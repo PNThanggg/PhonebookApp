@@ -8,7 +8,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
 import com.app.phonebook.base.extension.finishWithSlide
 import com.app.phonebook.base.extension.handleBackPressed
-import com.app.phonebook.base.utils.Constant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -16,7 +15,6 @@ import kotlinx.coroutines.launch
 abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     //region variable
     companion object {
-        const val TAG = Constant.TAG
         const val TIME_DELAY_CLICK = 200L
     }
 
