@@ -17,5 +17,4 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override fun inflateViewBinding(inflater: LayoutInflater): ActivityMainBinding {
         return ActivityMainBinding.inflate(inflater)
     }
-
 }
