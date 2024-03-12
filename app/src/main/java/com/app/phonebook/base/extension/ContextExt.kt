@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -13,7 +14,10 @@ import androidx.loader.content.CursorLoader
 import com.app.phonebook.R
 import com.app.phonebook.base.helpers.BaseConfig
 import com.app.phonebook.base.utils.APP_NAME
+import com.app.phonebook.base.utils.DARK_GREY
 import com.app.phonebook.base.utils.PREFS_KEY
+import com.app.phonebook.base.utils.TIME_FORMAT_12
+import com.app.phonebook.base.utils.TIME_FORMAT_24
 import com.app.phonebook.base.utils.appIconColorStrings
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.data.models.SharedTheme
@@ -107,3 +111,48 @@ fun Context.toggleAppIconColor(appId: String, colorIndex: Int, color: Int, enabl
 
 fun Context.getAppIconColors() =
     resources.getIntArray(R.array.md_app_icon_colors).toCollection(ArrayList())
+
+
+fun Context.getTimeFormat() = if (baseConfig.use24HourFormat) TIME_FORMAT_24 else TIME_FORMAT_12
+
+
+fun Context.getProperBackgroundColor() = if (baseConfig.isUsingSystemTheme) {
+    resources.getColor(R.color.you_background_color, theme)
+} else {
+    baseConfig.backgroundColor
+}
+//
+//fun Context.updateBottomTabItemColors(view: View?, isActive: Boolean, drawableId: Int? = null) {
+//    val color = if (isActive) {
+//        getProperPrimaryColor()
+//    } else {
+//        getProperTextColor()
+//    }
+//
+//    if (drawableId != null) {
+//        val drawable = ResourcesCompat.getDrawable(resources, drawableId, theme)
+//        view?.findViewById<ImageView>(R.id.tab_item_icon)?.setImageDrawable(drawable)
+//    }
+//
+//    view?.findViewById<ImageView>(R.id.tab_item_icon)?.applyColorFilter(color)
+//    view?.findViewById<TextView>(R.id.tab_item_label)?.setTextColor(color)
+//}
+
+
+fun Context.getProperTextColor() = if (baseConfig.isUsingSystemTheme) {
+    resources.getColor(R.color.you_neutral_text_color, theme)
+} else {
+    baseConfig.textColor
+}
+
+fun Context.getProperPrimaryColor() = when {
+    baseConfig.isUsingSystemTheme -> resources.getColor(R.color.you_primary_color, theme)
+    isWhiteTheme() || isBlackAndWhiteTheme() -> baseConfig.accentColor
+    else -> baseConfig.primaryColor
+}
+
+fun Context.isBlackAndWhiteTheme() =
+    baseConfig.textColor == Color.WHITE && baseConfig.primaryColor == Color.BLACK && baseConfig.backgroundColor == Color.BLACK
+
+fun Context.isWhiteTheme() =
+    baseConfig.textColor == DARK_GREY && baseConfig.primaryColor == Color.WHITE && baseConfig.backgroundColor == Color.WHITE

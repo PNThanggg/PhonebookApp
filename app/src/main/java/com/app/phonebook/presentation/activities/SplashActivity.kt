@@ -1,4 +1,4 @@
-package com.app.phonebook.presentation
+package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -47,28 +47,20 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
     }
 
     override fun initData() {
-        @Suppress("DEPRECATION") baseConfig.apply {
+        baseConfig.apply {
             if (isUsingAutoTheme) {
                 val isUsingSystemDarkTheme = isUsingSystemDarkTheme()
                 isUsingSharedTheme = false
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    textColor = resources.getColor(
-                        if (isUsingSystemDarkTheme) R.color.theme_dark_text_color else R.color.theme_light_text_color,
-                        theme,
-                    )
+                textColor = resources.getColor(
+                    if (isUsingSystemDarkTheme) R.color.theme_dark_text_color else R.color.theme_light_text_color,
+                    theme,
+                )
 
-                    backgroundColor = resources.getColor(
-                        if (isUsingSystemDarkTheme) R.color.theme_dark_background_color else R.color.theme_light_background_color,
-                        theme,
-                    )
-                } else {
-                    textColor = resources.getColor(
-                        if (isUsingSystemDarkTheme) R.color.theme_dark_text_color else R.color.theme_light_text_color,
-                    )
-                    backgroundColor =
-                        resources.getColor(if (isUsingSystemDarkTheme) R.color.theme_dark_background_color else R.color.theme_light_background_color)
-                }
+                backgroundColor = resources.getColor(
+                    if (isUsingSystemDarkTheme) R.color.theme_dark_background_color else R.color.theme_light_background_color,
+                    theme,
+                )
             }
         }
     }

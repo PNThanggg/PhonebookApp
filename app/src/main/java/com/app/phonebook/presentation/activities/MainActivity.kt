@@ -1,4 +1,4 @@
-package com.app.phonebook.presentation
+package com.app.phonebook.presentation.activities
 
 import android.view.LayoutInflater
 import com.app.phonebook.base.view.BaseActivity
