@@ -15,6 +15,7 @@
 
     <dimen name="material_dialog_corner_radius">28dp</dimen>
     <dimen name="material_button_corner_radius">24dp</dimen>
+    <dimen name="corner_radius">8dp</dimen>
     <dimen name="social_logo">40dp</dimen>
     <dimen name="color_sample_size">34dp</dimen>
     <dimen name="shortcut_size">64dp</dimen>
@@ -61,6 +62,6 @@
     <dimen name="cab_item_min_width">85dp</dimen>
     <dimen name="popup_menu_elevation">4dp</dimen>
     <dimen name="divider_height">2px</dimen>
-    
+
     <dimen name="contact_grid_item_max_size">100dp</dimen>
 </resources>
