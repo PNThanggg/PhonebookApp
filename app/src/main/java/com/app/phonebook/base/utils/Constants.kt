@@ -557,7 +557,7 @@ const val SOCIAL_VOICE_CALL = 0
 const val SOCIAL_VIDEO_CALL = 1
 const val SOCIAL_MESSAGE = 2
 
-//fun getEmptyLocalContact() = LocalContact(
+//fun getEmptyLocalContact() = com.app.phonebook.data.models.LocalContact(
 //    0,
 //    "",
 //    "",

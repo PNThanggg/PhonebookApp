@@ -1,6 +1,5 @@
 package com.app.phonebook.base.extension
 
-import com.app.phonebook.base.helpers.MyContentProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
@@ -13,6 +12,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.loader.content.CursorLoader
 import com.app.phonebook.R
 import com.app.phonebook.base.helpers.BaseConfig
+import com.app.phonebook.base.helpers.MyContentProvider
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.DARK_GREY
 import com.app.phonebook.base.utils.PREFS_KEY
@@ -156,3 +156,9 @@ fun Context.isBlackAndWhiteTheme() =
 
 fun Context.isWhiteTheme() =
     baseConfig.textColor == DARK_GREY && baseConfig.primaryColor == Color.WHITE && baseConfig.backgroundColor == Color.WHITE
+
+fun Context.getProperStatusBarColor() = when {
+    baseConfig.isUsingSystemTheme -> resources.getColor(R.color.you_status_bar_color, theme)
+    else -> getProperBackgroundColor()
+}
+

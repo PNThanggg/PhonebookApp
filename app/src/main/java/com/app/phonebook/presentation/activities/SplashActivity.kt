@@ -67,6 +67,10 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
     override fun initListener() {
     }
 
+    override fun beforeCreate() {
+
+    }
+
     override fun inflateViewBinding(inflater: LayoutInflater): ActivitySplashBinding {
         return ActivitySplashBinding.inflate(inflater)
     }
@@ -75,8 +79,8 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
         lifecycleScope.launch(Dispatchers.Main) {
             delay(500)
 
-//            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-//            finish()
+            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+            finish()
         }
     }
 }

@@ -296,6 +296,54 @@
     <string name="loading">Loading…</string>
     <string name="access_storage_prompt">Please grant our app access to all your files, it might not work well without it.</string>
 
+    <!-- Dialpad -->
+    <string name="dialpad">Dialpad</string>
+    <string name="asterisk">Asterisk</string>
+    <string name="hashtag">Hashtag</string>
+    <string name="call_number">Call number</string>
+    <string name="dialpad_beeps">Enable beeps on dialpad button clicks</string>
+    <string name="dialpad_vibrations">Enable vibrations on dialpad button clicks</string>
+
+    <!-- Dialer -->
+    <string name="dialer">Dialer</string>
+    <string name="accept">Accept</string>
+    <string name="accept_call">Accept call</string>
+    <string name="decline">Decline</string>
+    <string name="decline_call">Decline call</string>
+    <string name="unknown_caller">Unknown Caller</string>
+    <string name="is_calling">Is Calling…</string>
+    <string name="dialing">Dialing…</string>
+    <string name="call_ended">Call Ended</string>
+    <string name="call_ending">Call Ending</string>
+    <string name="ongoing_call">Ongoing Call</string>
+    <string name="select_sim">Select a SIM for this call</string>
+    <string name="always_use_this_sim">Always use this SIM for this number</string>
+    <string name="unset_default_sim">Unset default SIM</string>
+    <string name="calls">Calls</string>
+    <string name="turn_microphone_on">Turn microphone on</string>
+    <string name="turn_microphone_off">Turn microphone off</string>
+    <string name="turn_speaker_on">Turn speaker on</string>
+    <string name="turn_speaker_off">Turn speaker off</string>
+    <string name="show_dialpad">Show dialpad</string>
+    <string name="hide_dialpad">Hide dialpad</string>
+    <string name="end_call">End call</string>
+    <string name="hold_call">Hold call</string>
+    <string name="resume_call">Resume call</string>
+    <string name="call_on_hold">On Hold</string>
+    <string name="call_swap">Swap calls</string>
+    <string name="call_merge">Merge calls</string>
+    <string name="call_split">Split call</string>
+    <string name="call_add">Add call</string>
+    <string name="conference_manage">Manage conference call</string>
+    <string name="conference">Conference</string>
+    <string name="audio_route_speaker">Speaker</string>
+    <string name="audio_route_earpiece">Earpiece</string>
+    <string name="audio_route_bluetooth">Bluetooth</string>
+    <string name="audio_route_wired_headset">Wired Headset</string>
+    <string name="audio_route_wired_or_earpiece">Wired or Earpiece</string>
+    <string name="choose_audio_route">Choose audio route</string>
+    <string name="calling_blocked_number">The number you are calling is blocked</string>
+
     <plurals name="items">
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>
@@ -601,7 +649,7 @@
         <item quantity="other">%d years</item>
     </plurals>
 
-    <!-- For example: Event reminder: 3 minutes before -->
+    <!-- For example: com.app.phonebook.data.models.Event reminder: 3 minutes before -->
     <plurals name="seconds_before">
         <item quantity="one">%d second before</item>
         <item quantity="other">%d seconds before</item>
