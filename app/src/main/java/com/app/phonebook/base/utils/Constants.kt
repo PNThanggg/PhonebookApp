@@ -15,14 +15,12 @@ const val EXTRA_SHOW_ADVANCED = "android.content.extra.SHOW_ADVANCED"
 
 const val APP_NAME = "Phone Book"
 const val APP_LICENSES = "app_licenses"
-const val APP_FAQ = "app_faq"
 const val APP_VERSION_NAME = "app_version_name"
 const val APP_ICON_IDS = "app_icon_ids"
 const val APP_ID = "app_id"
 const val APP_LAUNCHER_NAME = "app_launcher_name"
 const val REAL_FILE_PATH = "real_file_path_2"
 const val IS_FROM_GALLERY = "is_from_gallery"
-const val BROADCAST_REFRESH_MEDIA = "com.simplemobiletools.REFRESH_MEDIA"
 const val REFRESH_PATH = "refresh_path"
 const val IS_CUSTOMIZING_COLORS = "is_customizing_colors"
 const val BLOCKED_NUMBERS_EXPORT_DELIMITER = ","
@@ -468,14 +466,14 @@ fun ensureBackgroundThread(callback: () -> Unit) {
     }
 }
 
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N)
-fun isNougatPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N_MR1)
-fun isNougatMR1Plus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
-fun isOreoPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+//@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N)
+//fun isNougatPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+//
+//@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N_MR1)
+//fun isNougatMR1Plus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1
+//
+//@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
+//fun isOreoPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
 
 @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O_MR1)
 fun isOreoMr1Plus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
