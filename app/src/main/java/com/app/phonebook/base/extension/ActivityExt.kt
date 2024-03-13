@@ -9,10 +9,11 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import com.app.phonebook.R
+import com.app.phonebook.base.utils.isUpsideDownCakePlus
 
 fun Activity.finishWithSlide() {
     finish()
-    if (isSdk34()) {
+    if (isUpsideDownCakePlus()) {
         overrideActivityTransition(
             OVERRIDE_TRANSITION_CLOSE,
             R.anim.slide_in_left,

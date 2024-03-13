@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +20,7 @@ import com.app.phonebook.base.extension.handleBackPressed
 import com.app.phonebook.base.extension.removeBit
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.DARK_GREY
+import com.app.phonebook.base.utils.isRPlus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -88,7 +90,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         }
 
         if (!useTopSearchMenu) {
-            updateStatusbarColor(color)
+            updateStatusBarColor(color)
             toolbar.setBackgroundColor(color)
             toolbar.setTitleTextColor(contrastColor)
             toolbar.navigationIcon?.applyColorFilter(contrastColor)
@@ -115,15 +117,32 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         }
     }
 
-    fun updateStatusbarColor(color: Int) {
+    @Suppress("DEPRECATION")
+    fun updateStatusBarColor(color: Int) {
         window.statusBarColor = color
 
-        if (color.getContrastColor() == DARK_GREY) {
-            window.decorView.systemUiVisibility =
-                window.decorView.systemUiVisibility.addBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+        if (isRPlus()) {
+            val controller = window.insetsController
+            if (color.getContrastColor() == DARK_GREY) {
+                controller?.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+            } else {
+                controller?.setSystemBarsAppearance(
+                    0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+            }
         } else {
-            window.decorView.systemUiVisibility =
-                window.decorView.systemUiVisibility.removeBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            if (color.getContrastColor() == DARK_GREY) {
+                window.decorView.systemUiVisibility =
+                    window.decorView.systemUiVisibility.addBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            } else {
+                window.decorView.systemUiVisibility =
+                    window.decorView.systemUiVisibility.removeBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            }
         }
+
+
     }
 }

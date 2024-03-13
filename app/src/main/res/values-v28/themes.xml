@@ -10,11 +10,13 @@
         <item name="android:paddingBottom">@dimen/activity_margin</item>
         <item name="android:background">@drawable/button_background_stroke</item>
         <item name="android:gravity">center_horizontal</item>
+        <item name="android:textViewStyle">@style/SofiaTextViewStyle</item>
     </style>
 
     <style name="SettingsTextValueStyle">
         <item name="android:alpha">0.6</item>
         <item name="android:textFontWeight">300</item>
         <item name="android:textSize">@dimen/normal_text_size</item>
+        <item name="android:textViewStyle">@style/SofiaTextViewStyle</item>
     </style>
 </resources>

@@ -1,6 +1,6 @@
 package com.app.phonebook.base.extension
 
-import MyContentProvider
+import com.app.phonebook.base.helpers.MyContentProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences

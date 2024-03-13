@@ -1,3 +1,5 @@
+package com.app.phonebook.base.helpers
+
 import android.content.ContentValues
 import android.net.Uri
 import com.app.phonebook.data.models.SharedTheme

@@ -165,6 +165,7 @@
     <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:textViewStyle">@style/SofiaTextViewStyle</item>
     </style>
 
     <style name="MyWidgetConfigTheme" parent="@style/AppTheme.Base">

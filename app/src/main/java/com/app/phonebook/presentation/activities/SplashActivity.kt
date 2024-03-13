@@ -2,7 +2,6 @@ package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.os.Build
 import android.view.LayoutInflater
 import androidx.lifecycle.lifecycleScope
 import com.app.phonebook.R
@@ -72,12 +71,12 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
         return ActivitySplashBinding.inflate(inflater)
     }
 
-    private fun initActivity(): Unit {
+    private fun initActivity() {
         lifecycleScope.launch(Dispatchers.Main) {
             delay(500)
 
-            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-            finish()
+//            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+//            finish()
         }
     }
 }

@@ -1,7 +1,5 @@
 package com.app.phonebook.base.utils
 
-import android.content.Context
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Looper
 import android.provider.ContactsContract
@@ -465,36 +463,6 @@ fun ensureBackgroundThread(callback: () -> Unit) {
         callback()
     }
 }
-
-//@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N)
-//fun isNougatPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-//
-//@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N_MR1)
-//fun isNougatMR1Plus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1
-//
-//@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
-//fun isOreoPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O_MR1)
-fun isOreoMr1Plus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
-fun isPiePlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.Q)
-fun isQPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.R)
-fun isRPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.S)
-fun isSPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.TIRAMISU)
-fun isTiramisuPlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-fun isUpsideDownCakePlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
 fun getDateFormats() = arrayListOf(
     "--MM-dd",
