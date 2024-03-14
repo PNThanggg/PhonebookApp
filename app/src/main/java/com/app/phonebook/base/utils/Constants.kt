@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.normalizeString
 import com.app.phonebook.data.models.LocalContact
+import com.app.phonebook.overloads.times
 
 const val EXTERNAL_STORAGE_PROVIDER_AUTHORITY = "com.android.externalstorage.documents"
 const val EXTRA_SHOW_ADVANCED = "android.content.extra.SHOW_ADVANCED"
@@ -503,6 +504,23 @@ const val THREEMA_PACKAGE = "ch.threema.app"
 const val SOCIAL_VOICE_CALL = 0
 const val SOCIAL_VIDEO_CALL = 1
 const val SOCIAL_MESSAGE = 2
+
+fun getQuestionMarks(size: Int) = ("?," * size).trimEnd(',')
+
+// most app icon colors from md_app_icon_colors with reduced alpha
+// used at showing contact placeholders without image
+val letterBackgroundColors = arrayListOf(
+    0xCCD32F2F,
+    0xCCC2185B,
+    0xCC1976D2,
+    0xCC0288D1,
+    0xCC0097A7,
+    0xCC00796B,
+    0xCC388E3C,
+    0xCC689F38,
+    0xCCF57C00,
+    0xCCE64A19
+)
 
 fun getEmptyLocalContact() = LocalContact(
     0,

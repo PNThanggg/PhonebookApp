@@ -17,6 +17,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
@@ -300,7 +301,7 @@ fun Context.getContactsHasMap(
     withComparableNumbers: Boolean = false,
     callback: (HashMap<String, String>) -> Unit
 ) {
-    ContactsHelper<Any?>(this).getContacts(showOnlyContactsWithNumbers = true) { contactList ->
+    ContactsHelper(this).getContacts(showOnlyContactsWithNumbers = true) { contactList ->
         val privateContacts: HashMap<String, String> = HashMap()
         for (contact in contactList) {
             for (phoneNumber in contact.phoneNumbers) {
@@ -317,7 +318,7 @@ fun Context.getContactsHasMap(
 }
 
 fun Context.getAllContactSources(): ArrayList<ContactSource> {
-    val sources = ContactsHelper<Any?>(this).getDeviceContactSources()
+    val sources = ContactsHelper(this).getDeviceContactSources()
     sources.add(getPrivateContactSource())
     return sources.toMutableList() as ArrayList<ContactSource>
 }
@@ -375,6 +376,26 @@ fun Context.copyToClipboard(text: String) {
     val toastText = String.format(getString(R.string.value_copied_to_clipboard_show), text)
     toast(toastText)
 }
+
+fun Context.getPhoneNumberTypeText(type: Int, label: String): String {
+    return if (type == ContactsContract.CommonDataKinds.BaseTypes.TYPE_CUSTOM) {
+        label
+    } else {
+        getString(
+            when (type) {
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> R.string.mobile
+                ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> R.string.home
+                ContactsContract.CommonDataKinds.Phone.TYPE_WORK -> R.string.work
+                ContactsContract.CommonDataKinds.Phone.TYPE_MAIN -> R.string.main_number
+                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK -> R.string.work_fax
+                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME -> R.string.home_fax
+                ContactsContract.CommonDataKinds.Phone.TYPE_PAGER -> R.string.pager
+                else -> R.string.other
+            }
+        )
+    }
+}
+
 
 val Context.telecomManager: TelecomManager get() = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 val Context.telephonyManager: TelephonyManager get() = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
