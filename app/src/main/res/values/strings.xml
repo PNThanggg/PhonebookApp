@@ -80,6 +80,12 @@
     <string name="audio">Audio</string>
     <string name="scanning">Scanning…</string>
 
+    <string name="facebook">Facebook</string>
+    <string name="reddit">Reddit</string>
+    <string name="telegram">Telegram</string>
+    <string name="github">GitHub</string>
+    <string name="viber">Viber</string>
+
     <!-- Events -->
     <string name="birthday">Birthday</string>
     <string name="anniversary">Anniversary</string>
