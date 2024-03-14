@@ -9,7 +9,7 @@ import android.view.ScaleGestureDetector
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.app.phonebook.R
-import com.app.phonebook.base.`interface`.RecyclerScrollCallback
+import com.app.phonebook.base.interfaces.RecyclerScrollCallback
 
 open class MyRecyclerView : RecyclerView {
     companion object {
@@ -53,7 +53,7 @@ open class MyRecyclerView : RecyclerView {
     private var mScrollY = 0
 
     // variables used for fetching additional items at scrolling to the bottom/top
-    private var endlessScrollListener: EndlessScrollListener? = null
+    var endlessScrollListener: EndlessScrollListener? = null
     private var totalItemCount = 0
     private var lastMaxItemIndex = 0
     private var linearLayoutManager: LinearLayoutManager? = null

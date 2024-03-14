@@ -47,7 +47,6 @@ import com.app.phonebook.base.utils.FAVORITES
 import com.app.phonebook.base.utils.FAVORITES_CONTACTS_ORDER
 import com.app.phonebook.base.utils.FAVORITES_CUSTOM_ORDER_SELECTED
 import com.app.phonebook.base.utils.FONT_SIZE
-import com.app.phonebook.base.utils.HAD_THANK_YOU_INSTALLED
 import com.app.phonebook.base.utils.IGNORED_CONTACT_SOURCES
 import com.app.phonebook.base.utils.INITIAL_WIDGET_HEIGHT
 import com.app.phonebook.base.utils.IS_USING_AUTO_THEME
@@ -441,10 +440,10 @@ open class BaseConfig(private val context: Context) {
     fun hasCustomSorting(path: String) =
         prefs.contains(SORT_FOLDER_PREFIX + path.lowercase(Locale.ROOT))
 
-    var hadThankYouInstalled: Boolean
-        get() = prefs.getBoolean(HAD_THANK_YOU_INSTALLED, false)
-        set(hadThankYouInstalled) = prefs.edit()
-            .putBoolean(HAD_THANK_YOU_INSTALLED, hadThankYouInstalled).apply()
+//    var hadThankYouInstalled: Boolean
+//        get() = prefs.getBoolean(HAD_THANK_YOU_INSTALLED, false)
+//        set(hadThankYouInstalled) = prefs.edit()
+//            .putBoolean(HAD_THANK_YOU_INSTALLED, hadThankYouInstalled).apply()
 
     var skipDeleteConfirmation: Boolean
         get() = prefs.getBoolean(SKIP_DELETE_CONFIRMATION, false)

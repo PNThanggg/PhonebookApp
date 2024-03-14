@@ -1,4 +1,4 @@
-package com.app.phonebook.base.`interface`
+package com.app.phonebook.base.interfaces
 
 interface RefreshRecyclerViewListener {
     fun refreshItems()

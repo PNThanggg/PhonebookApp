@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import androidx.lifecycle.lifecycleScope
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.baseConfig
-import com.app.phonebook.base.extension.checkAppIconColor
 import com.app.phonebook.base.extension.getSharedTheme
 import com.app.phonebook.base.extension.isUsingSystemDarkTheme
 import com.app.phonebook.base.view.BaseActivity
@@ -33,10 +32,10 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
                         accentColor = it.accentColor
                     }
 
-                    if (baseConfig.appIconColor != it.appIconColor) {
-                        baseConfig.appIconColor = it.appIconColor
-                        checkAppIconColor()
-                    }
+//                    if (baseConfig.appIconColor != it.appIconColor) {
+//                        baseConfig.appIconColor = it.appIconColor
+//                        checkAppIconColor()
+//                    }
                 }
                 initActivity()
             }

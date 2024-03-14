@@ -3,6 +3,7 @@ package com.app.phonebook.data.models
 import android.graphics.Bitmap
 import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
+import android.telephony.TelephonyManager
 import com.app.phonebook.base.extension.normalizePhoneNumber
 import com.app.phonebook.base.extension.normalizeString
 import com.app.phonebook.base.utils.SMT_PRIVATE
@@ -11,6 +12,7 @@ import com.app.phonebook.base.utils.SORT_BY_FULL_NAME
 import com.app.phonebook.base.utils.SORT_BY_MIDDLE_NAME
 import com.app.phonebook.base.utils.SORT_BY_SURNAME
 import com.app.phonebook.base.utils.SORT_DESCENDING
+import com.app.phonebook.base.utils.isSPlus
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.util.Locale
@@ -33,13 +35,12 @@ data class Contact(
     var starred: Int = 0,
     var contactId: Int,
     var thumbnailUri: String = "",
-    @Contextual
-    var photo: Bitmap? = null,
+    @Contextual var photo: Bitmap? = null,
     var notes: String = "",
     var groups: ArrayList<Group> = arrayListOf(),
     var organization: Organization = Organization("", ""),
     var websites: ArrayList<String> = arrayListOf(),
-    var IMs: ArrayList<IM> = arrayListOf(),
+    var listIM: ArrayList<IM> = arrayListOf(),
     var mimetype: String = "",
     var ringtone: String? = ""
 ) : Comparable<Contact> {
@@ -94,9 +95,7 @@ data class Contact(
     }
 
     private fun compareUsingStrings(
-        firstString: String,
-        secondString: String,
-        other: Contact
+        firstString: String, secondString: String, other: Contact
     ): Int {
         var firstValue = firstString
         var secondValue = secondString
@@ -211,14 +210,14 @@ data class Contact(
             groups = ArrayList(),
             websites = ArrayList(),
             organization = Organization("", ""),
-            IMs = ArrayList(),
+            listIM = ArrayList(),
             ringtone = ""
         ).toString()
     }
 
     fun getHashToCompare() = getStringToCompare().hashCode()
 
-    fun getFullCompany(): String {
+    private fun getFullCompany(): String {
         var fullOrganization =
             if (organization.company.isEmpty()) "" else "${organization.company}, "
         fullOrganization += organization.jobPosition
@@ -228,21 +227,32 @@ data class Contact(
     fun isABusinessContact() =
         prefix.isEmpty() && firstName.isEmpty() && middleName.isEmpty() && surname.isEmpty() && suffix.isEmpty() && organization.isNotEmpty()
 
-    fun doesContainPhoneNumber(text: String, convertLetters: Boolean = false): Boolean {
+    @Suppress("DEPRECATION")
+    fun doesContainPhoneNumber(
+        text: String, convertLetters: Boolean = false, telephonyManager: TelephonyManager
+    ): Boolean {
         return if (text.isNotEmpty()) {
             val normalizedText = if (convertLetters) text.normalizePhoneNumber() else text
+
             phoneNumbers.any {
-                PhoneNumberUtils.compare(it.normalizedNumber, normalizedText) ||
-                        it.value.contains(text) ||
-                        it.normalizedNumber.contains(normalizedText) ||
-                        it.value.normalizePhoneNumber().contains(normalizedText)
+                val isCompare = if (isSPlus()) {
+                    PhoneNumberUtils.areSamePhoneNumber(
+                        it.normalizedNumber, normalizedText, telephonyManager.networkCountryIso
+                    )
+                } else {
+                    PhoneNumberUtils.compare(it.normalizedNumber, normalizedText)
+                }
+
+                isCompare || it.value.contains(text) || it.normalizedNumber.contains(normalizedText) || it.value.normalizePhoneNumber()
+                    .contains(normalizedText)
             }
         } else {
             false
         }
     }
 
-    fun doesHavePhoneNumber(text: String): Boolean {
+    @Suppress("DEPRECATION")
+    fun doesHavePhoneNumber(text: String, telephonyManager: TelephonyManager): Boolean {
         return if (text.isNotEmpty()) {
             val normalizedText = text.normalizePhoneNumber()
             if (normalizedText.isEmpty()) {
@@ -251,10 +261,18 @@ data class Contact(
                 }
             } else {
                 phoneNumbers.map { it.normalizedNumber }.any { phoneNumber ->
-                    PhoneNumberUtils.compare(phoneNumber.normalizePhoneNumber(), normalizedText) ||
-                            phoneNumber == text ||
-                            phoneNumber.normalizePhoneNumber() == normalizedText ||
-                            phoneNumber == normalizedText
+
+                    val isCompare = if (isSPlus()) {
+                        PhoneNumberUtils.areSamePhoneNumber(
+                            phoneNumber.normalizePhoneNumber(),
+                            normalizedText,
+                            telephonyManager.networkCountryIso
+                        )
+                    } else {
+                        PhoneNumberUtils.compare(phoneNumber.normalizePhoneNumber(), normalizedText)
+                    }
+
+                    isCompare || phoneNumber == text || phoneNumber.normalizePhoneNumber() == normalizedText || phoneNumber == normalizedText
                 }
             }
         } else {
@@ -262,7 +280,7 @@ data class Contact(
         }
     }
 
-    fun isPrivate() = source == SMT_PRIVATE
+    private fun isPrivate() = source == SMT_PRIVATE
 
     fun getSignatureKey() = photoUri.ifEmpty { hashCode() }
 

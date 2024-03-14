@@ -2,17 +2,15 @@ package com.app.phonebook.base.utils
 
 import android.os.Looper
 import android.provider.ContactsContract
-import android.util.Log
 import androidx.annotation.StringRes
 import com.app.phonebook.R
+import com.app.phonebook.base.extension.normalizeString
+import com.app.phonebook.data.models.LocalContact
 
 const val EXTERNAL_STORAGE_PROVIDER_AUTHORITY = "com.android.externalstorage.documents"
 const val EXTRA_SHOW_ADVANCED = "android.content.extra.SHOW_ADVANCED"
 
 const val APP_NAME = "Phone Book"
-const val APP_LICENSES = "app_licenses"
-const val APP_VERSION_NAME = "app_version_name"
-const val APP_ICON_IDS = "app_icon_ids"
 const val APP_ID = "app_id"
 const val APP_LAUNCHER_NAME = "app_launcher_name"
 const val REAL_FILE_PATH = "real_file_path_2"
@@ -114,7 +112,8 @@ const val SHOW_INFO_BUBBLE = "show_info_bubble"
 const val LAST_CONFLICT_RESOLUTION = "last_conflict_resolution"
 const val LAST_CONFLICT_APPLY_TO_ALL = "last_conflict_apply_to_all"
 const val LAST_COPY_PATH = "last_copy_path"
-const val HAD_THANK_YOU_INSTALLED = "had_thank_you_installed"
+
+//const val HAD_THANK_YOU_INSTALLED = "had_thank_you_installed"
 const val SKIP_DELETE_CONFIRMATION = "skip_delete_confirmation"
 const val ENABLE_PULL_TO_REFRESH = "enable_pull_to_refresh"
 const val SCROLL_HORIZONTALLY = "scroll_horizontally"
@@ -272,8 +271,9 @@ const val REQUEST_CODE_SET_DEFAULT_CALLER_ID = 1010
 
 // sorting
 const val SORT_ORDER = "sort_order"
-const val SORT_FOLDER_PREFIX =
-    "sort_folder_"       // storing folder specific values at using "Use for this folder only"
+
+// storing folder specific values at using "Use for this folder only"
+const val SORT_FOLDER_PREFIX = "sort_folder_"
 const val SORT_BY_NAME = 1
 const val SORT_BY_DATE_MODIFIED = 2
 const val SORT_BY_SIZE = 4
@@ -309,32 +309,6 @@ const val SHOW_ALL_TABS = -1
 const val SHOW_PATTERN = 0
 const val SHOW_PIN = 1
 const val SHOW_FINGERPRINT = 2
-
-// permissions
-const val PERMISSION_READ_STORAGE = 1
-const val PERMISSION_WRITE_STORAGE = 2
-const val PERMISSION_CAMERA = 3
-const val PERMISSION_RECORD_AUDIO = 4
-const val PERMISSION_READ_CONTACTS = 5
-const val PERMISSION_WRITE_CONTACTS = 6
-const val PERMISSION_READ_CALENDAR = 7
-const val PERMISSION_WRITE_CALENDAR = 8
-const val PERMISSION_CALL_PHONE = 9
-const val PERMISSION_READ_CALL_LOG = 10
-const val PERMISSION_WRITE_CALL_LOG = 11
-const val PERMISSION_GET_ACCOUNTS = 12
-const val PERMISSION_READ_SMS = 13
-const val PERMISSION_SEND_SMS = 14
-const val PERMISSION_READ_PHONE_STATE = 15
-const val PERMISSION_MEDIA_LOCATION = 16
-const val PERMISSION_POST_NOTIFICATIONS = 17
-const val PERMISSION_READ_MEDIA_IMAGES = 18
-const val PERMISSION_READ_MEDIA_VIDEO = 19
-const val PERMISSION_READ_MEDIA_AUDIO = 20
-const val PERMISSION_ACCESS_COARSE_LOCATION = 21
-const val PERMISSION_ACCESS_FINE_LOCATION = 22
-const val PERMISSION_READ_MEDIA_VISUAL_USER_SELECTED = 23
-const val PERMISSION_READ_SYNC_SETTINGS = 24
 
 // conflict resolving
 const val CONFLICT_SKIP = 1
@@ -422,43 +396,6 @@ enum class NavigationIcon(@StringRes val accessibilityResId: Int) {
     Cross(R.string.close), Arrow(R.string.back), None(0)
 }
 
-val appIconColorStrings = arrayListOf(
-    ".Red",
-    ".Pink",
-    ".Purple",
-    ".Deep_purple",
-    ".Indigo",
-    ".Blue",
-    ".Light_blue",
-    ".Cyan",
-    ".Teal",
-    ".Green",
-    ".Light_green",
-    ".Lime",
-    ".Yellow",
-    ".Amber",
-    ".Orange",
-    ".Deep_orange",
-    ".Brown",
-    ".Blue_grey",
-    ".Grey_black"
-)
-
-// most app icon colors from md_app_icon_colors with reduced alpha
-// used at showing contact placeholders without image
-val letterBackgroundColors = arrayListOf(
-    0xCCD32F2F,
-    0xCCC2185B,
-    0xCC1976D2,
-    0xCC0288D1,
-    0xCC0097A7,
-    0xCC00796B,
-    0xCC388E3C,
-    0xCC689F38,
-    0xCCF57C00,
-    0xCCE64A19
-)
-
 // view types
 const val VIEW_TYPE_GRID = 1
 const val VIEW_TYPE_LIST = 2
@@ -515,8 +452,6 @@ fun getConflictResolution(resolutions: LinkedHashMap<String, Int>, path: String)
 
 val proPackages = arrayListOf("draw", "gallery", "filemanager", "contacts", "notes", "calendar")
 
-fun mydebug(message: String) = Log.e("DEBUG", message)
-
 const val FIRST_CONTACT_ID = 1000000
 const val DEFAULT_FILE_NAME = "contacts.vcf"
 
@@ -569,29 +504,30 @@ const val SOCIAL_VOICE_CALL = 0
 const val SOCIAL_VIDEO_CALL = 1
 const val SOCIAL_MESSAGE = 2
 
-//fun getEmptyLocalContact() = com.app.phonebook.data.models.LocalContact(
-//    0,
-//    "",
-//    "",
-//    "",
-//    "",
-//    "",
-//    "",
-//    null,
-//    "",
-//    ArrayList(),
-//    ArrayList(),
-//    ArrayList(),
-//    0,
-//    ArrayList(),
-//    "",
-//    ArrayList(),
-//    "",
-//    "",
-//    ArrayList(),
-//    ArrayList(),
-//    null
-//)
-//
-//fun getProperText(text: String, shouldNormalize: Boolean) =
-//    if (shouldNormalize) text.normalizeString() else text
+fun getEmptyLocalContact() = LocalContact(
+    0,
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    null,
+    "",
+    ArrayList(),
+    ArrayList(),
+    ArrayList(),
+    0,
+    ArrayList(),
+    "",
+    ArrayList(),
+    "",
+    "",
+    ArrayList(),
+    ArrayList(),
+    null
+)
+
+
+fun getProperText(text: String, shouldNormalize: Boolean) =
+    if (shouldNormalize) text.normalizeString() else text
