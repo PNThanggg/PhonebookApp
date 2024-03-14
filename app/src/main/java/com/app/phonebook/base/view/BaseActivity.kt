@@ -1,14 +1,20 @@
 package com.app.phonebook.base.view
 
 import android.app.ActivityManager
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.telecom.PhoneAccountHandle
+import android.telecom.TelecomManager
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
 import android.view.View
 import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
 import com.app.phonebook.R
@@ -17,16 +23,22 @@ import com.app.phonebook.base.extension.adjustAlpha
 import com.app.phonebook.base.extension.applyColorFilter
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.finishWithSlide
+import com.app.phonebook.base.extension.getAvailableSIMCardLabels
 import com.app.phonebook.base.extension.getColoredDrawableWithColor
 import com.app.phonebook.base.extension.getContrastColor
+import com.app.phonebook.base.extension.getPermissionString
 import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperStatusBarColor
 import com.app.phonebook.base.extension.getThemeId
 import com.app.phonebook.base.extension.handleBackPressed
+import com.app.phonebook.base.extension.hasPermission
+import com.app.phonebook.base.extension.launchActivityIntent
 import com.app.phonebook.base.extension.removeBit
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.DARK_GREY
 import com.app.phonebook.base.utils.HIGHER_ALPHA
+import com.app.phonebook.base.utils.PERMISSION_CALL_PHONE
+import com.app.phonebook.base.utils.PERMISSION_READ_PHONE_STATE
 import com.app.phonebook.base.utils.isRPlus
 import com.app.phonebook.base.utils.isTiramisuPlus
 import kotlinx.coroutines.Dispatchers
@@ -36,17 +48,24 @@ import kotlinx.coroutines.launch
 abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     //region variable
     companion object {
-        const val TIME_DELAY_CLICK = 200L
+        private const val TIME_DELAY_CLICK = 200L
+        private const val GENERIC_PERM_HANDLER = 100
     }
 
-    private lateinit var binding: VB
+    lateinit var binding: VB
     private var isAvailableClick = true
     private var useTopSearchMenu = false
-    //endregion
+
+    var actionOnPermission: ((granted: Boolean) -> Unit)? = null
+
+    var isAskingPermissions = false
 
     var isMaterialActivity = false
     var useDynamicTheme = true
     var showTransparentTop = false
+
+    //endregion
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (useDynamicTheme) {
@@ -198,7 +217,9 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     fun updateActionbarColor(color: Int = getProperStatusBarColor()) {
         updateStatusBarColor(color)
         if (isTiramisuPlus()) {
-            setTaskDescription(ActivityManager.TaskDescription.Builder().setStatusBarColor(color).build())
+            setTaskDescription(
+                ActivityManager.TaskDescription.Builder().setStatusBarColor(color).build()
+            )
         } else {
             setTaskDescription(ActivityManager.TaskDescription(null, null, color))
         }
@@ -209,6 +230,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         updateNavigationBarButtons(color)
     }
 
+    @Suppress("DEPRECATION")
     override fun onResume() {
         super.onResume()
 
@@ -247,4 +269,77 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
 
         updateNavigationBarColor(navBarColor)
     }
+
+    fun updateMenuItemColors(
+        menu: Menu?,
+        baseColor: Int = getProperStatusBarColor(),
+        forceWhiteIcons: Boolean = false
+    ) {
+        if (menu == null) {
+            return
+        }
+
+        var color = baseColor.getContrastColor()
+        if (forceWhiteIcons) {
+            color = Color.WHITE
+        }
+
+        for (i in 0 until menu.size()) {
+            try {
+                menu.getItem(i)?.icon?.setTint(color)
+            } catch (ignored: Exception) {
+                Log.e(APP_NAME, "updateMenuItemColors: ${ignored.message}")
+            }
+        }
+    }
+
+    fun handlePermission(permissionId: Int, callback: (granted: Boolean) -> Unit) {
+        actionOnPermission = null
+        if (hasPermission(permissionId)) {
+            callback(true)
+        } else {
+            isAskingPermissions = true
+            actionOnPermission = callback
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(getPermissionString(permissionId)),
+                GENERIC_PERM_HANDLER
+            )
+        }
+    }
+
+    fun launchCallIntent(recipient: String, handle: PhoneAccountHandle? = null) {
+        handlePermission(PERMISSION_CALL_PHONE) {
+            val action = if (it) Intent.ACTION_CALL else Intent.ACTION_DIAL
+            Intent(action).apply {
+                data = Uri.fromParts("tel", recipient, null)
+
+                if (handle != null) {
+                    putExtra(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)
+                }
+
+//                if (isDefaultDialer()) {
+//                    val packageName = if (baseConfig.appId.contains(
+//                            ".debug",
+//                            true
+//                        )
+//                    ) "com.simplemobiletools.dialer.debug" else "com.simplemobiletools.dialer"
+//                    val className = "com.simplemobiletools.dialer.activities.DialerActivity"
+//                    setClassName(packageName, className)
+//                }
+
+                launchActivityIntent(this)
+            }
+        }
+    }
+
+    fun callContactWithSim(recipient: String, useMainSIM: Boolean) {
+        handlePermission(PERMISSION_READ_PHONE_STATE) {
+            val wantedSimIndex = if (useMainSIM) 0 else 1
+            val handle =
+                getAvailableSIMCardLabels().sortedBy { it.id }.getOrNull(wantedSimIndex)?.handle
+            launchCallIntent(recipient, handle)
+        }
+    }
+
 }
