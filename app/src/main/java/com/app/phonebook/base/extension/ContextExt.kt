@@ -3,6 +3,7 @@ package com.app.phonebook.base.extension
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -19,6 +20,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
+import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -68,6 +70,7 @@ import com.app.phonebook.base.utils.TIME_FORMAT_24
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isQPlus
+import com.app.phonebook.base.utils.isSPlus
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.data.models.SharedTheme
@@ -373,6 +376,17 @@ fun Context.copyToClipboard(text: String) {
 }
 
 val Context.telecomManager: TelecomManager get() = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+val Context.telephonyManager: TelephonyManager get() = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+fun Context.getPopupMenuTheme(): Int {
+    return if (isSPlus() && baseConfig.isUsingSystemTheme) {
+        R.style.AppTheme_YouPopupMenuStyle
+    } else if (isWhiteTheme()) {
+        R.style.AppTheme_PopupMenuLightStyle
+    } else {
+        R.style.AppTheme_PopupMenuDarkStyle
+    }
+}
 
 @SuppressLint("MissingPermission")
 fun Context.areMultipleSIMsAvailable(): Boolean {
@@ -561,6 +575,20 @@ fun Context.queryCursor(
 fun Context.hasPermission(permId: Int) = ContextCompat.checkSelfPermission(
     this, getPermissionString(permId)
 ) == PackageManager.PERMISSION_GRANTED
+
+fun Context.isDefaultDialer(): Boolean {
+    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
+            "com.simplemobiletools.dialer"
+        )
+    ) {
+        true
+    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
+        val roleManager = getSystemService(RoleManager::class.java)
+        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+    } else {
+        telecomManager.defaultDialerPackage == packageName
+    }
+}
 
 fun Context.getPermissionString(id: Int) = when (id) {
     PERMISSION_READ_STORAGE -> Manifest.permission.READ_EXTERNAL_STORAGE
