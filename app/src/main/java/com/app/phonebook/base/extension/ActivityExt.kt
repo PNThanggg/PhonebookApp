@@ -12,8 +12,13 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import com.app.phonebook.R
+import com.app.phonebook.base.utils.CONTACT_ID
 import com.app.phonebook.base.utils.DARK_GREY
+import com.app.phonebook.base.utils.IS_PRIVATE
+import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
+import com.app.phonebook.data.models.Contact
+import com.app.phonebook.helpers.SimpleContactsHelper
 
 fun Activity.finishWithSlide() {
     finish()
@@ -67,6 +72,39 @@ fun Activity.launchSendSMSIntent(recipient: String) {
     }
 }
 
+fun Activity.launchViewContactIntent(uri: Uri) {
+    Intent().apply {
+        action = ContactsContract.QuickContact.ACTION_QUICK_CONTACT
+        data = uri
+        launchActivityIntent(this)
+    }
+}
+
+
+fun Activity.startContactDetailsIntent(contact: Contact) {
+    if (contact.rawId > 1000000 && contact.contactId > 1000000 && contact.rawId == contact.contactId) {
+        Intent().apply {
+            action = Intent.ACTION_VIEW
+            putExtra(CONTACT_ID, contact.rawId)
+            putExtra(IS_PRIVATE, true)
+            setDataAndType(
+                ContactsContract.Contacts.CONTENT_LOOKUP_URI,
+                "vnd.android.cursor.dir/person"
+            )
+            launchActivityIntent(this)
+        }
+    } else {
+        ensureBackgroundThread {
+            val lookupKey =
+                SimpleContactsHelper(this).getContactLookupKey((contact).rawId.toString())
+            val publicUri =
+                Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey)
+            runOnUiThread {
+                launchViewContactIntent(publicUri)
+            }
+        }
+    }
+}
 
 fun Activity.getThemeId(color: Int = baseConfig.primaryColor, showTransparentTop: Boolean = false) =
     when {
