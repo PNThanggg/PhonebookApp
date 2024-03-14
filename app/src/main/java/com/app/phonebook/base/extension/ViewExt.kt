@@ -1,8 +1,11 @@
 package com.app.phonebook.base.extension
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.StyleRes
+import com.app.phonebook.R
 import com.app.phonebook.base.utils.SHORT_ANIMATION_DURATION
 
 fun View.beInvisibleIf(beInvisible: Boolean) = if (beInvisible) beInvisible() else beVisible()
@@ -64,5 +67,14 @@ fun View.throwIfMissingAttrs(@StyleRes styleRes: Int, block: () -> Unit) {
                     "${resources.getResourceName(styleRes)}.",
             e
         )
+    }
+}
+
+@SuppressLint("UseCompatLoadingForDrawables")
+fun View.setupViewBackground(context: Context) {
+    background = if (context.baseConfig.isUsingSystemTheme) {
+        resources.getDrawable(R.drawable.selector_clickable_you, context.theme)
+    } else {
+        resources.getDrawable(R.drawable.selector_clickable, context.theme)
     }
 }
