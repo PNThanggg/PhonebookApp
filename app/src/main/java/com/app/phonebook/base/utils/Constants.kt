@@ -11,6 +11,8 @@ import com.app.phonebook.overloads.times
 const val EXTERNAL_STORAGE_PROVIDER_AUTHORITY = "com.android.externalstorage.documents"
 const val EXTRA_SHOW_ADVANCED = "android.content.extra.SHOW_ADVANCED"
 
+const val MIN_RECENTS_THRESHOLD = 30
+
 const val APP_NAME = "Phone Book"
 const val APP_ID = "app_id"
 const val APP_LAUNCHER_NAME = "app_launcher_name"

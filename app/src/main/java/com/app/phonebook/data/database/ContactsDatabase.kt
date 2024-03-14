@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.app.phonebook.base.helpers.Converters
 import com.app.phonebook.base.utils.FIRST_CONTACT_ID
@@ -31,26 +30,25 @@ abstract class ContactsDatabase : RoomDatabase() {
         fun getInstance(context: Context): ContactsDatabase {
             if (db == null) {
                 synchronized(ContactsDatabase::class) {
-                    if (db == null) {
-                        db = Room.databaseBuilder(
-                            context.applicationContext,
-                            ContactsDatabase::class.java,
-                            "local_contacts.db"
-                        ).addCallback(object : Callback() {
-                            override fun onCreate(db: SupportSQLiteDatabase) {
-                                super.onCreate(db)
-                                increaseAutoIncrementIds()
-                            }
-                        }).addMigrations(MIGRATION_1_2).addMigrations(MIGRATION_2_3).build()
-                    }
+                    db = Room.databaseBuilder(
+                        context.applicationContext,
+                        ContactsDatabase::class.java,
+                        "local_contacts.db"
+                    ).addCallback(object : Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            increaseAutoIncrementIds()
+                        }
+                    }).build()
                 }
             }
+
             return db!!
         }
 
-        fun destroyInstance() {
-            db = null
-        }
+//        fun destroyInstance() {
+//            db = null
+//        }
 
         // start autoincrement ID from FIRST_CONTACT_ID/FIRST_GROUP_ID to avoid conflicts
         // Room doesn't seem to have a built in way for it, so just create a contact/group and delete it
@@ -67,22 +65,6 @@ abstract class ContactsDatabase : RoomDatabase() {
                 db?.GroupsDao()?.apply {
                     insertOrUpdate(emptyGroup)
                     deleteGroupId(FIRST_GROUP_ID)
-                }
-            }
-        }
-
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.apply {
-                    execSQL("ALTER TABLE contacts ADD COLUMN photo_uri TEXT NOT NULL DEFAULT ''")
-                }
-            }
-        }
-
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.apply {
-                    execSQL("ALTER TABLE contacts ADD COLUMN ringtone TEXT DEFAULT ''")
                 }
             }
         }

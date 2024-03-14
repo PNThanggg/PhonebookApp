@@ -1,12 +1,15 @@
 package com.app.phonebook.presentation.activities
 
+import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.view.ScrollingView
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.getProperBackgroundColor
+import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
@@ -18,7 +21,7 @@ import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.ActivityMainBinding
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
-import com.app.phonebook.presentation.fragments.RecentsFragment
+import com.app.phonebook.presentation.fragments.RecentFragment
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
     private var launchedDialer = false
@@ -27,10 +30,21 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private var storedStartNameWithSurname = false
     var cachedContacts = ArrayList<Contact>()
 
+    private var mainCoordinatorLayout: CoordinatorLayout? = null
+    private var nestedView: View? = null
+    private var scrollingView: ScrollingView? = null
+    private var useTransparentNavigation = false
 
     override fun initView() {
-        setupOptionsMenu()
+        setupOptionsMenu(context = applicationContext)
         refreshMenuItems()
+
+        updateMaterialActivityViews(
+            binding.mainCoordinator,
+            binding.mainHolder,
+            useTransparentNavigation = false,
+            useTopSearchMenu = true
+        )
     }
 
     override fun initData() {
@@ -47,7 +61,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         return ActivityMainBinding.inflate(inflater)
     }
 
-    private fun setupOptionsMenu() {
+    private fun setupOptionsMenu(context: Context) {
         binding.mainMenu.apply {
             getToolbar().inflateMenu(R.menu.menu)
             toggleHideOnScroll(false)
@@ -55,29 +69,33 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             onSearchClosedListener = {
                 getAllFragments().forEach {
-                    it?.onSearchQueryChanged("")
+                    it?.onSearchQueryChanged(context = context, text = "")
                 }
             }
-//
-//            onSearchTextChangedListener = { text ->
-//                getCurrentFragment()?.onSearchQueryChanged(text)
-//            }
-//
-//            getToolbar().setOnMenuItemClickListener { menuItem ->
-//                when (menuItem.itemId) {
+
+            onSearchTextChangedListener = { text ->
+                getCurrentFragment()?.onSearchQueryChanged(
+                    text = text,
+                    context = context
+                )
+            }
+
+            getToolbar().setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
 //                    R.id.clear_call_history -> clearCallHistory()
-//                    R.id.create_new_contact -> launchCreateNewContactIntent()
-//                    R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is com.app.phonebook.presentation.fragments.FavoritesFragment)
+                    R.id.create_new_contact -> launchCreateNewContactIntent()
+//                    R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is FavoritesFragment)
 //                    R.id.filter -> showFilterDialog()
-//                    R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
-//                    R.id.settings -> launchSettings()
+//
 //                    R.id.change_view_type -> changeViewType()
 //                    R.id.column_count -> changeColumnCount()
-//                    R.id.about -> launchAbout()
-//                    else -> return@setOnMenuItemClickListener false
-//                }
-//                return@setOnMenuItemClickListener true
-//            }
+////                    R.id.about -> launchAbout()
+////                    R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
+////                    R.id.settings -> launchSettings()
+                    else -> return@setOnMenuItemClickListener false
+                }
+                return@setOnMenuItemClickListener true
+            }
         }
     }
 
@@ -97,16 +115,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     // use translucent navigation bar, set the background color to action and status bars
-    fun updateMaterialActivityViews(
+    private fun updateMaterialActivityViews(
         mainCoordinatorLayout: CoordinatorLayout?,
         nestedView: View?,
         useTransparentNavigation: Boolean,
         useTopSearchMenu: Boolean,
     ) {
-//        this.mainCoordinatorLayout = mainCoordinatorLayout
-//        this.nestedView = nestedView
-//        this.useTransparentNavigation = useTransparentNavigation
-//        this.useTopSearchMenu = useTopSearchMenu
+        this.mainCoordinatorLayout = mainCoordinatorLayout
+        this.nestedView = nestedView
+        this.useTransparentNavigation = useTransparentNavigation
+        this.useTopSearchMenu = useTopSearchMenu
+
 //        handleNavigationAndScrolling()
 
         val backgroundColor = getProperBackgroundColor()
@@ -138,7 +157,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     private fun getFavoritesFragment(): FavoritesFragment? = findViewById(R.id.favorites_fragment)
 
-    private fun getRecentsFragment(): RecentsFragment? = findViewById(R.id.recents_fragment)
+    private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
 
     fun cacheContacts(contacts: List<Contact>) {
         try {
@@ -154,4 +173,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         getFavoritesFragment()?.refreshItems()
         getRecentsFragment()?.refreshItems()
     }
+
+
 }

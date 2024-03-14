@@ -54,7 +54,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
 
     lateinit var binding: VB
     private var isAvailableClick = true
-    private var useTopSearchMenu = false
+    var useTopSearchMenu = false
 
     var actionOnPermission: ((granted: Boolean) -> Unit)? = null
 
@@ -342,4 +342,15 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         }
     }
 
+    fun startCallIntent(recipient: String) {
+        launchCallIntent(recipient, null)
+
+//        if (isDefaultDialer()) {
+//            getHandleToUse(null, recipient) { handle ->
+//                launchCallIntent(recipient, handle)
+//            }
+//        } else {
+//            launchCallIntent(recipient, null)
+//        }
+    }
 }

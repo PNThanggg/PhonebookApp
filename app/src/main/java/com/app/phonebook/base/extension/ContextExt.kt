@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.pm.ShortcutManager
 import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Color
@@ -612,6 +613,8 @@ fun Context.isDefaultDialer(): Boolean {
     }
 }
 
+val Context.shortcutManager: ShortcutManager get() = getSystemService(ShortcutManager::class.java) as ShortcutManager
+
 fun Context.getMyContactsCursor(favoritesOnly: Boolean, withPhoneNumbersOnly: Boolean) = try {
     val getFavoritesOnly = if (favoritesOnly) "1" else "0"
     val getWithPhoneNumbersOnly = if (withPhoneNumbersOnly) "1" else "0"
@@ -626,6 +629,7 @@ fun Context.getMyContactsCursor(favoritesOnly: Boolean, withPhoneNumbersOnly: Bo
     ).loadInBackground()
 } catch (e: Exception) {
     Log.e(APP_NAME, "getMyContactsCursor: ${e.message}")
+    null
 }
 
 

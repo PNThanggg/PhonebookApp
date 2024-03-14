@@ -227,21 +227,21 @@ open class BaseConfig(private val context: Context) {
         set(lastHandledShortcutColor) = prefs.edit()
             .putInt(LAST_HANDLED_SHORTCUT_COLOR, lastHandledShortcutColor).apply()
 
-    var appIconColor: Int
-        get() = prefs.getInt(
-            APP_ICON_COLOR, ContextCompat.getColor(context, R.color.default_app_icon_color)
-        )
-        set(appIconColor) {
-            isUsingModifiedAppIcon =
-                appIconColor != ContextCompat.getColor(context, R.color.color_primary)
-            prefs.edit().putInt(APP_ICON_COLOR, appIconColor).apply()
-        }
-
-    var lastIconColor: Int
-        get() = prefs.getInt(
-            LAST_ICON_COLOR, ContextCompat.getColor(context, R.color.color_primary)
-        )
-        set(lastIconColor) = prefs.edit().putInt(LAST_ICON_COLOR, lastIconColor).apply()
+//    var appIconColor: Int
+//        get() = prefs.getInt(
+//            APP_ICON_COLOR, ContextCompat.getColor(context, R.color.default_app_icon_color)
+//        )
+//        set(appIconColor) {
+//            isUsingModifiedAppIcon =
+//                appIconColor != ContextCompat.getColor(context, R.color.color_primary)
+//            prefs.edit().putInt(APP_ICON_COLOR, appIconColor).apply()
+//        }
+//
+//    var lastIconColor: Int
+//        get() = prefs.getInt(
+//            LAST_ICON_COLOR, ContextCompat.getColor(context, R.color.color_primary)
+//        )
+//        set(lastIconColor) = prefs.edit().putInt(LAST_ICON_COLOR, lastIconColor).apply()
 
     var customTextColor: Int
         get() = prefs.getInt(CUSTOM_TEXT_COLOR, textColor)
@@ -261,10 +261,10 @@ open class BaseConfig(private val context: Context) {
         get() = prefs.getInt(CUSTOM_ACCENT_COLOR, accentColor)
         set(customAccentColor) = prefs.edit().putInt(CUSTOM_ACCENT_COLOR, customAccentColor).apply()
 
-    var customAppIconColor: Int
-        get() = prefs.getInt(CUSTOM_APP_ICON_COLOR, appIconColor)
-        set(customAppIconColor) = prefs.edit().putInt(CUSTOM_APP_ICON_COLOR, customAppIconColor)
-            .apply()
+//    var customAppIconColor: Int
+//        get() = prefs.getInt(CUSTOM_APP_ICON_COLOR, appIconColor)
+//        set(customAppIconColor) = prefs.edit().putInt(CUSTOM_APP_ICON_COLOR, customAppIconColor)
+//            .apply()
 
     var widgetBgColor: Int
         get() = prefs.getInt(

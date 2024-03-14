@@ -13,10 +13,10 @@ import com.app.phonebook.base.extension.getTextSize
 import com.app.phonebook.base.utils.SORT_BY_FIRST_NAME
 import com.app.phonebook.base.utils.SORT_BY_SURNAME
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
-import com.app.phonebook.databinding.FragmentRecentsBinding
+import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.presentation.activities.MainActivity
-import com.app.phonebook.presentation.fragments.RecentsFragment
+import com.app.phonebook.presentation.fragments.RecentFragment
 import com.app.phonebook.presentation.view.MyRecyclerView
 
 abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBinding>(
@@ -41,7 +41,7 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
     }
 
     fun startNameWithSurnameChanged(startNameWithSurname: Boolean) {
-        if (this !is RecentsFragment) {
+        if (this !is RecentFragment) {
             (innerBinding.fragmentList?.adapter as? ContactsAdapter)?.apply {
                 config.sorting = if (startNameWithSurname) SORT_BY_SURNAME else SORT_BY_FIRST_NAME
                 (this@BaseViewPagerFragment.activity!! as MainActivity).refreshFragments()
@@ -51,13 +51,13 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
 
     fun finishActMode() {
         (innerBinding.fragmentList?.adapter as? BaseRecyclerViewAdapter)?.finishActMode()
-        (innerBinding.recentsList?.adapter as? BaseRecyclerViewAdapter)?.finishActMode()
+        (innerBinding.recentList?.adapter as? BaseRecyclerViewAdapter)?.finishActMode()
     }
 
     @SuppressLint("NotifyDataSetChanged")
     fun fontSizeChanged() {
-        if (this is RecentsFragment) {
-            (innerBinding.recentsList.adapter as? RecentCallsAdapter)?.apply {
+        if (this is RecentFragment) {
+            (innerBinding.recentList.adapter as? RecentCallsAdapter)?.apply {
                 fontSize = activity.getTextSize()
                 notifyDataSetChanged()
             }
@@ -75,20 +75,20 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
 
     abstract fun onSearchClosed()
 
-    abstract fun onSearchQueryChanged(text: String)
+    abstract fun onSearchQueryChanged(context: Context, text: String)
 
     interface InnerBinding {
         val fragmentList: MyRecyclerView?
-        val recentsList: MyRecyclerView?
+        val recentList: MyRecyclerView?
     }
 
-    class LettersInnerBinding(val binding: FragmentLettersLayoutBinding) : InnerBinding {
+    class LettersInnerBinding(binding: FragmentLettersLayoutBinding) : InnerBinding {
         override val fragmentList: MyRecyclerView = binding.fragmentList
-        override val recentsList = null
+        override val recentList = null
     }
 
-    class RecentsInnerBinding(val binding: FragmentRecentsBinding) : InnerBinding {
+    class RecentInnerBinding(binding: FragmentRecentBinding) : InnerBinding {
         override val fragmentList = null
-        override val recentsList = binding.recentsList
+        override val recentList = binding.recentsList
     }
 }

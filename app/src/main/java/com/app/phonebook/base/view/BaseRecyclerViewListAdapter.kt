@@ -159,7 +159,7 @@ abstract class BaseRecyclerViewListAdapter<T>(
             selectedKeys.remove(itemKey)
         }
 
-        notifyItemChanged(pos + positionOffset, RecyclerSelectionPayload(select))
+//        notifyItemChanged(pos + positionOffset, RecyclerSelectionPayload(select))
 
         if (updateTitle) {
             updateTitle()
@@ -172,11 +172,11 @@ abstract class BaseRecyclerViewListAdapter<T>(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
         val any = payloads.firstOrNull()
-        if (any is RecyclerSelectionPayload) {
-            holder.itemView.isSelected = any.selected
-        } else {
-            onBindViewHolder(holder, position)
-        }
+//        if (any is RecyclerSelectionPayload) {
+//            holder.itemView.isSelected = any.selected
+//        } else {
+//            onBindViewHolder(holder, position)
+//        }
     }
 
     private fun updateTitle() {
