@@ -157,7 +157,7 @@ import java.util.LinkedList
 import java.util.Locale
 
 open class BaseConfig(private val context: Context) {
-    private val prefs = context.getSharedPrefs()
+    val prefs = context.getSharedPrefs()
 
     companion object {
         fun newInstance(context: Context) = BaseConfig(context)
