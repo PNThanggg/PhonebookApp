@@ -1,10 +1,8 @@
 package com.app.phonebook.base.utils
 
-import android.os.Build
 import android.os.Looper
 import android.provider.ContactsContract
 import android.util.Log
-import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.StringRes
 import com.app.phonebook.R
 
@@ -187,6 +185,17 @@ const val AUTO_BACKUP_FILENAME = "auto_backup_filename"
 const val LAST_AUTO_BACKUP_TIME = "last_auto_backup_time"
 const val PASSWORD_RETRY_COUNT = "password_retry_count"
 const val PASSWORD_COUNTDOWN_START_MS = "password_count_down_start_ms"
+const val REMEMBER_SIM_PREFIX = "remember_sim_"
+const val GROUP_SUBSEQUENT_CALLS = "group_subsequent_calls"
+const val OPEN_DIAL_PAD_AT_LAUNCH = "open_dial_pad_at_launch"
+const val DISABLE_PROXIMITY_SENSOR = "disable_proximity_sensor"
+const val DISABLE_SWIPE_TO_ANSWER = "disable_swipe_to_answer"
+const val WAS_OVERLAY_SNACKBAR_CONFIRMED = "was_overlay_snackbar_confirmed"
+const val DIALPAD_VIBRATION = "dialpad_vibration"
+const val DIALPAD_BEEPS = "dialpad_beeps"
+const val HIDE_DIALPAD_NUMBERS = "hide_dialpad_numbers"
+const val ALWAYS_SHOW_FULLSCREEN = "always_show_fullscreen"
+
 
 const val MAX_PASSWORD_RETRY_COUNT = 3
 const val DEFAULT_PASSWORD_COUNTDOWN = 5
@@ -364,6 +373,9 @@ const val TAB_GROUPS = 8
 const val TAB_FILES = 16
 const val TAB_RECENT_FILES = 32
 const val TAB_STORAGE_ANALYSIS = 64
+
+const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
+
 
 val photoExtensions: Array<String>
     get() = arrayOf(
