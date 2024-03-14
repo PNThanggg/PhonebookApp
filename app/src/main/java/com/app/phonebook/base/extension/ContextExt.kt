@@ -76,6 +76,7 @@ import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.data.models.SharedTheme
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
+import com.app.phonebook.helpers.MyContactsContentProvider
 
 val Context.config: Config get() = Config.newInstance(applicationContext)
 
@@ -589,6 +590,23 @@ fun Context.isDefaultDialer(): Boolean {
         telecomManager.defaultDialerPackage == packageName
     }
 }
+
+fun Context.getMyContactsCursor(favoritesOnly: Boolean, withPhoneNumbersOnly: Boolean) = try {
+    val getFavoritesOnly = if (favoritesOnly) "1" else "0"
+    val getWithPhoneNumbersOnly = if (withPhoneNumbersOnly) "1" else "0"
+    val args = arrayOf(getFavoritesOnly, getWithPhoneNumbersOnly)
+    CursorLoader(
+        this,
+        MyContactsContentProvider.CONTACTS_CONTENT_URI,
+        null,
+        null,
+        args,
+        null
+    ).loadInBackground()
+} catch (e: Exception) {
+    Log.e(APP_NAME, "getMyContactsCursor: ${e.message}")
+}
+
 
 fun Context.getPermissionString(id: Int) = when (id) {
     PERMISSION_READ_STORAGE -> Manifest.permission.READ_EXTERNAL_STORAGE
