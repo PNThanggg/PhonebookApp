@@ -1,15 +1,23 @@
 package com.app.phonebook.presentation.activities
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.ScrollingView
 import com.app.phonebook.R
+import com.app.phonebook.base.extension.beGoneIf
 import com.app.phonebook.base.extension.config
+import com.app.phonebook.base.extension.getColoredDrawableWithColor
 import com.app.phonebook.base.extension.getProperBackgroundColor
+import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
+import com.app.phonebook.base.extension.onTabSelectionChanged
+import com.app.phonebook.base.extension.updateBottomTabItemColors
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
@@ -24,6 +32,10 @@ import com.app.phonebook.presentation.fragments.FavoritesFragment
 import com.app.phonebook.presentation.fragments.RecentFragment
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
+    companion object {
+        private val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_CALL_HISTORY)
+    }
+
     private var launchedDialer = false
     private var storedShowTabs = 0
     private var storedFontSize = 0
@@ -45,6 +57,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             useTransparentNavigation = false,
             useTopSearchMenu = true
         )
+
+        setupTabs()
+        Contact.sorting = config.sorting
     }
 
     override fun initData() {
@@ -75,8 +90,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             onSearchTextChangedListener = { text ->
                 getCurrentFragment()?.onSearchQueryChanged(
-                    text = text,
-                    context = context
+                    text = text, context = context
                 )
             }
 
@@ -174,5 +188,59 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         getRecentsFragment()?.refreshItems()
     }
 
+    private fun getTabIcon(position: Int): Drawable {
+        val drawableId = when (position) {
+            0 -> R.drawable.ic_person_vector
+            1 -> R.drawable.ic_star_vector
+            else -> R.drawable.ic_clock_vector
+        }
 
+        return resources.getColoredDrawableWithColor(
+            drawableId = drawableId, color = getProperTextColor(), context = applicationContext
+        )
+    }
+
+    private fun getTabLabel(position: Int): String {
+        val stringId = when (position) {
+            0 -> R.string.contacts_tab
+            1 -> R.string.favorites_tab
+            else -> R.string.call_history_tab
+        }
+
+        return resources.getString(stringId)
+    }
+
+    private fun setupTabs() {
+        binding.viewPager.adapter = null
+        binding.mainTabsHolder.removeAllTabs()
+        tabsList.forEachIndexed { index, value ->
+            if (config.showTabs and value != 0) {
+                binding.mainTabsHolder.newTab().setCustomView(R.layout.bottom_tablayout_item)
+                    .apply {
+                        customView?.findViewById<ImageView>(R.id.tab_item_icon)
+                            ?.setImageDrawable(getTabIcon(index))
+                        customView?.findViewById<TextView>(R.id.tab_item_label)?.text =
+                            getTabLabel(index)
+                        AutofitHelper.create(customView?.findViewById(R.id.tab_item_label))
+                        binding.mainTabsHolder.addTab(this)
+                    }
+            }
+        }
+
+        binding.mainTabsHolder.onTabSelectionChanged(tabUnselectedAction = {
+            updateBottomTabItemColors(
+                it.customView, false, getDeselectedTabDrawableIds()[it.position]
+            )
+        }, tabSelectedAction = {
+            binding.mainMenu.closeSearch(it)
+            binding.viewPager.currentItem = it.position
+            updateBottomTabItemColors(
+                it.customView, true, getSelectedTabDrawableIds()[it.position]
+            )
+        })
+
+        binding.mainTabsHolder.beGoneIf(binding.mainTabsHolder.tabCount == 1)
+        storedShowTabs = config.showTabs
+        storedStartNameWithSurname = config.startNameWithSurname
+    }
 }
