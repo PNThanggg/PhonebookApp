@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.provider.ContactsContract
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -47,6 +49,14 @@ fun Activity.showKeyboard(editText: EditText) {
 fun Activity.hideKeyboard(view: View) {
     val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
     inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
+}
+
+fun Activity.launchCreateNewContactIntent() {
+    Intent().apply {
+        action = Intent.ACTION_INSERT
+        data = ContactsContract.Contacts.CONTENT_URI
+        launchActivityIntent(this)
+    }
 }
 
 fun Activity.getThemeId(color: Int = baseConfig.primaryColor, showTransparentTop: Boolean = false) =
