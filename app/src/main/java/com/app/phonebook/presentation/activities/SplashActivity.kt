@@ -3,6 +3,8 @@ package com.app.phonebook.presentation.activities
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.view.LayoutInflater
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.baseConfig
@@ -67,7 +69,12 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
     }
 
     override fun beforeCreate() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+        )
     }
 
     override fun inflateViewBinding(inflater: LayoutInflater): ActivitySplashBinding {
