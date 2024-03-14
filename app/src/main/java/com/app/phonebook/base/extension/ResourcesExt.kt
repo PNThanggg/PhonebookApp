@@ -2,12 +2,14 @@ package com.app.phonebook.base.extension
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.Drawable
+import androidx.annotation.ColorInt
 
 @SuppressLint("UseCompatLoadingForDrawables")
 fun Resources.getColoredBitmap(resourceId: Int, newColor: Int, context: Context): Bitmap {
@@ -67,3 +69,9 @@ fun Resources.getNavBarHeight(): Int {
         0
     }
 }
+
+@ColorInt
+internal fun ColorStateList.getColorForState(stateSet: IntArray): Int? {
+    return getColorForState(stateSet, defaultColor).takeIf { it != defaultColor }
+}
+

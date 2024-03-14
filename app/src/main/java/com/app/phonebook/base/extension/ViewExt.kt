@@ -2,6 +2,7 @@ package com.app.phonebook.base.extension
 
 import android.view.View
 import android.view.ViewTreeObserver
+import androidx.annotation.StyleRes
 import com.app.phonebook.base.utils.SHORT_ANIMATION_DURATION
 
 fun View.beInvisibleIf(beInvisible: Boolean) = if (beInvisible) beInvisible() else beVisible()
@@ -51,4 +52,17 @@ fun View.fadeIn() {
 
 fun View.fadeOut() {
     animate().alpha(0f).setDuration(SHORT_ANIMATION_DURATION).withEndAction { beGone() }.start()
+}
+
+fun View.throwIfMissingAttrs(@StyleRes styleRes: Int, block: () -> Unit) {
+    try {
+        block()
+    } catch (e: IllegalArgumentException) {
+        throw IllegalArgumentException(
+            "This ${this::class.java.simpleName} is missing an attribute. " +
+                    "Add it to its style, or make the style inherit from " +
+                    "${resources.getResourceName(styleRes)}.",
+            e
+        )
+    }
 }
