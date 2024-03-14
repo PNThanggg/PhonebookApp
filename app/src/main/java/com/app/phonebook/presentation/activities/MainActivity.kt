@@ -148,4 +148,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             Log.e(APP_NAME, "cacheContacts: ${e.message}")
         }
     }
+
+    fun refreshFragments() {
+        getContactsFragment()?.refreshItems()
+        getFavoritesFragment()?.refreshItems()
+        getRecentsFragment()?.refreshItems()
+    }
 }

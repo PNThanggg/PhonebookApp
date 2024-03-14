@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.RelativeLayout
 import com.app.phonebook.adapter.ContactsAdapter
+import com.app.phonebook.adapter.RecentCallsAdapter
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
@@ -57,7 +58,7 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
     fun fontSizeChanged() {
         if (this is RecentsFragment) {
             (innerBinding.recentsList.adapter as? RecentCallsAdapter)?.apply {
-                fontSize = activity?.getTextSize()
+                fontSize = activity.getTextSize()
                 notifyDataSetChanged()
             }
         } else {
