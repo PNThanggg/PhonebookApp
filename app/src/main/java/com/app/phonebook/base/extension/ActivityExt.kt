@@ -6,6 +6,7 @@ import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.provider.ContactsContract
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -58,6 +59,14 @@ fun Activity.launchCreateNewContactIntent() {
         launchActivityIntent(this)
     }
 }
+
+fun Activity.launchSendSMSIntent(recipient: String) {
+    Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.fromParts("smsto", recipient, null)
+        launchActivityIntent(this)
+    }
+}
+
 
 fun Activity.getThemeId(color: Int = baseConfig.primaryColor, showTransparentTop: Boolean = false) =
     when {
