@@ -24,7 +24,7 @@ fun TabLayout.onTabSelectionChanged(
     tabUnselectedAction: ((inactiveTab: TabLayout.Tab) -> Unit)? = null,
     tabSelectedAction: ((activeTab: TabLayout.Tab) -> Unit)? = null
 ) {
-    addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+    return addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
         override fun onTabSelected(tab: TabLayout.Tab) {
             tabSelectedAction?.invoke(tab)
         }

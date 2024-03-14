@@ -1,5 +1,6 @@
 package com.app.phonebook.presentation.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -18,6 +19,7 @@ class MyScrollView : ScrollView {
         defStyle
     )
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         return when (ev.action) {
             MotionEvent.ACTION_DOWN -> {

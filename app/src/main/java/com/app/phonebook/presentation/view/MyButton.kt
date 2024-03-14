@@ -15,7 +15,7 @@ class MyButton : AppCompatButton {
         defStyle
     )
 
-    fun setColors(textColor: Int, accentColor: Int, backgroundColor: Int) {
+    fun setColors(textColor: Int) {
         setTextColor(textColor)
     }
 }

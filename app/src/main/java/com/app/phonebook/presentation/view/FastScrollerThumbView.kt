@@ -48,9 +48,9 @@ class FastScrollerThumbView @JvmOverloads constructor(
 ), FastScrollerView.ItemIndicatorSelectedCallback {
 
     var thumbColor: ColorStateList by onUpdate(::applyStyle)
-    var iconSize: Int by onUpdate(::applyStyle)
-    var iconColor: Int by onUpdate(::applyStyle)
-    var textAppearanceRes: Int by onUpdate(::applyStyle)
+    private var iconSize: Int by onUpdate(::applyStyle)
+    private var iconColor: Int by onUpdate(::applyStyle)
+    private var textAppearanceRes: Int by onUpdate(::applyStyle)
     var textColor: Int by onUpdate(::applyStyle)
 
     private val thumbView: ViewGroup

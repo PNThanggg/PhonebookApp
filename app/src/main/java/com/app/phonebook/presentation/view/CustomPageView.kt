@@ -13,7 +13,6 @@ import androidx.viewpager.widget.ViewPager
 import com.app.phonebook.adapter.DelegatingPagerAdapter
 import com.app.phonebook.base.utils.isTiramisuPlus
 
-
 open class CustomPageView : ViewPager {
     private val pageChangeListeners =
         hashMapOf<OnPageChangeListener, ReversingOnPageChangeListener>()
@@ -249,15 +248,6 @@ open class CustomPageView : ViewPager {
             super.destroyItem(container, newPosition, any)
         }
 
-//        @Deprecated("")
-//        fun destroyItem(container: View, position: Int, `object`: Any) {
-//            var newPosition = position
-//            if (isRtl()) {
-//                newPosition = count - position - 1
-//            }
-//            super.destroyItem(container, newPosition, `object`)
-//        }
-
         override fun getItemPosition(any: Any): Int {
             var position: Int = super.getItemPosition(any)
             if (customPageView.isRtl) {
@@ -294,15 +284,6 @@ open class CustomPageView : ViewPager {
             return super.instantiateItem(container, newPosition)
         }
 
-//        @Deprecated("")
-//        fun instantiateItem(container: View, position: Int): Any {
-//            var position = position
-//            if (isRtl()) {
-//                position = count - position - 1
-//            }
-//            return super.instantiateItem(container, position)
-//        }
-
         override fun setPrimaryItem(container: ViewGroup, position: Int, any: Any) {
             var newPosition = position
             if (customPageView.isRtl) {
@@ -310,15 +291,6 @@ open class CustomPageView : ViewPager {
             }
             super.setPrimaryItem(container, newPosition, any)
         }
-
-//        @Deprecated("")
-//        fun setPrimaryItem(container: View, position: Int, `object`: Any) {
-//            var position = position
-//            if (isRtl()) {
-//                position = count - position - 1
-//            }
-//            super.setPrimaryItem(container, position, `object`)
-//        }
     }
 
 }
