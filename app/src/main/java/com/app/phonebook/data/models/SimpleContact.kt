@@ -11,8 +11,8 @@ import com.app.phonebook.base.utils.isSPlus
 data class SimpleContact(
     val rawId: Int,
     val contactId: Int,
-    var name: String,
-    var photoUri: String,
+    var name: String? = "",
+    var photoUri: String? = "",
     var phoneNumbers: ArrayList<PhoneNumber>,
     var birthdays: ArrayList<String>,
     var anniversaries: ArrayList<String>
@@ -40,8 +40,16 @@ data class SimpleContact(
     }
 
     private fun compareByFullName(other: SimpleContact): Int {
-        val firstString = name.normalizeString()
-        val secondString = other.name.normalizeString()
+        val firstString = name?.normalizeString()
+        val secondString = other.name?.normalizeString()
+
+        if (firstString == null) {
+            return -1
+        }
+
+        if (secondString == null) {
+            return -1
+        }
 
         return if (firstString.firstOrNull()?.isLetter() == true && secondString.firstOrNull()
                 ?.isLetter() == false
