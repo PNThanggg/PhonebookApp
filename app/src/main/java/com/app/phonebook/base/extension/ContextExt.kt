@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -361,6 +363,13 @@ fun Context.getTextSize() = when (baseConfig.fontSize) {
     FONT_SIZE_MEDIUM -> resources.getDimension(R.dimen.bigger_text_size)
     FONT_SIZE_LARGE -> resources.getDimension(R.dimen.big_text_size)
     else -> resources.getDimension(R.dimen.extra_big_text_size)
+}
+
+fun Context.copyToClipboard(text: String) {
+    val clip = ClipData.newPlainText(getString(R.string.app_name), text)
+    (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+    val toastText = String.format(getString(R.string.value_copied_to_clipboard_show), text)
+    toast(toastText)
 }
 
 val Context.telecomManager: TelecomManager get() = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
