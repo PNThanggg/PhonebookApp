@@ -41,7 +41,7 @@ data class Contact(
     var organization: Organization = Organization("", ""),
     var websites: ArrayList<String> = arrayListOf(),
     var listIM: ArrayList<IM> = arrayListOf(),
-    var mimetype: String = "",
+    var mimetype: String? = "",
     var ringtone: String? = ""
 ) : Comparable<Contact> {
     val rawId = id
@@ -280,7 +280,7 @@ data class Contact(
         }
     }
 
-    private fun isPrivate() = source == SMT_PRIVATE
+    fun isPrivate() = source == SMT_PRIVATE
 
     fun getSignatureKey() = photoUri.ifEmpty { hashCode() }
 
