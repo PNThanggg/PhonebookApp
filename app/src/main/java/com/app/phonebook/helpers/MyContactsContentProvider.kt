@@ -1,0 +1,153 @@
+package com.app.phonebook.helpers
+
+import android.database.Cursor
+import android.net.Uri
+import android.util.Log
+import com.app.phonebook.base.extension.getIntValue
+import com.app.phonebook.base.extension.getStringValue
+import com.app.phonebook.base.utils.APP_NAME
+import com.app.phonebook.base.utils.SMT_PRIVATE
+import com.app.phonebook.data.models.Contact
+import com.app.phonebook.data.models.PhoneNumber
+import com.app.phonebook.data.models.SimpleContact
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
+// used for sharing privately stored contacts in Simple Contacts with Simple Dialer, Simple SMS Messenger and Simple Calendar Pro
+class MyContactsContentProvider {
+    companion object {
+        private const val AUTHORITY = "com.simplemobiletools.commons.contactsprovider"
+        val CONTACTS_CONTENT_URI = Uri.parse("content://$AUTHORITY/contacts")
+
+        private const val FAVORITES_ONLY = "favorites_only"
+        private const val COL_RAW_ID = "raw_id"
+        private const val COL_CONTACT_ID = "contact_id"
+        private const val COL_NAME = "name"
+        private const val COL_PHOTO_URI = "photo_uri"
+        private const val COL_PHONE_NUMBERS = "phone_numbers"
+        private const val COL_BIRTHDAYS = "birthdays"
+        private const val COL_ANNIVERSARIES = "anniversaries"
+
+        fun getSimpleContacts(cursor: Cursor?): ArrayList<SimpleContact> {
+            val contacts = ArrayList<SimpleContact>()
+
+            try {
+                cursor?.use {
+                    if (cursor.moveToFirst()) {
+                        do {
+                            val rawId = cursor.getIntValue(COL_RAW_ID)
+                            val contactId = cursor.getIntValue(COL_CONTACT_ID)
+                            val name = cursor.getStringValue(COL_NAME)
+                            val photoUri = cursor.getStringValue(COL_PHOTO_URI)
+                            val phoneNumbersJson = cursor.getStringValue(COL_PHONE_NUMBERS)
+                            val birthdaysJson = cursor.getStringValue(COL_BIRTHDAYS)
+                            val anniversariesJson = cursor.getStringValue(COL_ANNIVERSARIES)
+
+                            val phoneNumbersToken =
+                                object : TypeToken<ArrayList<PhoneNumber>>() {}.type
+                            val phoneNumbers = Gson().fromJson<ArrayList<PhoneNumber>>(
+                                phoneNumbersJson,
+                                phoneNumbersToken
+                            ) ?: ArrayList()
+
+                            val stringsToken = object : TypeToken<ArrayList<String>>() {}.type
+                            val birthdays =
+                                Gson().fromJson<ArrayList<String>>(birthdaysJson, stringsToken)
+                                    ?: ArrayList()
+                            val anniversaries =
+                                Gson().fromJson<ArrayList<String>>(anniversariesJson, stringsToken)
+                                    ?: ArrayList()
+
+                            val contact = SimpleContact(
+                                rawId,
+                                contactId,
+                                name,
+                                photoUri,
+                                phoneNumbers,
+                                birthdays,
+                                anniversaries
+                            )
+                            contacts.add(contact)
+                        } while (cursor.moveToNext())
+                    }
+                }
+            } catch (ignored: Exception) {
+            }
+            return contacts
+        }
+
+        fun getContacts(cursor: Cursor?): ArrayList<Contact> {
+            val contacts = ArrayList<Contact>()
+
+            try {
+                cursor?.use {
+                    if (cursor.moveToFirst()) {
+                        do {
+                            val rawId = cursor.getIntValue(COL_RAW_ID)
+                            val contactId = cursor.getIntValue(COL_CONTACT_ID)
+                            val name = cursor.getStringValue(COL_NAME) ?: ""
+                            val photoUri = cursor.getStringValue(COL_PHOTO_URI) ?: ""
+                            val phoneNumbersJson = cursor.getStringValue(COL_PHONE_NUMBERS)
+                            val birthdaysJson = cursor.getStringValue(COL_BIRTHDAYS)
+                            val anniversariesJson = cursor.getStringValue(COL_ANNIVERSARIES)
+
+                            val phoneNumbersToken =
+                                object : TypeToken<ArrayList<PhoneNumber>>() {}.type
+                            val phoneNumbers = Gson().fromJson<ArrayList<PhoneNumber>>(
+                                phoneNumbersJson,
+                                phoneNumbersToken
+                            ) ?: ArrayList()
+
+                            val stringsToken = object : TypeToken<ArrayList<String>>() {}.type
+                            val birthdays =
+                                Gson().fromJson<ArrayList<String>>(birthdaysJson, stringsToken)
+                                    ?: ArrayList()
+                            val anniversaries =
+                                Gson().fromJson<ArrayList<String>>(anniversariesJson, stringsToken)
+                                    ?: ArrayList()
+
+                            val names = if (name.contains(",")) {
+                                name.split(",")
+                            } else {
+                                name.split(" ")
+                            }
+
+                            var firstName = names.firstOrNull() ?: ""
+                            if (name.contains(",")) {
+                                firstName += ", "
+                            }
+
+                            val middleName = if (names.size >= 3) {
+                                names.subList(1, names.size - 1).joinToString(" ")
+                            } else {
+                                ""
+                            }
+
+                            val surname = names.lastOrNull()?.takeIf { names.size > 1 } ?: ""
+
+                            val contact = Contact(
+                                id = rawId,
+                                contactId = contactId,
+                                firstName = firstName,
+                                middleName = middleName,
+                                surname = surname,
+                                photoUri = photoUri,
+                                phoneNumbers = phoneNumbers,
+                                source = SMT_PRIVATE
+                            ).also {
+                                it.birthdays = birthdays
+                                it.anniversaries = anniversaries
+                            }
+
+                            contacts.add(contact)
+                        } while (cursor.moveToNext())
+                    }
+                }
+            } catch (ignored: Exception) {
+                Log.e(APP_NAME, "getContacts: ${ignored.message}")
+            }
+
+            return contacts
+        }
+    }
+}
