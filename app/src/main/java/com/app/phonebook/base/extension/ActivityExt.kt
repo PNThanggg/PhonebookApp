@@ -1,14 +1,16 @@
 package com.app.phonebook.base.extension
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.provider.ContactsContract
 import android.view.View
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import com.app.phonebook.R
@@ -16,6 +18,7 @@ import com.app.phonebook.base.utils.CONTACT_ID
 import com.app.phonebook.base.utils.DARK_GREY
 import com.app.phonebook.base.utils.IS_PRIVATE
 import com.app.phonebook.base.utils.ensureBackgroundThread
+import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.helpers.SimpleContactsHelper
@@ -36,20 +39,39 @@ fun Activity.finishWithSlide() {
     }
 }
 
-@SuppressLint("UseCompatLoadingForDrawables")
-fun Activity.isAppSideLoaded(): Boolean {
-    return try {
-        getDrawable(R.drawable.ic_camera_vector)
-        false
-    } catch (e: Exception) {
-        true
+//@SuppressLint("UseCompatLoadingForDrawables")
+//fun Activity.isAppSideLoaded(): Boolean {
+//    return try {
+//        getDrawable(R.drawable.ic_camera_vector)
+//        false
+//    } catch (e: Exception) {
+//        true
+//    }
+//}
+
+
+fun Activity.hideKeyboard() {
+    if (isOnMainThread()) {
+        hideKeyboardSync()
+    } else {
+        Handler(Looper.getMainLooper()).post {
+            hideKeyboardSync()
+        }
     }
 }
 
+fun Activity.hideKeyboardSync() {
+    val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    inputMethodManager.hideSoftInputFromWindow((currentFocus ?: View(this)).windowToken, 0)
+    window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+    currentFocus?.clearFocus()
+}
+
+
 fun Activity.showKeyboard(editText: EditText) {
     editText.requestFocus()
-    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+    val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
 }
 
 fun Activity.hideKeyboard(view: View) {
