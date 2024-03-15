@@ -18,6 +18,7 @@ import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.onTabSelectionChanged
 import com.app.phonebook.base.extension.updateBottomTabItemColors
+import com.app.phonebook.base.helpers.AutoFitHelper
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
@@ -210,6 +211,45 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         return resources.getString(stringId)
     }
 
+    private fun getDeselectedTabDrawableIds(): ArrayList<Int> {
+        val showTabs = config.showTabs
+        val icons = ArrayList<Int>()
+
+        if (showTabs and TAB_CONTACTS != 0) {
+            icons.add(R.drawable.ic_person_outline_vector)
+        }
+
+        if (showTabs and TAB_FAVORITES != 0) {
+            icons.add(R.drawable.ic_star_outline_vector)
+        }
+
+        if (showTabs and TAB_CALL_HISTORY != 0) {
+            icons.add(R.drawable.ic_clock_vector)
+        }
+
+        return icons
+    }
+
+    private fun getSelectedTabDrawableIds(): List<Int> {
+        val showTabs = config.showTabs
+        val icons = mutableListOf<Int>()
+
+        if (showTabs and TAB_CONTACTS != 0) {
+            icons.add(R.drawable.ic_person_vector)
+        }
+
+        if (showTabs and TAB_FAVORITES != 0) {
+            icons.add(R.drawable.ic_star_vector)
+        }
+
+        if (showTabs and TAB_CALL_HISTORY != 0) {
+            icons.add(R.drawable.ic_clock_filled_vector)
+        }
+
+        return icons
+    }
+
+
     private fun setupTabs() {
         binding.viewPager.adapter = null
         binding.mainTabsHolder.removeAllTabs()
@@ -221,7 +261,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                             ?.setImageDrawable(getTabIcon(index))
                         customView?.findViewById<TextView>(R.id.tab_item_label)?.text =
                             getTabLabel(index)
-                        AutofitHelper.create(customView?.findViewById(R.id.tab_item_label))
+                        customView?.findViewById<TextView>(R.id.tab_item_label)
+                            ?.let { AutoFitHelper.create(it) }
                         binding.mainTabsHolder.addTab(this)
                     }
             }
@@ -232,7 +273,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 it.customView, false, getDeselectedTabDrawableIds()[it.position]
             )
         }, tabSelectedAction = {
-            binding.mainMenu.closeSearch(it)
+            binding.mainMenu.closeSearch()
             binding.viewPager.currentItem = it.position
             updateBottomTabItemColors(
                 it.customView, true, getSelectedTabDrawableIds()[it.position]
