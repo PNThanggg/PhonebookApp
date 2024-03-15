@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.adjustAlpha
 import com.app.phonebook.base.extension.applyColorFilter
@@ -36,7 +35,7 @@ class MySearchMenu(context: Context, attrs: AttributeSet) : AppBarLayout(context
     fun setupMenu() {
         binding.topToolbarSearchIcon.setOnClickListener {
             if (isSearchOpen) {
-                closeSearch(it)
+                closeSearch()
             } else if (useArrowIcon && onNavigateBackClickListener != null) {
                 onNavigateBackClickListener!!()
             } else {
@@ -69,7 +68,7 @@ class MySearchMenu(context: Context, attrs: AttributeSet) : AppBarLayout(context
         binding.topToolbarSearchIcon.contentDescription = resources.getString(R.string.back)
     }
 
-    fun closeSearch(view: View) {
+    fun closeSearch() {
         isSearchOpen = false
         onSearchClosedListener?.invoke()
         binding.topToolbarSearch.setText("")
@@ -77,7 +76,7 @@ class MySearchMenu(context: Context, attrs: AttributeSet) : AppBarLayout(context
             binding.topToolbarSearchIcon.setImageResource(R.drawable.ic_search_vector)
             binding.topToolbarSearchIcon.contentDescription = resources.getString(R.string.search)
         }
-        (context as? Activity)?.hideKeyboard(view)
+        (context as? Activity)?.hideKeyboard()
     }
 
     fun getCurrentQuery() = binding.topToolbarSearch.text.toString()
