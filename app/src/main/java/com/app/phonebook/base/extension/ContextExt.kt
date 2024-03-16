@@ -575,6 +575,25 @@ fun Context.getProperBackgroundColor() = if (baseConfig.isUsingSystemTheme) {
     baseConfig.backgroundColor
 }
 
+/**
+ * Updates the colors of a bottom tab item based on its active state.
+ *
+ * This extension function for the `Context` class allows for the dynamic updating of the colors and optional drawable
+ * of a bottom tab item within a navigation bar. It modifies the color of the tab item icon and label to indicate
+ * its active or inactive state. Additionally, if a drawable resource ID is provided, it updates the tab item icon
+ * with the specified drawable.
+ *
+ * The color change is determined by whether the tab item is active or not:
+ * - For active tab items, it uses the primary color of the app's theme, fetched via `getProperPrimaryColor`.
+ * - For inactive tab items, it uses a text color appropriate for less emphasis, fetched via `getProperTextColor`.
+ *
+ * @param view The view containing the tab item's icon and label. If null, no operation is performed.
+ * @param isActive Indicates whether the tab item is currently active. This affects the color used for the icon and label.
+ * @param drawableId Optional. The resource ID of a drawable to set as the icon of the tab item. If null, the icon's drawable is not updated.
+ *
+ * Usage of this function enhances the visual feedback in navigation bars by clearly distinguishing between active
+ * and inactive states, contributing to a more intuitive user interface.
+ */
 fun Context.updateBottomTabItemColors(view: View?, isActive: Boolean, drawableId: Int? = null) {
     val color = if (isActive) {
         getProperPrimaryColor()
