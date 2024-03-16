@@ -1,5 +1,6 @@
 package com.app.phonebook.presentation.activities
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Log
@@ -10,6 +11,7 @@ import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.ScrollingView
 import com.app.phonebook.R
+import com.app.phonebook.adapter.ViewPagerAdapter
 import com.app.phonebook.base.extension.beGoneIf
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.getBottomNavigationBackgroundColor
@@ -19,7 +21,9 @@ import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
+import com.app.phonebook.base.extension.onGlobalLayout
 import com.app.phonebook.base.extension.onTabSelectionChanged
+import com.app.phonebook.base.extension.telecomManager
 import com.app.phonebook.base.extension.updateBottomTabItemColors
 import com.app.phonebook.base.extension.updateTextColors
 import com.app.phonebook.base.helpers.AutoFitHelper
@@ -27,7 +31,9 @@ import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
+import com.app.phonebook.base.utils.TAB_LAST_USED
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
+import com.app.phonebook.base.utils.tabsList
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
@@ -35,12 +41,9 @@ import com.app.phonebook.databinding.ActivityMainBinding
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
 import com.app.phonebook.presentation.fragments.RecentFragment
+import kotlin.system.exitProcess
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
-    companion object {
-        private val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_CALL_HISTORY)
-    }
-
     private var launchedDialer = false
     private var storedShowTabs = 0
     private var storedFontSize = 0
@@ -70,6 +73,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override fun onResume() {
         super.onResume()
 
+        if (storedShowTabs != config.showTabs) {
+            config.lastUsedViewPagerPage = 0
+            exitProcess(0)
+        }
+
         updateMenuColors()
 
         val properPrimaryColor = getProperPrimaryColor()
@@ -85,6 +93,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         getAllFragments().forEach {
             it?.setupColors(getProperTextColor(), getProperPrimaryColor(), getProperPrimaryColor())
+        }
+
+        val configStartNameWithSurname = config.startNameWithSurname
+        if (storedStartNameWithSurname != configStartNameWithSurname) {
+            getContactsFragment()?.startNameWithSurnameChanged(configStartNameWithSurname)
+            getFavoritesFragment()?.startNameWithSurnameChanged(configStartNameWithSurname)
+            storedStartNameWithSurname = config.startNameWithSurname
+        }
+
+        if (!binding.mainMenu.isSearchOpen) {
+            refreshItems(true)
         }
     }
 
@@ -222,9 +241,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
 
         return resources.getColoredDrawableWithColor(
-            drawableId = drawableId,
-            color = getProperTextColor(),
-            context = this@MainActivity
+            drawableId = drawableId, color = getProperTextColor(), context = this@MainActivity
         )
     }
 
@@ -323,9 +340,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun setupTabColors() {
         val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
         updateBottomTabItemColors(
-            activeView,
-            true,
-            getSelectedTabDrawableIds()[binding.viewPager.currentItem]
+            activeView, true, getSelectedTabDrawableIds()[binding.viewPager.currentItem]
         )
 
         getInactiveTabIndexes(binding.viewPager.currentItem).forEach { index ->
@@ -336,5 +351,62 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         val bottomBarColor = getBottomNavigationBackgroundColor(this@MainActivity)
         binding.mainTabsHolder.setBackgroundColor(bottomBarColor)
         updateNavigationBarColor(bottomBarColor)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun clearMissedCalls() {
+        try {
+            telecomManager.cancelMissedCallsNotification()
+        } catch (ignored: Exception) {
+            Log.e(APP_NAME, "clearMissedCalls: ${ignored.message}")
+        }
+    }
+
+
+    private fun getDefaultTab(): Int {
+        val showTabsMask = config.showTabs
+        return when (config.defaultTab) {
+            TAB_LAST_USED -> if (config.lastUsedViewPagerPage < binding.mainTabsHolder.tabCount) config.lastUsedViewPagerPage else 0
+            TAB_CONTACTS -> 0
+            TAB_FAVORITES -> if (showTabsMask and TAB_CONTACTS > 0) 1 else 0
+            else -> {
+                if (showTabsMask and TAB_CALL_HISTORY > 0) {
+                    if (showTabsMask and TAB_CONTACTS > 0) {
+                        if (showTabsMask and TAB_FAVORITES > 0) {
+                            2
+                        } else {
+                            1
+                        }
+                    } else {
+                        if (showTabsMask and TAB_FAVORITES > 0) {
+                            1
+                        } else {
+                            0
+                        }
+                    }
+                } else {
+                    0
+                }
+            }
+        }
+    }
+
+    private fun refreshItems(openLastTab: Boolean = false) {
+        if (isDestroyed || isFinishing) {
+            return
+        }
+
+        binding.apply {
+            if (viewPager.adapter == null) {
+                viewPager.adapter = ViewPagerAdapter(this@MainActivity)
+                viewPager.currentItem =
+                    if (openLastTab) config.lastUsedViewPagerPage else getDefaultTab()
+                viewPager.onGlobalLayout {
+                    refreshFragments()
+                }
+            } else {
+                refreshFragments()
+            }
+        }
     }
 }
