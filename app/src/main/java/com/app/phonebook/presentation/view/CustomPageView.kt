@@ -26,8 +26,12 @@ open class CustomPageView : ViewPager {
     override fun onRtlPropertiesChanged(newLayoutDirection: Int) {
         super.onRtlPropertiesChanged(newLayoutDirection)
 
-        val viewCompatLayoutDirection =
-            if (newLayoutDirection == View.LAYOUT_DIRECTION_RTL) ViewCompat.LAYOUT_DIRECTION_RTL else ViewCompat.LAYOUT_DIRECTION_LTR
+        val viewCompatLayoutDirection = if (newLayoutDirection == View.LAYOUT_DIRECTION_RTL) {
+            ViewCompat.LAYOUT_DIRECTION_RTL
+        } else {
+            ViewCompat.LAYOUT_DIRECTION_LTR
+        }
+
         if (viewCompatLayoutDirection != layoutDirection) {
             val adapter = super.getAdapter()
             var position = 0
@@ -43,7 +47,7 @@ open class CustomPageView : ViewPager {
     }
 
     override fun setAdapter(adapter: PagerAdapter?) {
-        super.setAdapter(adapter?.let { ReversingAdapter(it) })
+        super.setAdapter(adapter?.let { ReversingAdapter(it, context) })
         currentItem = 0
     }
 
@@ -236,9 +240,12 @@ open class CustomPageView : ViewPager {
     }
 
 
-    private class ReversingAdapter(adapter: PagerAdapter) : DelegatingPagerAdapter(adapter) {
-        val customPageView: CustomPageView =
-            CustomPageView::class.java.getDeclaredConstructor().newInstance()
+    private class ReversingAdapter(adapter: PagerAdapter, context: Context) :
+        DelegatingPagerAdapter(adapter) {
+//        val customPageView: CustomPageView =
+//            CustomPageView::class.java.getDeclaredConstructor().newInstance()
+
+        val customPageView = CustomPageView(context = context)
 
         override fun destroyItem(container: ViewGroup, position: Int, any: Any) {
             var newPosition = position
