@@ -31,7 +31,6 @@ class AutoFitHelper private constructor(view: TextView) {
      * @see TextView.getMaxLines
      */
     private var maxLines: Int
-        private set
 
     /**
      * Returns the minimum size (in pixels) of the text.
@@ -180,7 +179,7 @@ class AutoFitHelper private constructor(view: TextView) {
         return this
     }
 
-     private fun setRawMaxTextSize(size: Float) {
+    private fun setRawMaxTextSize(size: Float) {
         if (size != maxTextSize) {
             maxTextSize = size
             autofit()
@@ -251,13 +250,13 @@ class AutoFitHelper private constructor(view: TextView) {
         setRawTextSize(TypedValue.applyDimension(unit, size, r.displayMetrics))
     }
 
-     private fun setRawTextSize(size: Float) {
+    private fun setRawTextSize(size: Float) {
         if (mTextSize != size) {
             mTextSize = size
         }
     }
 
-     fun autofit() {
+    fun autofit() {
         val oldTextSize = mTextView.textSize
         mIsAutoFitting = true
         autoFit(
@@ -270,7 +269,7 @@ class AutoFitHelper private constructor(view: TextView) {
         }
     }
 
-     private fun sendTextSizeChange(textSize: Float, oldTextSize: Float) {
+    private fun sendTextSizeChange(textSize: Float, oldTextSize: Float) {
         if (mListeners == null) {
             return
         }
@@ -279,7 +278,7 @@ class AutoFitHelper private constructor(view: TextView) {
         }
     }
 
-     inner class AutoFitTextWatcher : TextWatcher {
+    inner class AutoFitTextWatcher : TextWatcher {
         override fun beforeTextChanged(
             charSequence: CharSequence, start: Int, count: Int, after: Int
         ) {
@@ -297,7 +296,7 @@ class AutoFitHelper private constructor(view: TextView) {
         }
     }
 
-     inner class AutoFitOnLayoutChangeListener : OnLayoutChangeListener {
+    inner class AutoFitOnLayoutChangeListener : OnLayoutChangeListener {
         override fun onLayoutChange(
             view: View,
             left: Int,
@@ -513,9 +512,12 @@ class AutoFitHelper private constructor(view: TextView) {
                 TypedValue.COMPLEX_UNIT_PX, size, displayMetrics
             )
 
-            val staticLayout = StaticLayout.Builder.obtain(text, 0, width, paint, attr.width)
-                .setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(0.0f, 1.0f)
-                .setIncludePad(true).build()
+            val staticLayout: StaticLayout =
+                StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setLineSpacing(0.0f, 1.0f)
+                    .setIncludePad(true)
+                    .build()
 
             return staticLayout.lineCount
         }
