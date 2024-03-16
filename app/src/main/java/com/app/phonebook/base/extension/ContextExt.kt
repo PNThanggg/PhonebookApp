@@ -9,10 +9,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutManager
-import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Color
 import android.net.Uri
@@ -29,8 +27,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.loader.content.CursorLoader
@@ -66,17 +62,14 @@ import com.app.phonebook.base.utils.PERMISSION_WRITE_CALENDAR
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CALL_LOG
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CONTACTS
 import com.app.phonebook.base.utils.PERMISSION_WRITE_STORAGE
-import com.app.phonebook.base.utils.PREFS_KEY
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.TIME_FORMAT_12
 import com.app.phonebook.base.utils.TIME_FORMAT_24
-import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.isSPlus
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.SIMAccount
-import com.app.phonebook.data.models.SharedTheme
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
@@ -85,181 +78,13 @@ import com.app.phonebook.presentation.view.MyEditText
 import com.app.phonebook.presentation.view.MyFloatingActionButton
 import com.app.phonebook.presentation.view.MyTextView
 
+/**
+ * Lazily accessed property that provides an instance of `Config`.
+ *
+ * Note: It's important to use `applicationContext` when instantiating singletons or similar objects to
+ * prevent memory leaks associated with shorter-lived context objects.
+ */
 val Context.config: Config get() = Config.newInstance(applicationContext)
-
-fun ComponentActivity.handleBackPressed(action: () -> Unit) {
-    onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-        override fun handleOnBackPressed() {
-            action()
-        }
-    })
-}
-
-fun Context.getSharedPrefs(): SharedPreferences =
-    getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE)
-
-fun Context.getSharedTheme(callback: (sharedTheme: SharedTheme?) -> Unit) {
-    val cursorLoader = getMyContentProviderCursorLoader()
-    ensureBackgroundThread {
-        callback(getSharedThemeSync(cursorLoader))
-    }
-}
-
-//fun Context.isOrWasThankYouInstalled(): Boolean {
-//    return when {
-//        resources.getBoolean(R.bool.pretend_thank_you_installed) -> true
-//        baseConfig.hadThankYouInstalled -> true
-//        isThankYouInstalled() -> {
-//            baseConfig.hadThankYouInstalled = true
-//            true
-//        }
-//
-//        else -> false
-//    }
-//}
-
-//fun Context.addLockedLabelIfNeeded(stringId: Int): String {
-//    return "${getString(stringId)} (${getString(R.string.feature_locked)})"
-//
-////    return if (isOrWasThankYouInstalled()) {
-////        getString(stringId)
-////    } else {
-////        "${getString(stringId)} (${getString(R.string.feature_locked)})"
-////    }
-//}
-
-//fun Context.isContactBlocked(contact: Contact, callback: (Boolean) -> Unit) {
-//    val phoneNumbers = contact.phoneNumbers.map { PhoneNumberUtils.stripSeparators(it.value) }
-//    getBlockedNumbersWithContact { blockedNumbersWithContact ->
-//        val blockedNumbers = blockedNumbersWithContact.map { it.number }
-//        val allNumbersBlocked = phoneNumbers.all { it in blockedNumbers }
-//        callback(allNumbersBlocked)
-//    }
-//}
-
-//fun Context.getBlockedNumbers(): java.util.ArrayList<BlockedNumber> {
-//    val blockedNumbers = java.util.ArrayList<BlockedNumber>()
-//    if (!isDefaultDialer()) {
-//        return blockedNumbers
-//    }
-//
-//    val uri = BlockedNumberContract.BlockedNumbers.CONTENT_URI
-//    val projection = arrayOf(
-//        BlockedNumberContract.BlockedNumbers.COLUMN_ID,
-//        BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER,
-//        BlockedNumberContract.BlockedNumbers.COLUMN_E164_NUMBER
-//    )
-//
-//    queryCursor(uri, projection) { cursor ->
-//        val id = cursor.getLongValue(BlockedNumberContract.BlockedNumbers.COLUMN_ID)
-//        val number =
-//            cursor.getStringValue(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER) ?: ""
-//        val normalizedNumber =
-//            cursor.getStringValue(BlockedNumberContract.BlockedNumbers.COLUMN_E164_NUMBER) ?: number
-//        val comparableNumber = normalizedNumber.trimToComparableNumber()
-//        val blockedNumber = BlockedNumber(id, number, normalizedNumber, comparableNumber)
-//        blockedNumbers.add(blockedNumber)
-//    }
-//
-//    return blockedNumbers
-//}
-
-//fun Context.isNumberBlockedByPattern(
-//    number: String,
-//    blockedNumbers: java.util.ArrayList<BlockedNumber> = getBlockedNumbers()
-//): Boolean {
-//    for (blockedNumber in blockedNumbers) {
-//        val num = blockedNumber.number
-//        if (num.isBlockedNumberPattern()) {
-//            val pattern = num.replace("+", "\\+").replace("*", ".*")
-//            if (number.matches(pattern.toRegex())) {
-//                return true
-//            }
-//        }
-//    }
-//    return false
-//}
-
-
-//fun Context.isNumberBlocked(
-//    number: String,
-//    blockedNumbers: java.util.ArrayList<BlockedNumber> = getBlockedNumbers()
-//): Boolean {
-//    val numberToCompare = number.trimToComparableNumber()
-//
-//    return blockedNumbers.any {
-//        numberToCompare == it.numberToCompare ||
-//                numberToCompare == it.number ||
-//                PhoneNumberUtils.stripSeparators(number) == it.number
-//    } || isNumberBlockedByPattern(number, blockedNumbers)
-//}
-
-//fun Context.deleteBlockedNumber(number: String): Boolean {
-//    val selection = "${BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER} = ?"
-//    val selectionArgs = arrayOf(number)
-//
-//    return if (isNumberBlocked(number)) {
-//        val deletedRowCount = contentResolver.delete(
-//            BlockedNumberContract.BlockedNumbers.CONTENT_URI,
-//            selection,
-//            selectionArgs
-//        )
-//
-//        deletedRowCount > 0
-//    } else {
-//        true
-//    }
-//}
-
-//fun Context.unblockContact(contact: Contact): Boolean {
-//    var contactUnblocked = true
-//    ensureBackgroundThread {
-//        contact.phoneNumbers.forEach {
-//            val numberUnblocked = deleteBlockedNumber(PhoneNumberUtils.stripSeparators(it.value))
-//            contactUnblocked = contactUnblocked && numberUnblocked
-//        }
-//    }
-//
-//    return contactUnblocked
-//}
-
-//fun Context.getBlockedNumbersWithContact(callback: (ArrayList<BlockedNumber>) -> Unit) {
-//    getContactsHasMap(true) { contacts ->
-//        val blockedNumbers = java.util.ArrayList<BlockedNumber>()
-//        if (!isDefaultDialer()) {
-//            callback(blockedNumbers)
-//        }
-//
-//        val uri = BlockedNumberContract.BlockedNumbers.CONTENT_URI
-//        val projection = arrayOf(
-//            BlockedNumberContract.BlockedNumbers.COLUMN_ID,
-//            BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER,
-//            BlockedNumberContract.BlockedNumbers.COLUMN_E164_NUMBER,
-//        )
-//
-//        queryCursor(uri, projection) { cursor ->
-//            val id = cursor.getLongValue(BlockedNumberContract.BlockedNumbers.COLUMN_ID)
-//            val number =
-//                cursor.getStringValue(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER)
-//                    ?: ""
-//            val normalizedNumber =
-//                cursor.getStringValue(BlockedNumberContract.BlockedNumbers.COLUMN_E164_NUMBER)
-//                    ?: number
-//            val comparableNumber = normalizedNumber.trimToComparableNumber()
-//
-//            val contactName = contacts[comparableNumber]
-//            val blockedNumber =
-//                BlockedNumber(id, number, normalizedNumber, comparableNumber, contactName)
-//            blockedNumbers.add(blockedNumber)
-//        }
-//
-//        val blockedNumbersPair = blockedNumbers.partition { it.contactName != null }
-//        val blockedNumbersWithNameSorted = blockedNumbersPair.first.sortedBy { it.contactName }
-//        val blockedNumbersNoNameSorted = blockedNumbersPair.second.sortedBy { it.number }
-//
-//        callback(ArrayList(blockedNumbersWithNameSorted + blockedNumbersNoNameSorted))
-//    }
-//}
 
 
 @SuppressLint("MissingPermission")
@@ -288,20 +113,6 @@ fun Context.getAvailableSIMCardLabels(): List<SIMAccount> {
     }
     return simAccounts
 }
-
-//fun Context.isDefaultDialer(): Boolean {
-//    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
-//            "com.simplemobiletools.dialer"
-//        )
-//    ) {
-//        true
-//    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
-//        val roleManager = getSystemService(RoleManager::class.java)
-//        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-//    } else {
-//        telecomManager.defaultDialerPackage == packageName
-//    }
-//}
 
 fun Context.getContactsHasMap(
     withComparableNumbers: Boolean = false,
@@ -342,32 +153,6 @@ fun Context.getPrivateContactSource() =
 fun Context.getMyContentProviderCursorLoader() =
     CursorLoader(this, MyContentProvider.MY_CONTENT_URI, null, null, null, null)
 
-fun Context.getSharedThemeSync(cursorLoader: CursorLoader): SharedTheme? {
-    val cursor = cursorLoader.loadInBackground()
-    cursor?.use {
-        if (cursor.moveToFirst()) {
-            try {
-                val textColor = cursor.getIntValue(MyContentProvider.COL_TEXT_COLOR)
-                val backgroundColor = cursor.getIntValue(MyContentProvider.COL_BACKGROUND_COLOR)
-                val primaryColor = cursor.getIntValue(MyContentProvider.COL_PRIMARY_COLOR)
-                val accentColor = cursor.getIntValue(MyContentProvider.COL_ACCENT_COLOR)
-                val appIconColor = cursor.getIntValue(MyContentProvider.COL_APP_ICON_COLOR)
-                val lastUpdatedTS = cursor.getIntValue(MyContentProvider.COL_LAST_UPDATED_TS)
-                return SharedTheme(
-                    textColor,
-                    backgroundColor,
-                    primaryColor,
-                    appIconColor,
-                    lastUpdatedTS,
-                    accentColor
-                )
-            } catch (e: Exception) {
-                Log.e(APP_NAME, "getSharedThemeSync: ${e.message}")
-            }
-        }
-    }
-    return null
-}
 
 fun Context.getTextSize() = when (baseConfig.fontSize) {
     FONT_SIZE_SMALL -> resources.getDimension(R.dimen.smaller_text_size)
@@ -479,41 +264,6 @@ fun Context.showErrorToast(exception: Exception, length: Int = Toast.LENGTH_LONG
 
 
 val Context.baseConfig: BaseConfig get() = BaseConfig.newInstance(this)
-
-fun Context.isUsingSystemDarkTheme() =
-    resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_YES != 0
-
-//fun Context.checkAppIconColor() {
-//    val appId = baseConfig.appId
-//    if (appId.isNotEmpty() && baseConfig.lastIconColor != baseConfig.appIconColor) {
-//        getAppIconColors().forEachIndexed { index, color ->
-//            toggleAppIconColor(appId, index, color, false)
-//        }
-//
-//        getAppIconColors().forEachIndexed { index, color ->
-//            if (baseConfig.appIconColor == color) {
-//                toggleAppIconColor(appId, index, color, true)
-//            }
-//        }
-//    }
-//}
-//
-//fun Context.toggleAppIconColor(appId: String, colorIndex: Int, color: Int, enable: Boolean) {
-//    val className =
-//        "${appId.removeSuffix(".debug")}.activities.SplashActivity${appIconColorStrings[colorIndex]}"
-//    val state =
-//        if (enable) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-//    try {
-//        packageManager.setComponentEnabledSetting(
-//            ComponentName(appId, className), state, PackageManager.DONT_KILL_APP
-//        )
-//        if (enable) {
-//            baseConfig.lastIconColor = color
-//        }
-//    } catch (e: Exception) {
-//        Log.e(APP_NAME, "toggleAppIconColor: ${e.message}")
-//    }
-//}
 
 @SuppressLint("NewApi")
 fun Context.getBottomNavigationBackgroundColor(context: Context): Int {
