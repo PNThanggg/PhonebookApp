@@ -86,7 +86,29 @@ import com.app.phonebook.presentation.view.MyTextView
  */
 val Context.config: Config get() = Config.newInstance(applicationContext)
 
-
+/**
+ * Retrieves a list of available SIM accounts on the device.
+ *
+ * This function queries the `TelecomManager` for call-capable phone accounts and constructs a list
+ * of `SIMAccount` objects, each representing a SIM account. Each `SIMAccount` includes details such
+ * as the account index, account handle, label, and address. The label is augmented with the SIM account's
+ * address (phone number) if available, providing a more descriptive identifier for the account.
+ *
+ * @suppress Uses `@SuppressLint("MissingPermission")` to acknowledge that this function may be called
+ * in a context where the necessary permissions (e.g., `READ_PHONE_STATE`) have been checked at a higher level
+ * or are being managed through a different mechanism.
+ *
+ * @return A list of `SIMAccount` objects representing the call-capable SIM accounts found on the device.
+ * If an error occurs during retrieval, the function logs the error and returns an empty list.
+ *
+ * Note: This function requires appropriate permissions (e.g., `READ_PHONE_STATE`) to access phone account
+ * information. The caller is responsible for ensuring that these permissions are granted before invoking
+ * this function. The use of `@SuppressLint("MissingPermission")` indicates that permission handling is
+ * being addressed elsewhere.
+ *
+ * This function is particularly useful for applications that need to display or manage SIM account
+ * information, providing a straightforward way to access this data.
+ */
 @SuppressLint("MissingPermission")
 fun Context.getAvailableSIMCardLabels(): List<SIMAccount> {
     val simAccounts = mutableListOf<SIMAccount>()
