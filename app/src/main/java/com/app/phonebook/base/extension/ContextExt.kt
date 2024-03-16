@@ -25,6 +25,7 @@ import android.telephony.PhoneNumberUtils
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -79,6 +80,10 @@ import com.app.phonebook.data.models.SharedTheme
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.presentation.view.MyButton
+import com.app.phonebook.presentation.view.MyEditText
+import com.app.phonebook.presentation.view.MyFloatingActionButton
+import com.app.phonebook.presentation.view.MyTextView
 
 val Context.config: Config get() = Config.newInstance(applicationContext)
 
@@ -509,6 +514,52 @@ fun Context.isUsingSystemDarkTheme() =
 //        Log.e(APP_NAME, "toggleAppIconColor: ${e.message}")
 //    }
 //}
+
+@SuppressLint("NewApi")
+fun Context.getBottomNavigationBackgroundColor(context: Context): Int {
+    val baseColor = baseConfig.backgroundColor
+    val bottomColor = when {
+        baseConfig.isUsingSystemTheme -> resources.getColor(R.color.you_status_bar_color, theme)
+        baseColor == Color.WHITE -> resources.getColor(
+            R.color.bottom_tabs_light_background,
+            context.theme
+        )
+
+        else -> baseConfig.backgroundColor.lightenColor(4)
+    }
+    return bottomColor
+}
+
+
+fun Context.updateTextColors(viewGroup: ViewGroup) {
+    val textColor = when {
+        baseConfig.isUsingSystemTheme -> getProperTextColor()
+        else -> baseConfig.textColor
+    }
+
+    val backgroundColor = baseConfig.backgroundColor
+    val accentColor = when {
+        isWhiteTheme() || isBlackAndWhiteTheme() -> baseConfig.accentColor
+        else -> getProperPrimaryColor()
+    }
+
+    val cnt = viewGroup.childCount
+    (0 until cnt).map { viewGroup.getChildAt(it) }.forEach {
+        when (it) {
+            is MyTextView -> it.setColors(textColor = textColor, accentColor = accentColor)
+//            is MyAppCompatSpinner -> it.setColors(textColor, accentColor, backgroundColor)
+//            is MyCompatRadioButton -> it.setColors(textColor, accentColor, backgroundColor)
+//            is MyAppCompatCheckbox -> it.setColors(textColor, accentColor, backgroundColor)
+            is MyEditText -> it.setColors(textColor = textColor, accentColor = accentColor)
+//            is MyAutoCompleteTextView -> it.setColors(textColor, accentColor, backgroundColor)
+            is MyFloatingActionButton -> it.setColors(accentColor = accentColor)
+//            is MySeekBar -> it.setColors(textColor, accentColor, backgroundColor)
+            is MyButton -> it.setColors(textColor = textColor)
+//            is MyTextInputLayout -> it.setColors(textColor, accentColor, backgroundColor)
+            is ViewGroup -> updateTextColors(it)
+        }
+    }
+}
 
 
 fun Context.getAppIconColors() =
