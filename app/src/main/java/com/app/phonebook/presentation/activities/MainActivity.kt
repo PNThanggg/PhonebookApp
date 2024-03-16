@@ -353,6 +353,21 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         updateNavigationBarColor(bottomBarColor)
     }
 
+    /**
+     * Clears missed calls notification.
+     *
+     * This function attempts to clear any missed call notifications using the `telecomManager`.
+     * It requires the application to have permissions related to call management (e.g., CALL_PHONE).
+     * If the application lacks these permissions, an exception will be thrown. However, this exception
+     * is caught and logged, ensuring that the application's execution is not interrupted.
+     *
+     * Note: The use of @SuppressLint("MissingPermission") indicates that the function may not explicitly
+     * check for permissions at the point of invocation, assuming permissions have been checked previously or
+     * the function is operating in an environment where permissions are not required (e.g., an emulator).
+     *
+     * @suppress Indicates suppression of the MissingPermission lint warning, acknowledging that permission
+     * checking is handled elsewhere or is not applicable.
+     */
     @SuppressLint("MissingPermission")
     private fun clearMissedCalls() {
         try {
@@ -362,7 +377,26 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
-
+    /**
+     * Determines and returns the default tab index based on user preferences and application configuration.
+     *
+     * This function calculates the default tab to be displayed in the main view of the application, taking into
+     * consideration the user's last used tab, their preferred default tab, and which tabs are enabled
+     * through the application's configuration. The tabs are identified by predefined constants such as
+     * TAB_LAST_USED, TAB_CONTACTS, TAB_FAVORITES, and TAB_CALL_HISTORY.
+     *
+     * @return The index of the default tab to be displayed. The index is determined based on the following logic:
+     *         - If the default tab is set to TAB_LAST_USED, it returns the index of the last used tab if it's
+     *           within the range of the available tabs; otherwise, it defaults to the first tab (index 0).
+     *         - If the default tab is set to TAB_CONTACTS, it returns the index for the Contacts tab, which is 0.
+     *         - If the default tab is set to TAB_FAVORITES and the TAB_CONTACTS is enabled, it returns 1,
+     *           indicating the Favorites tab is the second tab; if TAB_CONTACTS is not enabled, it defaults to 0.
+     *         - For other cases, especially when the default tab is set to TAB_CALL_HISTORY, it calculates the
+     *           index based on which tabs (TAB_CONTACTS and TAB_FAVORITES) are enabled before it in the tabs
+     *           configuration. It ensures the returned index accurately reflects the position of the CALL_HISTORY tab
+     *           among the enabled tabs.
+     *         - If none of the specific cases match, it defaults to the first tab (index 0).
+     */
     private fun getDefaultTab(): Int {
         val showTabsMask = config.showTabs
         return when (config.defaultTab) {
@@ -391,6 +425,34 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
+    /**
+     * Refreshes the items in the main activity, potentially opening the last used tab.
+     *
+     * This function checks the state of the activity to ensure it is neither destroyed nor finishing.
+     * If the activity is in a valid state, it proceeds to either set up the view pager with a new adapter
+     * or directly refresh the fragments contained within it, based on the current state of the view pager adapter.
+     * It optionally allows the view pager to open the last tab that was viewed, as specified by the user's
+     * preference, or defaults to opening the tab determined by the `getDefaultTab` function.
+     *
+     * @param openLastTab A Boolean parameter that indicates whether the view pager should open the last tab
+     *                    that was active before the activity was paused or destroyed. Defaults to false, in which
+     *                    case the default tab specified by application logic is opened.
+     *
+     * Behavior:
+     * 1. Checks if the activity is in a state where it can safely modify the UI. If the activity is either
+     *    destroyed or finishing, the function returns early without making any changes.
+     * 2. If the view pager does not have an adapter set, it initializes the adapter with a new instance of
+     *    `ViewPagerAdapter` and sets the current item (tab) of the view pager based on the `openLastTab` parameter.
+     *    - If `openLastTab` is true, sets the current item to `config.lastUsedViewPagerPage`.
+     *    - If `openLastTab` is false, uses the `getDefaultTab` function to determine which tab to display.
+     * 3. After setting the adapter, or if the adapter is already set, calls `refreshFragments` to update the
+     *    fragments within the view pager.
+     * 4. Utilizes the `viewPager.onGlobalLayout` listener to ensure that `refreshFragments` is called once the
+     *    layout has been fully initialized, applicable only when setting a new adapter.
+     *
+     * Note: This function is intended for use within the MainActivity to manage the display of tabs and the
+     * content within those tabs, based on user interactions and application state.
+     */
     private fun refreshItems(openLastTab: Boolean = false) {
         if (isDestroyed || isFinishing) {
             return
