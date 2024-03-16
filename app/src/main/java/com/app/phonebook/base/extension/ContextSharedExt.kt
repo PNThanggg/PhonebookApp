@@ -2,6 +2,7 @@ package com.app.phonebook.base.extension
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import com.app.phonebook.base.helpers.SharedHelper
 import com.app.phonebook.base.utils.PREFS_KEY
 import com.app.phonebook.base.utils.ensureBackgroundThread
@@ -62,4 +63,19 @@ fun Context.getSharedTheme(callback: (sharedTheme: SharedTheme?) -> Unit) {
     }
 }
 
-
+/**
+ * Checks if the system dark theme is currently enabled.
+ *
+ * This extension function for `Context` determines whether the system's dark theme is active based on the
+ * UI mode configuration. It utilizes the `uiMode` property of the `Configuration` object, which contains UI
+ * mode information about the current configuration. By performing a bitwise AND operation with `UI_MODE_NIGHT_YES`,
+ * it checks if the night mode is currently set to yes.
+ *
+ * @return True if the system dark theme is enabled, false otherwise.
+ *
+ * This function can be particularly useful for adjusting the application's theme dynamically in response to
+ * the system theme settings, enhancing the user experience by aligning the app's appearance with the user's
+ * system-wide preferences.
+ */
+fun Context.isUsingSystemDarkTheme() =
+    resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_YES != 0
