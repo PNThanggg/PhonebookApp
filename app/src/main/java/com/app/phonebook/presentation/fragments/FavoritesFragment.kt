@@ -64,11 +64,11 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
             fragmentPlaceholder.setTextColor(textColor)
             (fragmentList.adapter as? BaseRecyclerViewAdapter)?.updateTextColor(textColor)
 
-            letterFastscroller.textColor = textColor.getColorStateList()
-            letterFastscroller.pressedTextColor = properPrimaryColor
-            letterFastscrollerThumb.setupWithFastScroller(letterFastscroller)
-            letterFastscrollerThumb.textColor = properPrimaryColor.getContrastColor()
-            letterFastscrollerThumb.thumbColor = properPrimaryColor.getColorStateList()
+            letterFastScroller.textColor = textColor.getColorStateList()
+            letterFastScroller.pressedTextColor = properPrimaryColor
+            letterFastScrollerThumb.setupWithFastScroller(letterFastScroller)
+            letterFastScrollerThumb.textColor = properPrimaryColor.getContrastColor()
+            letterFastScrollerThumb.thumbColor = properPrimaryColor.getColorStateList()
         }
     }
 
@@ -201,7 +201,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
     }
 
     private fun setupLetterFastScroller(contacts: List<Contact>) {
-        binding.letterFastscroller.setupWithRecyclerView(binding.fragmentList, { position ->
+        binding.letterFastScroller.setupWithRecyclerView(binding.fragmentList, { position ->
             try {
                 val name = contacts[position].getNameToDisplay()
                 val character = if (name.isNotEmpty()) name.substring(0, 1) else ""
@@ -239,10 +239,10 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
         val spanCount = context.config.contactsGridColumnCount
 
         val layoutManager = if (viewType == VIEW_TYPE_GRID) {
-            binding.letterFastscroller.beGone()
+            binding.letterFastScroller.beGone()
             MyGridLayoutManager(context, spanCount)
         } else {
-            binding.letterFastscroller.beVisible()
+            binding.letterFastScroller.beVisible()
             MyLinearLayoutManager(context)
         }
         binding.fragmentList.layoutManager = layoutManager
