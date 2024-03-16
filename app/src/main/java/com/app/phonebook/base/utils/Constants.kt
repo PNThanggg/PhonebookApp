@@ -353,6 +353,7 @@ const val TAB_STORAGE_ANALYSIS = 64
 
 const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
 
+val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_CALL_HISTORY)
 
 val photoExtensions: Array<String>
     get() = arrayOf(
