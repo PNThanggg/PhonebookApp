@@ -123,10 +123,7 @@ fun Context.getAvailableSIMCardLabels(): List<SIMAccount> {
             }
 
             val sim = SIMAccount(
-                index + 1,
-                phoneAccount.accountHandle,
-                label,
-                address.substringAfter("tel:")
+                index + 1, phoneAccount.accountHandle, label, address.substringAfter("tel:")
             )
             simAccounts.add(sim)
         }
@@ -137,8 +134,7 @@ fun Context.getAvailableSIMCardLabels(): List<SIMAccount> {
 }
 
 fun Context.getContactsHasMap(
-    withComparableNumbers: Boolean = false,
-    callback: (HashMap<String, String>) -> Unit
+    withComparableNumbers: Boolean = false, callback: (HashMap<String, String>) -> Unit
 ) {
     ContactsHelper(this).getContacts(showOnlyContactsWithNumbers = true) { contactList ->
         val privateContacts: HashMap<String, String> = HashMap()
@@ -200,8 +196,31 @@ fun Context.getVisibleContactSources(): ArrayList<String> {
         .map { it.name }.toMutableList() as ArrayList<String>
 }
 
-fun Context.getPrivateContactSource() =
-    ContactSource(SMT_PRIVATE, SMT_PRIVATE, getString(R.string.phone_storage_hidden))
+/**
+ * Creates and returns a private contact source.
+ *
+ * This function generates a `ContactSource` object representing a private contact source, typically
+ * used for contacts that are stored within the application's own storage space, rather than synced
+ * with or imported from external sources. This private source is distinguished by using `SMT_PRIVATE`
+ * as both the identifier and type, with a user-friendly name sourced from the application's string
+ * resources (`R.string.phone_storage_hidden`), indicating that these contacts are hidden from other
+ * applications and are managed privately by the app.
+ *
+ * The `SMT_PRIVATE` constant should be defined within your application to uniquely identify this
+ * private contact source, ensuring it does not conflict with other contact sources on the device.
+ *
+ * @return A `ContactSource` object configured as a private contact source, with its name set to
+ *         indicate it represents contacts stored privately by the application.
+ *
+ * This function is particularly useful for applications that manage a set of contacts independently
+ * of the device's central contacts storage, allowing for separation between publicly shared contacts
+ * and those meant to remain private within the app.
+ */
+fun Context.getPrivateContactSource() = ContactSource(
+    SMT_PRIVATE,
+    SMT_PRIVATE,
+    getString(R.string.phone_storage_hidden)
+)
 
 fun Context.getMyContentProviderCursorLoader() =
     CursorLoader(this, MyContentProvider.MY_CONTENT_URI, null, null, null, null)
@@ -324,8 +343,7 @@ fun Context.getBottomNavigationBackgroundColor(context: Context): Int {
     val bottomColor = when {
         baseConfig.isUsingSystemTheme -> resources.getColor(R.color.you_status_bar_color, theme)
         baseColor == Color.WHITE -> resources.getColor(
-            R.color.bottom_tabs_light_background,
-            context.theme
+            R.color.bottom_tabs_light_background, context.theme
         )
 
         else -> baseConfig.backgroundColor.lightenColor(4)
@@ -493,12 +511,7 @@ fun Context.getMyContactsCursor(favoritesOnly: Boolean, withPhoneNumbersOnly: Bo
     val getWithPhoneNumbersOnly = if (withPhoneNumbersOnly) "1" else "0"
     val args = arrayOf(getFavoritesOnly, getWithPhoneNumbersOnly)
     CursorLoader(
-        this,
-        MyContactsContentProvider.CONTACTS_CONTENT_URI,
-        null,
-        null,
-        args,
-        null
+        this, MyContactsContentProvider.CONTACTS_CONTENT_URI, null, null, args, null
     ).loadInBackground()
 } catch (e: Exception) {
     Log.e(APP_NAME, "getMyContactsCursor: ${e.message}")
