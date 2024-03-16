@@ -12,12 +12,16 @@ import androidx.core.view.ScrollingView
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.beGoneIf
 import com.app.phonebook.base.extension.config
+import com.app.phonebook.base.extension.getBottomNavigationBackgroundColor
 import com.app.phonebook.base.extension.getColoredDrawableWithColor
+import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getProperBackgroundColor
+import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.onTabSelectionChanged
 import com.app.phonebook.base.extension.updateBottomTabItemColors
+import com.app.phonebook.base.extension.updateTextColors
 import com.app.phonebook.base.helpers.AutoFitHelper
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
@@ -49,7 +53,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private var useTransparentNavigation = false
 
     override fun initView() {
-        setupOptionsMenu(context = applicationContext)
+        setupOptionsMenu(context = this@MainActivity)
         refreshMenuItems()
 
         updateMaterialActivityViews(
@@ -61,6 +65,27 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         setupTabs()
         Contact.sorting = config.sorting
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        updateMenuColors()
+
+        val properPrimaryColor = getProperPrimaryColor()
+        val dialpadIcon = resources.getColoredDrawableWithColor(
+            drawableId = R.drawable.ic_dialpad_vector,
+            color = properPrimaryColor.getContrastColor(),
+            context = this@MainActivity
+        )
+        binding.mainDialpadButton.setImageDrawable(dialpadIcon)
+
+        updateTextColors(binding.mainHolder)
+        setupTabColors()
+
+        getAllFragments().forEach {
+            it?.setupColors(getProperTextColor(), getProperPrimaryColor(), getProperPrimaryColor())
+        }
     }
 
     override fun initData() {
@@ -197,7 +222,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
 
         return resources.getColoredDrawableWithColor(
-            drawableId = drawableId, color = getProperTextColor(), context = applicationContext
+            drawableId = drawableId,
+            color = getProperTextColor(),
+            context = this@MainActivity
         )
     }
 
@@ -283,5 +310,31 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainTabsHolder.beGoneIf(binding.mainTabsHolder.tabCount == 1)
         storedShowTabs = config.showTabs
         storedStartNameWithSurname = config.startNameWithSurname
+    }
+
+    private fun updateMenuColors() {
+        updateStatusBarColor(getProperBackgroundColor())
+        binding.mainMenu.updateColors()
+    }
+
+    private fun getInactiveTabIndexes(activeIndex: Int) =
+        (0 until binding.mainTabsHolder.tabCount).filter { it != activeIndex }
+
+    private fun setupTabColors() {
+        val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
+        updateBottomTabItemColors(
+            activeView,
+            true,
+            getSelectedTabDrawableIds()[binding.viewPager.currentItem]
+        )
+
+        getInactiveTabIndexes(binding.viewPager.currentItem).forEach { index ->
+            val inactiveView = binding.mainTabsHolder.getTabAt(index)?.customView
+            updateBottomTabItemColors(inactiveView, false, getDeselectedTabDrawableIds()[index])
+        }
+
+        val bottomBarColor = getBottomNavigationBackgroundColor(this@MainActivity)
+        binding.mainTabsHolder.setBackgroundColor(bottomBarColor)
+        updateNavigationBarColor(bottomBarColor)
     }
 }
