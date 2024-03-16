@@ -156,6 +156,21 @@ fun Context.getContactsHasMap(
     }
 }
 
+/**
+ * Retrieves all contact sources available on the device, including both device and private contact sources.
+ *
+ * This function aggregates contact sources from the device and adds a private contact source specific to
+ * the application or context in use. It leverages the `ContactsHelper` class to fetch existing contact
+ * sources from the device's storage and then appends a private source defined by `getPrivateContactSource()`.
+ * The combination of these sources provides a comprehensive list of contact origins that an application
+ * can interact with or display to the user.
+ *
+ * @return An `ArrayList` of `ContactSource` objects representing all available contact sources on the device.
+ * This list includes both system-wide contacts and those defined privately within the application.
+ *
+ * This utility function is particularly useful for applications that need to display a list of contacts
+ * or contact sources to the user, allowing for a more nuanced understanding of where each contact originates.
+ */
 fun Context.getAllContactSources(): ArrayList<ContactSource> {
     val sources = ContactsHelper(this).getDeviceContactSources()
     sources.add(getPrivateContactSource())
