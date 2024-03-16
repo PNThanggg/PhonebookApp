@@ -177,6 +177,22 @@ fun Context.getAllContactSources(): ArrayList<ContactSource> {
     return sources.toMutableList() as ArrayList<ContactSource>
 }
 
+/**
+ * Retrieves the names of all contact sources that are not ignored by the user's configuration settings.
+ *
+ * This function first gathers all available contact sources on the device by calling `getAllContactSources()`.
+ * It then filters out any sources that have been marked as ignored in the user's configuration settings,
+ * accessible via `baseConfig.ignoredContactSources`. The result is a list of contact source names that are
+ * considered "visible" or active, according to the user's preferences.
+ *
+ * The visibility of contact sources can be configured by the user, allowing them to hide certain sources
+ * from the application's view. This function respects those settings by excluding any sources the user has
+ * chosen to ignore.
+ *
+ * This function is useful for applications that manage contacts or contact information, enabling them to
+ * tailor the user interface and functionality to respect the user's preferences regarding which contact
+ * sources should be displayed or interacted with.
+ */
 fun Context.getVisibleContactSources(): ArrayList<String> {
     val sources = getAllContactSources()
     val ignoredContactSources = baseConfig.ignoredContactSources
