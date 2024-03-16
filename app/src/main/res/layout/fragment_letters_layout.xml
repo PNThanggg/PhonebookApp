@@ -45,7 +45,7 @@
             app:layoutManager=".presentation.view.MyLinearLayoutManager" />
 
         <com.app.phonebook.presentation.view.FastScrollerView
-            android:id="@+id/letter_fastscroller"
+            android:id="@+id/letter_fast_scroller"
             android:layout_width="32dp"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
@@ -53,13 +53,14 @@
             android:paddingBottom="@dimen/big_margin" />
 
         <com.app.phonebook.presentation.view.FastScrollerThumbView
-            android:id="@+id/letter_fastscroller_thumb"
+            android:id="@+id/letter_fast_scroller_thumb"
+            style="@style/FastScrollerThumb"
             android:layout_width="@dimen/fab_size"
             android:layout_height="match_parent"
-            android:layout_alignTop="@+id/letter_fastscroller"
-            android:layout_alignBottom="@+id/letter_fastscroller"
+            android:layout_alignTop="@+id/letter_fast_scroller"
+            android:layout_alignBottom="@+id/letter_fast_scroller"
             android:layout_marginEnd="@dimen/activity_margin"
-            android:layout_toStartOf="@+id/letter_fastscroller" />
+            android:layout_toStartOf="@+id/letter_fast_scroller" />
 
     </RelativeLayout>
 </merge>
