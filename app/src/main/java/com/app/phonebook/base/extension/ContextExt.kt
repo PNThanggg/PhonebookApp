@@ -77,6 +77,9 @@ import com.app.phonebook.presentation.view.MyButton
 import com.app.phonebook.presentation.view.MyEditText
 import com.app.phonebook.presentation.view.MyFloatingActionButton
 import com.app.phonebook.presentation.view.MyTextView
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Lazily accessed property that provides an instance of `Config`.
@@ -498,18 +501,23 @@ fun Context.hasPermission(permId: Int) = ContextCompat.checkSelfPermission(
     this, getPermissionString(permId)
 ) == PackageManager.PERMISSION_GRANTED
 
-fun Context.isDefaultDialer(): Boolean {
-    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
-            "com.simplemobiletools.dialer"
-        )
-    ) {
-        true
-    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
-        val roleManager = getSystemService(RoleManager::class.java)
-        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-    } else {
-        telecomManager.defaultDialerPackage == packageName
-    }
+//fun Context.isDefaultDialer(): Boolean {
+//    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
+//            "com.simplemobiletools.dialer"
+//        )
+//    ) {
+//        true
+//    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
+//        val roleManager = getSystemService(RoleManager::class.java)
+//        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+//    } else {
+//        telecomManager.defaultDialerPackage == packageName
+//    }
+//}
+
+fun Context.getCurrentFormattedDateTime(): String {
+    val simpleDateFormat = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault())
+    return simpleDateFormat.format(Date(System.currentTimeMillis()))
 }
 
 val Context.shortcutManager: ShortcutManager get() = getSystemService(ShortcutManager::class.java) as ShortcutManager
