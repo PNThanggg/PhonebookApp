@@ -27,6 +27,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.loader.content.CursorLoader
@@ -112,10 +113,13 @@ val Context.config: Config get() = Config.newInstance(applicationContext)
  * This function is particularly useful for applications that need to display or manage SIM account
  * information, providing a straightforward way to access this data.
  */
-@SuppressLint("MissingPermission")
 fun Context.getAvailableSIMCardLabels(): List<SIMAccount> {
     val simAccounts = mutableListOf<SIMAccount>()
     try {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            return simAccounts
+        }
+
         telecomManager.callCapablePhoneAccounts.forEachIndexed { index, account ->
             val phoneAccount = telecomManager.getPhoneAccount(account)
             var label = phoneAccount.label.toString()
@@ -501,19 +505,35 @@ fun Context.hasPermission(permId: Int) = ContextCompat.checkSelfPermission(
     this, getPermissionString(permId)
 ) == PackageManager.PERMISSION_GRANTED
 
-//fun Context.isDefaultDialer(): Boolean {
-//    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
-//            "com.simplemobiletools.dialer"
-//        )
-//    ) {
-//        true
-//    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
-//        val roleManager = getSystemService(RoleManager::class.java)
-//        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+fun Context.isDefaultDialer(): Boolean {
+    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
+            "com.simplemobiletools.dialer"
+        )
+    ) {
+        true
+    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
+        val roleManager = getSystemService(RoleManager::class.java)
+        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+    } else {
+        telecomManager.defaultDialerPackage == packageName
+    }
+}
+
+fun Context.openNotificationSettings() {
+    val intent = Intent(Settings.ACTION_SETTINGS)
+    startActivity(intent)
+
+//    if (isOreoPlus()) {
+//        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+//        intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+//        startActivity(intent)
 //    } else {
-//        telecomManager.defaultDialerPackage == packageName
+//        // For Android versions below Oreo, you can't directly open the app's notification settings.
+//        // You can open the general notification settings instead.
+//        val intent = Intent(Settings.ACTION_SETTINGS)
+//        startActivity(intent)
 //    }
-//}
+}
 
 fun Context.getCurrentFormattedDateTime(): String {
     val simpleDateFormat = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault())
