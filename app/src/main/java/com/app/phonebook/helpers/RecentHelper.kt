@@ -47,13 +47,13 @@ class RecentHelper(private val context: Context) {
                     contacts.addAll(privateContacts)
                 }
 
-                getRecents(contacts, groupSubsequentCalls, maxSize, callback = callback)
+                getRecent(contacts, groupSubsequentCalls, maxSize, callback = callback)
             }
         }
     }
 
-    @SuppressLint("NewApi")
-    private fun getRecents(
+    @SuppressLint("NewApi", "Recycle")
+    private fun getRecent(
         contacts: List<Contact>,
         groupSubsequentCalls: Boolean,
         maxSize: Int,
@@ -81,19 +81,16 @@ class RecentHelper(private val context: Context) {
             accountIdToSimIDMap[it.handle.id] = it.id
         }
 
-        val sortOrder = "${Calls.DATE} DESC LIMIT $QUERY_LIMIT"
-        val cursor = context.contentResolver.query(contentUri, projection, null, null, sortOrder)
-
-//        val cursor = if (isNougatPlus()) {
-//            // https://issuetracker.google.com/issues/175198972?pli=1#comment6
-//            val limitedUri = contentUri.buildUpon()
-//                .appendQueryParameter(Calls.LIMIT_PARAM_KEY, QUERY_LIMIT.toString()).build()
-//            val sortOrder = "${Calls.DATE} DESC"
-//            context.contentResolver.query(limitedUri, projection, null, null, sortOrder)
-//        } else {
-//            val sortOrder = "${Calls.DATE} DESC LIMIT $QUERY_LIMIT"
-//            context.contentResolver.query(contentUri, projection, null, null, sortOrder)
-//        }
+        val limitedUri = contentUri.buildUpon()
+            .appendQueryParameter(Calls.LIMIT_PARAM_KEY, QUERY_LIMIT.toString()).build()
+        val sortOrder = "${Calls.DATE} DESC"
+        val cursor = context.contentResolver.query(
+            limitedUri,
+            projection,
+            null,
+            null,
+            sortOrder
+        )
 
         val contactsWithMultipleNumbers = contacts.filter { it.phoneNumbers.size > 1 }
         val numbersToContactIDMap = HashMap<String, Int>()
