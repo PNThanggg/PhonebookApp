@@ -2,6 +2,7 @@ package com.app.phonebook.base.extension
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Rect
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.StyleRes
@@ -78,3 +79,6 @@ fun View.setupViewBackground(context: Context) {
         resources.getDrawable(R.drawable.selector_clickable, context.theme)
     }
 }
+
+val View.boundingBox
+    get() = Rect().also { getGlobalVisibleRect(it) }
