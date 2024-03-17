@@ -192,7 +192,7 @@ class FastScrollerView @JvmOverloads constructor(
         showIndicator: ((FastScrollItemIndicator, Int, Int) -> Boolean)? = null,
         useDefaultScroller: Boolean = true
     ) {
-        check(!isSetup) { "Only set this view's RecyclerView once!" }
+//        check(!isSetup) { "Only set this view's RecyclerView once!" }
         this.recyclerView = recyclerView
         this.getItemIndicator = getItemIndicator
         this.showIndicator = showIndicator

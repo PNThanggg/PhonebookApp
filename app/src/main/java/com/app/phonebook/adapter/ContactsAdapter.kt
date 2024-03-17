@@ -27,12 +27,14 @@ import com.app.phonebook.base.extension.highlightTextPart
 import com.app.phonebook.base.extension.launchSendSMSIntent
 import com.app.phonebook.base.extension.setupViewBackground
 import com.app.phonebook.base.extension.shortcutManager
+import com.app.phonebook.base.extension.startContactDetailsIntent
 import com.app.phonebook.base.helpers.ItemMoveCallback
 import com.app.phonebook.base.interfaces.ItemTouchHelperContract
 import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.interfaces.StartReorderDragListener
 import com.app.phonebook.base.utils.CONTACTS_GRID_MAX_COLUMNS_COUNT
 import com.app.phonebook.base.utils.PERMISSION_CALL_PHONE
+import com.app.phonebook.base.utils.PERMISSION_WRITE_CONTACTS
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
 import com.app.phonebook.base.utils.VIEW_TYPE_LIST
 import com.app.phonebook.base.view.BaseActivity
@@ -41,6 +43,7 @@ import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.ItemContactWithoutNumberBinding
 import com.app.phonebook.databinding.ItemContactWithoutNumberGridBinding
 import com.app.phonebook.helpers.SimpleContactsHelper
+import com.app.phonebook.presentation.dialog.ConfirmationDialog
 import com.app.phonebook.presentation.view.MyRecyclerView
 import com.bumptech.glide.Glide
 import java.util.*
@@ -98,14 +101,8 @@ class ContactsAdapter(
                 isOneItemSelected && (activity.config.getCustomSIM(selectedNumber) ?: "") != ""
 
             findItem(R.id.cab_delete).isVisible = showDeleteButton
-//            findItem(R.id.cab_create_shortcut).title =
-//                activity.addLockedLabelIfNeeded(R.string.create_shortcut)
             findItem(R.id.cab_create_shortcut).isVisible = isOneItemSelected
             findItem(R.id.cab_view_details).isVisible = isOneItemSelected
-//            findItem(R.id.cab_block_unblock_contact).isVisible = isOneItemSelected
-//            getCabBlockContactTitle { title ->
-//                findItem(R.id.cab_block_unblock_contact).title = title
-//            }
         }
     }
 
@@ -115,13 +112,11 @@ class ContactsAdapter(
         }
 
         when (id) {
-//            R.id.cab_block_unblock_contact -> tryBlockingUnblocking()
             R.id.cab_call_sim_1 -> callContact(true)
             R.id.cab_call_sim_2 -> callContact(false)
             R.id.cab_remove_default_sim -> removeDefaultSIM()
             R.id.cab_delete -> askConfirmDelete()
             R.id.cab_send_sms -> sendSMS()
-//            R.id.cab_view_details -> viewContactDetails()
             R.id.cab_create_shortcut -> tryCreateShortcut()
             R.id.cab_select_all -> selectAll()
         }
@@ -165,71 +160,6 @@ class ContactsAdapter(
 
     override fun getItemCount() = contacts.size
 
-//    private fun getCabBlockContactTitle(callback: (String) -> Unit) {
-//        val contact = getSelectedItems().firstOrNull() ?: return callback("")
-//
-//        activity.isContactBlocked(contact) { blocked ->
-//            val cabItemTitleRes = if (blocked) {
-//                R.string.unblock_contact
-//            } else {
-//                R.string.block_contact
-//            }
-//
-//            callback(activity.addLockedLabelIfNeeded(cabItemTitleRes))
-//        }
-//    }
-
-//    private fun tryBlockingUnblocking() {
-//        val contact = getSelectedItems().firstOrNull() ?: return
-//
-//        if (activity.isOrWasThankYouInstalled()) {
-//            activity.isContactBlocked(contact) { blocked ->
-//                if (blocked) {
-//                    tryUnblocking(contact)
-//                } else {
-//                    tryBlocking(contact)
-//                }
-//            }
-//        } else {
-//            FeatureLockedDialog(activity) { }
-//        }
-//    }
-
-//    private fun tryBlocking(contact: Contact) {
-//        askConfirmBlock(contact) { contactBlocked ->
-//            val resultMsg = if (contactBlocked) {
-//                R.string.block_contact_success
-//            } else {
-//                R.string.block_contact_fail
-//            }
-//
-//            activity.toast(resultMsg)
-//            finishActMode()
-//        }
-//    }
-
-//    private fun tryUnblocking(contact: Contact) {
-//        val contactUnblocked = activity.unblockContact(contact)
-//        val resultMsg = if (contactUnblocked) {
-//            R.string.unblock_contact_success
-//        } else {
-//            R.string.unblock_contact_fail
-//        }
-//
-//        activity.toast(resultMsg)
-//        finishActMode()
-//    }
-
-//    private fun askConfirmBlock(contact: Contact, callback: (Boolean) -> Unit) {
-//        val baseString = R.string.block_confirmation
-//        val question = String.format(resources.getString(baseString), contact.name)
-//
-//        ConfirmationDialog(activity, question) {
-//            val contactBlocked = activity.blockContact(contact)
-//            callback(contactBlocked)
-//        }
-//    }
-
     @SuppressLint("NotifyDataSetChanged")
     fun updateItems(newItems: List<Contact>, highlightText: String = "") {
         if (newItems.hashCode() != contacts.hashCode()) {
@@ -272,28 +202,28 @@ class ContactsAdapter(
         activity.launchSendSMSIntent(recipient)
     }
 
-//    private fun viewContactDetails() {
-//        val contact = getSelectedItems().firstOrNull() ?: return
-//        activity.startContactDetailsIntent(contact)
-//    }
+    private fun viewContactDetails() {
+        val contact = getSelectedItems().firstOrNull() ?: return
+        activity.startContactDetailsIntent(contact)
+    }
 
     private fun askConfirmDelete() {
-//        val itemsCnt = selectedKeys.size
-//        val firstItem = getSelectedItems().firstOrNull() ?: return
-//        val items = if (itemsCnt == 1) {
-//            "\"${firstItem.getNameToDisplay()}\""
-//        } else {
-//            resources.getQuantityString(R.plurals.delete_contacts, itemsCnt, itemsCnt)
-//        }
-//
-//        val baseString = R.string.deletion_confirmation
-//        val question = String.format(resources.getString(baseString), items)
+        val itemsCnt = selectedKeys.size
+        val firstItem = getSelectedItems().firstOrNull() ?: return
+        val items = if (itemsCnt == 1) {
+            "\"${firstItem.getNameToDisplay()}\""
+        } else {
+            resources.getQuantityString(R.plurals.delete_contacts, itemsCnt, itemsCnt)
+        }
 
-//        ConfirmationDialog(activity, question) {
-//            activity.handlePermission(PERMISSION_WRITE_CONTACTS) {
-//                deleteContacts()
-//            }
-//        }
+        val baseString = R.string.deletion_confirmation
+        val question = String.format(resources.getString(baseString), items)
+
+        ConfirmationDialog(activity, question) {
+            activity.handlePermission(PERMISSION_WRITE_CONTACTS) {
+                deleteContacts()
+            }
+        }
     }
 
     private fun deleteContacts() {

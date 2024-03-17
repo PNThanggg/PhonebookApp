@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.viewpager.widget.PagerAdapter
 
-
 open class DelegatingPagerAdapter(
     private val delegate: PagerAdapter
 ) : PagerAdapter() {

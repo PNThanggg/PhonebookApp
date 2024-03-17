@@ -2,7 +2,12 @@ package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -10,37 +15,47 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.ScrollingView
+import androidx.viewpager.widget.ViewPager
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ViewPagerAdapter
 import com.app.phonebook.base.extension.beGoneIf
 import com.app.phonebook.base.extension.config
+import com.app.phonebook.base.extension.darkenColor
 import com.app.phonebook.base.extension.getBottomNavigationBackgroundColor
 import com.app.phonebook.base.extension.getColoredDrawableWithColor
 import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
+import com.app.phonebook.base.extension.isDefaultDialer
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.onGlobalLayout
 import com.app.phonebook.base.extension.onTabSelectionChanged
+import com.app.phonebook.base.extension.openNotificationSettings
 import com.app.phonebook.base.extension.telecomManager
 import com.app.phonebook.base.extension.updateBottomTabItemColors
 import com.app.phonebook.base.extension.updateTextColors
 import com.app.phonebook.base.helpers.AutoFitHelper
 import com.app.phonebook.base.utils.APP_NAME
+import com.app.phonebook.base.utils.OPEN_DIAL_PAD_AT_LAUNCH
+import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
 import com.app.phonebook.base.utils.TAB_LAST_USED
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
+import com.app.phonebook.base.utils.ensureBackgroundThread
+import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.tabsList
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.ActivityMainBinding
+import com.app.phonebook.presentation.dialog.PermissionRequiredDialog
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
 import com.app.phonebook.presentation.fragments.RecentFragment
+import com.google.android.material.snackbar.Snackbar
 import kotlin.system.exitProcess
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
@@ -55,19 +70,57 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private var scrollingView: ScrollingView? = null
     private var useTransparentNavigation = false
 
-    override fun initView() {
+    override fun initView(savedInstanceState: Bundle?) {
         setupOptionsMenu(context = this@MainActivity)
         refreshMenuItems()
 
         updateMaterialActivityViews(
-            binding.mainCoordinator,
-            binding.mainHolder,
+            mainCoordinatorLayout = binding.mainCoordinator,
+            nestedView = binding.mainHolder,
             useTransparentNavigation = false,
             useTopSearchMenu = true
         )
 
+        launchedDialer = savedInstanceState?.getBoolean(OPEN_DIAL_PAD_AT_LAUNCH) ?: false
+
+        if (isDefaultDialer()) {
+            checkContactPermissions()
+
+            if (!config.wasOverlaySnackbarConfirmed && !Settings.canDrawOverlays(this)) {
+                val snackbar =
+                    Snackbar.make(binding.mainHolder, R.string.allow_displaying_over_other_apps, Snackbar.LENGTH_INDEFINITE)
+                        .setAction(R.string.ok) {
+                            config.wasOverlaySnackbarConfirmed = true
+                            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                        }
+
+                snackbar.setBackgroundTint(getProperBackgroundColor().darkenColor())
+                snackbar.setTextColor(getProperTextColor())
+                snackbar.setActionTextColor(getProperTextColor())
+                snackbar.show()
+            }
+
+            handleNotificationPermission { granted ->
+                if (!granted) {
+                    PermissionRequiredDialog(this, R.string.allow_notifications_incoming_calls, { openNotificationSettings() })
+                }
+            }
+        } else {
+            launchSetDefaultDialerIntent()
+        }
+
+        if (isQPlus() && (config.blockUnknownNumbers || config.blockHiddenNumbers)) {
+            setDefaultCallerIdApp()
+        }
+
         setupTabs()
         Contact.sorting = config.sorting
+    }
+
+    private fun checkContactPermissions() {
+        handlePermission(PERMISSION_READ_CONTACTS) {
+            initFragments()
+        }
     }
 
     override fun onResume() {
@@ -293,6 +346,65 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         return icons
     }
 
+    private fun launchDialpad() {
+        Intent(applicationContext, DialpadActivity::class.java).apply {
+            startActivity(this)
+        }
+    }
+
+    private fun initFragments() {
+        binding.viewPager.offscreenPageLimit = 2
+        binding.viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+            override fun onPageScrollStateChanged(state: Int) {}
+
+            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
+
+            override fun onPageSelected(position: Int) {
+                binding.mainTabsHolder.getTabAt(position)?.select()
+                getAllFragments().forEach {
+                    it?.finishActMode()
+                }
+                refreshMenuItems()
+            }
+        })
+
+        // selecting the proper tab sometimes glitches, add an extra selector to make sure we have it right
+        binding.mainTabsHolder.onGlobalLayout {
+            Looper.myLooper()?.let {
+                Handler(it).postDelayed(
+                    {
+                        var wantedTab = getDefaultTab()
+
+                        // open the Recents tab if we got here by clicking a missed call notification
+                        if (intent.action == Intent.ACTION_VIEW && config.showTabs and TAB_CALL_HISTORY > 0) {
+                            wantedTab = binding.mainTabsHolder.tabCount - 1
+
+                            ensureBackgroundThread {
+                                clearMissedCalls()
+                            }
+                        }
+
+                        binding.mainTabsHolder.getTabAt(wantedTab)?.select()
+                        refreshMenuItems()
+                    },
+                    100L,
+                )
+            }
+        }
+
+        binding.mainDialpadButton.setOnClickListener {
+            launchDialpad()
+        }
+
+        binding.viewPager.onGlobalLayout {
+            refreshMenuItems()
+        }
+
+        if (config.openDialPadAtLaunch && !launchedDialer) {
+            launchDialpad()
+            launchedDialer = true
+        }
+    }
 
     private fun setupTabs() {
         binding.viewPager.adapter = null
@@ -443,7 +555,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
      *    destroyed or finishing, the function returns early without making any changes.
      * 2. If the view pager does not have an adapter set, it initializes the adapter with a new instance of
      *    `ViewPagerAdapter` and sets the current item (tab) of the view pager based on the `openLastTab` parameter.
-     *    - If `openLastTab` is true, sets the current item to `config.lastUsedViewPagerPage`.
+     *    - If `openLastTab` is true, sets the current item to `com.app.phonebook.base.compose.extensions.getConfig.lastUsedViewPagerPage`.
      *    - If `openLastTab` is false, uses the `getDefaultTab` function to determine which tab to display.
      * 3. After setting the adapter, or if the adapter is already set, calls `refreshFragments` to update the
      *    fragments within the view pager.

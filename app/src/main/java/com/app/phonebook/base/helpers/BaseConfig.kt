@@ -229,17 +229,17 @@ open class BaseConfig(private val context: Context) {
 
 //    var appIconColor: Int
 //        get() = prefs.getInt(
-//            APP_ICON_COLOR, ContextCompat.getColor(context, R.color.default_app_icon_color)
+//            APP_ICON_COLOR, ContextCompat.getColor(context, R.color.getDefault_app_icon_color)
 //        )
 //        set(appIconColor) {
 //            isUsingModifiedAppIcon =
-//                appIconColor != ContextCompat.getColor(context, R.color.color_primary)
+//                appIconColor != ContextCompat.getColor(context, R.color.getColor_primary)
 //            prefs.edit().putInt(APP_ICON_COLOR, appIconColor).apply()
 //        }
 //
 //    var lastIconColor: Int
 //        get() = prefs.getInt(
-//            LAST_ICON_COLOR, ContextCompat.getColor(context, R.color.color_primary)
+//            LAST_ICON_COLOR, ContextCompat.getColor(context, R.color.getColor_primary)
 //        )
 //        set(lastIconColor) = prefs.edit().putInt(LAST_ICON_COLOR, lastIconColor).apply()
 
@@ -377,7 +377,7 @@ open class BaseConfig(private val context: Context) {
         set(isUsingSharedTheme) = prefs.edit().putBoolean(IS_USING_SHARED_THEME, isUsingSharedTheme)
             .apply()
 
-    // used by Simple Thank You, stop using shared Shared Theme if it has been changed in it
+    // used by Simple Thank You, stop using shared Shared model.com.app.phonebook.base.compose.theme.model.Theme if it has been changed in it
     var shouldUseSharedTheme: Boolean
         get() = prefs.getBoolean(SHOULD_USE_SHARED_THEME, false)
         set(shouldUseSharedTheme) = prefs.edit()

@@ -4,11 +4,13 @@ import android.content.Context
 import android.util.AttributeSet
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ContactsAdapter
+import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.beGone
 import com.app.phonebook.base.extension.beVisible
 import com.app.phonebook.base.extension.beVisibleIf
 import com.app.phonebook.base.extension.getColorStateList
 import com.app.phonebook.base.extension.getContrastColor
+import com.app.phonebook.base.extension.getMyContactsCursor
 import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.normalizePhoneNumber
@@ -16,12 +18,16 @@ import com.app.phonebook.base.extension.normalizeString
 import com.app.phonebook.base.extension.underlineText
 import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
+import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.getProperText
 import com.app.phonebook.base.view.BaseRecyclerViewAdapter
 import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.FragmentContactsBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
+import com.app.phonebook.helpers.ContactsHelper
+import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.presentation.activities.MainActivity
 import com.app.phonebook.presentation.view.FastScrollItemIndicator
 import java.util.Locale
 
@@ -72,33 +78,33 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
             fragmentPlaceholder.setTextColor(textColor)
             fragmentPlaceholder2.setTextColor(properPrimaryColor)
 
-            letterFastscroller.textColor = textColor.getColorStateList()
-            letterFastscroller.pressedTextColor = properPrimaryColor
-            letterFastscrollerThumb.setupWithFastScroller(letterFastscroller)
-            letterFastscrollerThumb.textColor = properPrimaryColor.getContrastColor()
-            letterFastscrollerThumb.thumbColor = properPrimaryColor.getColorStateList()
+            letterFastScroller.textColor = textColor.getColorStateList()
+            letterFastScroller.pressedTextColor = properPrimaryColor
+            letterFastScrollerThumb.setupWithFastScroller(letterFastScroller)
+            letterFastScrollerThumb.textColor = properPrimaryColor.getContrastColor()
+            letterFastScrollerThumb.thumbColor = properPrimaryColor.getColorStateList()
         }
     }
 
     override fun refreshItems(callback: (() -> Unit)?) {
-//        val privateCursor = context?.getMyContactsCursor(false, true)
-//        com.app.phonebook.helpers.ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
-//            allContacts = contacts
-//
-//            if (SMT_PRIVATE !in context.baseConfig.ignoredContactSources) {
-//                val privateContacts = MyContactsContentProvider.getContacts(context, privateCursor)
-//                if (privateContacts.isNotEmpty()) {
-//                    allContacts.addAll(privateContacts)
-//                    allContacts.sort()
-//                }
-//            }
-//            (activity as MainActivity).cacheContacts(allContacts)
-//
-//            activity?.runOnUiThread {
-//                gotContacts(contacts)
-//                callback?.invoke()
-//            }
-//        }
+        val privateCursor = context?.getMyContactsCursor(false, true)
+        ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
+            allContacts = contacts
+
+            if (SMT_PRIVATE !in context.baseConfig.ignoredContactSources) {
+                val privateContacts = MyContactsContentProvider.getContacts(privateCursor)
+                if (privateContacts.isNotEmpty()) {
+                    allContacts.addAll(privateContacts)
+                    allContacts.sort()
+                }
+            }
+            (activity as MainActivity).cacheContacts(allContacts)
+
+            activity?.runOnUiThread {
+                gotContacts(contacts)
+                callback?.invoke()
+            }
+        }
     }
 
     private fun gotContacts(contacts: ArrayList<Contact>) {
@@ -139,7 +145,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
     }
 
     private fun setupLetterFastScroller(contacts: ArrayList<Contact>) {
-        binding.letterFastscroller.setupWithRecyclerView(binding.fragmentList, { position ->
+        binding.letterFastScroller.setupWithRecyclerView(binding.fragmentList, { position ->
             try {
                 val name = contacts[position].getNameToDisplay()
                 val character = if (name.isNotEmpty()) name.substring(0, 1) else ""
@@ -162,11 +168,9 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
         val shouldNormalize = text.normalizeString() == text
         val filtered = allContacts.filter {
             getProperText(it.getNameToDisplay(), shouldNormalize).contains(
-                text,
-                true
+                text, true
             ) || getProperText(it.nickname, shouldNormalize).contains(
-                text,
-                true
+                text, true
             ) || it.phoneNumbers.any { phoneNumber ->
                 text.normalizePhoneNumber().isNotEmpty() && phoneNumber.normalizedNumber.contains(
                     text.normalizePhoneNumber(), true
@@ -180,17 +184,16 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
             } || it.listIM.any { im ->
                 im.value.contains(text, true)
             } || getProperText(
-                it.notes,
-                shouldNormalize
+                it.notes, shouldNormalize
             ).contains(text, true) || getProperText(
-                it.organization.company,
-                shouldNormalize
+                it.organization.company, shouldNormalize
             ).contains(text, true) || getProperText(
-                it.organization.jobPosition,
-                shouldNormalize
+                it.organization.jobPosition, shouldNormalize
             ).contains(
                 text, true
-            ) || it.websites.any { it.contains(text, true) }
+            ) || it.websites.any { website ->
+                website.contains(text, true)
+            }
         } as ArrayList
 
         filtered.sortBy {

@@ -131,7 +131,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
                 showDeleteButton = false,
                 enableDrag = true,
             ) {
-//                if (context.config.showCallConfirmation) {
+//                if (context.com.app.phonebook.base.compose.extensions.getConfig.showCallConfirmation) {
 //                    CallConfirmationDialog(
 //                        activity as BaseActivity, (it as Contact).getNameToDisplay()
 //                    ) {

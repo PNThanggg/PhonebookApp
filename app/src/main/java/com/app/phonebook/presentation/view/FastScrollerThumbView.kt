@@ -108,7 +108,7 @@ class FastScrollerThumbView @JvmOverloads constructor(
      */
     @SuppressLint("ClickableViewAccessibility")
     fun setupWithFastScroller(fastScrollerView: FastScrollerView) {
-        check(!isSetup) { "Only set this view's com.app.phonebook.presentation.view.FastScrollerView once!" }
+//        check(!isSetup) { "Only set this view's FastScrollerView once!" }
         this.fastScrollerView = fastScrollerView
 
         fastScrollerView.itemIndicatorSelectedCallbacks += this
