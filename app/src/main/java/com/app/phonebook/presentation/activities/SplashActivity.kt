@@ -53,12 +53,20 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
                 isUsingSharedTheme = false
 
                 textColor = resources.getColor(
-                    if (isUsingSystemDarkTheme) R.color.theme_dark_text_color else R.color.theme_light_text_color,
+                    if (isUsingSystemDarkTheme) {
+                        R.color.theme_dark_text_color
+                    } else {
+                        R.color.theme_light_text_color
+                    },
                     theme,
                 )
 
                 backgroundColor = resources.getColor(
-                    if (isUsingSystemDarkTheme) R.color.theme_dark_background_color else R.color.theme_light_background_color,
+                    if (isUsingSystemDarkTheme) {
+                        R.color.theme_dark_background_color
+                    } else {
+                        R.color.theme_light_background_color
+                    },
                     theme,
                 )
             }
