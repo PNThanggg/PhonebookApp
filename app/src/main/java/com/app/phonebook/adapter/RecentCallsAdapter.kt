@@ -29,6 +29,7 @@ import com.app.phonebook.base.extension.startContactDetailsIntent
 import com.app.phonebook.base.extension.telephonyManager
 import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.utils.KEY_PHONE
+import com.app.phonebook.base.utils.PERMISSION_WRITE_CALL_LOG
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseRecyclerViewAdapter
 import com.app.phonebook.data.models.Contact
@@ -37,6 +38,8 @@ import com.app.phonebook.databinding.ItemRecentCallBinding
 import com.app.phonebook.helpers.RecentHelper
 import com.app.phonebook.helpers.SimpleContactsHelper
 import com.app.phonebook.presentation.activities.MainActivity
+import com.app.phonebook.presentation.dialog.ConfirmationDialog
+import com.app.phonebook.presentation.dialog.ShowGroupedCallsDialog
 import com.app.phonebook.presentation.view.MyRecyclerView
 import com.bumptech.glide.Glide
 
@@ -77,9 +80,6 @@ class RecentCallsAdapter(
             findItem(R.id.cab_remove_default_sim).isVisible =
                 isOneItemSelected && (activity.config.getCustomSIM(selectedNumber) ?: "") != ""
 
-//            findItem(R.id.cab_block_number).title =
-//                activity.addLockedLabelIfNeeded(R.string.block_number)
-//            findItem(R.id.cab_block_number).isVisible = isNougatPlus()
             findItem(R.id.cab_add_number).isVisible = isOneItemSelected
             findItem(R.id.cab_copy_number).isVisible = isOneItemSelected
             findItem(R.id.cab_show_call_details).isVisible = isOneItemSelected
@@ -97,7 +97,6 @@ class RecentCallsAdapter(
             R.id.cab_call_sim_1 -> callContact(true)
             R.id.cab_call_sim_2 -> callContact(false)
             R.id.cab_remove_default_sim -> removeDefaultSIM()
-//            R.id.cab_block_number -> tryBlocking()
             R.id.cab_add_number -> addNumberToContact()
             R.id.cab_send_sms -> sendSMS()
             R.id.cab_show_call_details -> showCallDetails()
@@ -182,46 +181,6 @@ class RecentCallsAdapter(
         finishActMode()
     }
 
-//    private fun tryBlocking() {
-//        if (activity.isOrWasThankYouInstalled()) {
-//            askConfirmBlock()
-//        } else {
-//            FeatureLockedDialog(activity) { }
-//        }
-//    }
-
-//    private fun askConfirmBlock() {
-//        val numbers = TextUtils.join(", ",
-//            getSelectedItems().distinctBy { it.phoneNumber }.map { it.phoneNumber })
-//        val baseString = R.string.block_confirmation
-//        val question = String.format(resources.getString(baseString), numbers)
-//
-//        ConfirmationDialog(activity, question) {
-//            blockNumbers()
-//        }
-//    }
-
-//    private fun blockNumbers() {
-//        if (selectedKeys.isEmpty()) {
-//            return
-//        }
-//
-//        val callsToBlock = getSelectedItems()
-//        val positions = getSelectedItemPositions()
-//        recentCalls.removeAll(callsToBlock)
-//
-//        ensureBackgroundThread {
-//            callsToBlock.map { it.phoneNumber }.forEach { number ->
-//                activity.addBlockedNumber(number)
-//            }
-//
-//            activity.runOnUiThread {
-//                removeSelectedItems(positions)
-//                finishActMode()
-//            }
-//        }
-//    }
-
     private fun addNumberToContact() {
         val phoneNumber = getSelectedPhoneNumber() ?: return
         Intent().apply {
@@ -242,7 +201,7 @@ class RecentCallsAdapter(
         val recentCall = getSelectedItems().firstOrNull() ?: return
         val callIds = recentCall.neighbourIDs.map { it }.toMutableList() as ArrayList<Int>
         callIds.add(recentCall.id)
-//        ShowGroupedCallsDialog(activity, callIds)
+        ShowGroupedCallsDialog(activity, callIds)
     }
 
     private fun copyNumber() {
@@ -252,14 +211,17 @@ class RecentCallsAdapter(
     }
 
     private fun askConfirmRemove() {
-//        ConfirmationDialog(activity, activity.getString(R.string.remove_confirmation)) {
-//            activity.handlePermission(PERMISSION_WRITE_CALL_LOG) {
-//                removeRecents()
-//            }
-//        }
+        ConfirmationDialog(
+            activity = activity,
+            message = activity.getString(R.string.remove_confirmation)
+        ) {
+            activity.handlePermission(PERMISSION_WRITE_CALL_LOG) {
+                removeRecent()
+            }
+        }
     }
 
-    private fun removeRecents() {
+    private fun removeRecent() {
         if (selectedKeys.isEmpty()) {
             return
         }
@@ -269,7 +231,9 @@ class RecentCallsAdapter(
         val idsToRemove = ArrayList<Int>()
         callsToRemove.forEach {
             idsToRemove.add(it.id)
-            it.neighbourIDs.mapTo(idsToRemove, { it })
+            it.neighbourIDs.mapTo(idsToRemove) { value ->
+                value
+            }
         }
 
         RecentHelper(activity).removeRecentCalls(idsToRemove) {
@@ -419,9 +383,7 @@ class RecentCallsAdapter(
                 findItem(R.id.cab_add_number).isVisible = !call.isUnknownNumber
                 findItem(R.id.cab_copy_number).isVisible = !call.isUnknownNumber
                 findItem(R.id.cab_show_call_details).isVisible = !call.isUnknownNumber
-//                findItem(R.id.cab_block_number).title =
-//                    activity.addLockedLabelIfNeeded(R.string.block_number)
-//                findItem(R.id.cab_block_number).isVisible = !call.isUnknownNumber
+
                 findItem(R.id.cab_remove_default_sim).isVisible =
                     (activity.config.getCustomSIM(selectedNumber)
                         ?: "") != "" && !call.isUnknownNumber
@@ -471,11 +433,6 @@ class RecentCallsAdapter(
                             showCallDetails()
                         }
                     }
-
-//                    R.id.cab_block_number -> {
-//                        selectedKeys.add(callId)
-//                        tryBlocking()
-//                    }
 
                     R.id.cab_remove -> {
                         selectedKeys.add(callId)
