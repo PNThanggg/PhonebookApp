@@ -86,6 +86,8 @@
     <string name="github">GitHub</string>
     <string name="viber">Viber</string>
 
+    <string name="allow_displaying_over_other_apps">Please allow displaying over other apps for reliable behaviour</string>
+
     <!-- Events -->
     <string name="birthday">Birthday</string>
     <string name="anniversary">Anniversary</string>
