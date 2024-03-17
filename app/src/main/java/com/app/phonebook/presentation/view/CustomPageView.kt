@@ -102,7 +102,10 @@ open class CustomPageView : ViewPager {
     }
 
     override fun addOnPageChangeListener(listener: OnPageChangeListener) {
-        val reversingListener = ReversingOnPageChangeListener(listener)
+        val reversingListener = ReversingOnPageChangeListener(
+            listener = listener,
+            context = context
+        )
         pageChangeListeners[listener] = reversingListener
         super.addOnPageChangeListener(reversingListener)
     }
@@ -187,10 +190,10 @@ open class CustomPageView : ViewPager {
     }
 
     private class ReversingOnPageChangeListener(
-        private val listener: OnPageChangeListener
+        private val listener: OnPageChangeListener,
+        private val context: Context,
     ) : OnPageChangeListener {
-        val customPageView: CustomPageView =
-            CustomPageView::class.java.getDeclaredConstructor().newInstance()
+        val customPageView: CustomPageView = CustomPageView(context = context)
 
         override fun onPageScrolled(
             newPosition: Int, newPositionOffset: Float, newPositionOffsetPixels: Int
