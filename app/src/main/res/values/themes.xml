@@ -2122,7 +2122,6 @@
         <item name="colorPrimary">@color/md_red_400</item>
         <item name="colorPrimaryDark">@color/md_red_400_dark</item>
         <item name="colorAccent">@color/md_red_400</item>
-        md_grey_white
     </style>
 
     <style name="AppTheme.Red_500_core" parent="AppTheme.Base.Core">

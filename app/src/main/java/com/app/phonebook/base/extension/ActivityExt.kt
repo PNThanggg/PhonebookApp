@@ -1,7 +1,10 @@
 package com.app.phonebook.base.extension
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
+import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -10,9 +13,12 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
 import android.view.View
+import android.view.ViewGroup
+import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import com.app.phonebook.R
 import com.app.phonebook.base.utils.CONTACT_ID
 import com.app.phonebook.base.utils.DARK_GREY
@@ -21,7 +27,10 @@ import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
 import com.app.phonebook.data.models.Contact
+import com.app.phonebook.databinding.DialogTitleBinding
 import com.app.phonebook.helpers.SimpleContactsHelper
+import com.app.phonebook.presentation.view.MyTextView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 fun Activity.finishWithSlide() {
     finish()
@@ -110,8 +119,7 @@ fun Activity.startContactDetailsIntent(contact: Contact) {
             putExtra(CONTACT_ID, contact.rawId)
             putExtra(IS_PRIVATE, true)
             setDataAndType(
-                ContactsContract.Contacts.CONTENT_LOOKUP_URI,
-                "vnd.android.cursor.dir/person"
+                ContactsContract.Contacts.CONTENT_LOOKUP_URI, "vnd.android.cursor.dir/person"
             )
             launchActivityIntent(this)
         }
@@ -127,6 +135,122 @@ fun Activity.startContactDetailsIntent(contact: Contact) {
         }
     }
 }
+
+@SuppressLint("UseCompatLoadingForDrawables")
+fun Activity.setupDialogStuff(
+    view: View,
+    dialog: AlertDialog.Builder,
+    titleId: Int = 0,
+    titleText: String = "",
+    cancelOnTouchOutside: Boolean = true,
+    callback: ((alertDialog: AlertDialog) -> Unit)? = null
+) {
+    if (isDestroyed || isFinishing) {
+        return
+    }
+
+    val textColor = getProperTextColor()
+    val primaryColor = getProperPrimaryColor()
+    if (view is ViewGroup) {
+        updateTextColors(view)
+    } else if (view is MyTextView) {
+        view.setColors(textColor, primaryColor)
+    }
+
+    if (dialog is MaterialAlertDialogBuilder) {
+        dialog.create().apply {
+            if (titleId != 0) {
+                setTitle(titleId)
+            } else if (titleText.isNotEmpty()) {
+                setTitle(titleText)
+            }
+
+            setView(view)
+            setCancelable(cancelOnTouchOutside)
+            if (!isFinishing) {
+                show()
+            }
+            getButton(Dialog.BUTTON_POSITIVE)?.setTextColor(primaryColor)
+            getButton(Dialog.BUTTON_NEGATIVE)?.setTextColor(primaryColor)
+            getButton(Dialog.BUTTON_NEUTRAL)?.setTextColor(primaryColor)
+            callback?.invoke(this)
+        }
+    } else {
+        var title: DialogTitleBinding? = null
+        if (titleId != 0 || titleText.isNotEmpty()) {
+            title = DialogTitleBinding.inflate(layoutInflater, null, false)
+            title.dialogTitleTextview.apply {
+                if (titleText.isNotEmpty()) {
+                    text = titleText
+                } else {
+                    setText(titleId)
+                }
+                setTextColor(textColor)
+            }
+        }
+
+        // if we use the same primary and background color, use the text color for dialog confirmation buttons
+        val dialogButtonColor = if (primaryColor == baseConfig.backgroundColor) {
+            textColor
+        } else {
+            primaryColor
+        }
+
+        dialog.create().apply {
+            setView(view)
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            setCustomTitle(title?.root)
+            setCanceledOnTouchOutside(cancelOnTouchOutside)
+            if (!isFinishing) {
+                show()
+            }
+            getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(dialogButtonColor)
+            getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(dialogButtonColor)
+            getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(dialogButtonColor)
+
+            val bgDrawable = when {
+                isBlackAndWhiteTheme() -> resources.getDrawable(
+                    R.drawable.black_dialog_background, theme
+                )
+
+                baseConfig.isUsingSystemTheme -> resources.getDrawable(
+                    R.drawable.dialog_you_background, theme
+                )
+
+                else -> resources.getColoredDrawableWithColor(
+                    drawableId = R.drawable.dialog_bg,
+                    color = baseConfig.backgroundColor,
+                    context = context
+                )
+            }
+
+            window?.setBackgroundDrawable(bgDrawable)
+            callback?.invoke(this)
+        }
+    }
+}
+
+fun Activity.getAlertDialogBuilder() = if (baseConfig.isUsingSystemTheme) {
+    MaterialAlertDialogBuilder(this)
+} else {
+    AlertDialog.Builder(this)
+}
+
+fun Activity.launchViewIntent(url: String) {
+    hideKeyboard()
+    ensureBackgroundThread {
+        Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            try {
+                startActivity(this)
+            } catch (e: ActivityNotFoundException) {
+                toast(R.string.no_browser_found)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+}
+
 
 fun Activity.getThemeId(color: Int = baseConfig.primaryColor, showTransparentTop: Boolean = false) =
     when {
