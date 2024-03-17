@@ -1,9 +1,13 @@
 package com.app.phonebook.base.view
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.app.role.RoleManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
@@ -12,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.WindowInsetsController
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
@@ -34,11 +39,17 @@ import com.app.phonebook.base.extension.handleBackPressed
 import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.launchActivityIntent
 import com.app.phonebook.base.extension.removeBit
+import com.app.phonebook.base.extension.showErrorToast
+import com.app.phonebook.base.extension.toast
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.DARK_GREY
 import com.app.phonebook.base.utils.HIGHER_ALPHA
 import com.app.phonebook.base.utils.PERMISSION_CALL_PHONE
+import com.app.phonebook.base.utils.PERMISSION_POST_NOTIFICATIONS
 import com.app.phonebook.base.utils.PERMISSION_READ_PHONE_STATE
+import com.app.phonebook.base.utils.REQUEST_CODE_SET_DEFAULT_CALLER_ID
+import com.app.phonebook.base.utils.REQUEST_CODE_SET_DEFAULT_DIALER
+import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.isRPlus
 import com.app.phonebook.base.utils.isTiramisuPlus
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +90,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         binding = inflateViewBinding(layoutInflater)
         setContentView(binding.root)
 
-        initView()
+        initView(savedInstanceState)
         initData()
         initListener()
 
@@ -96,7 +107,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         }
     }
 
-    abstract fun initView()
+    abstract fun initView(savedInstanceState: Bundle?)
     abstract fun initData()
     abstract fun initListener()
 
@@ -352,5 +363,48 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
 //        } else {
 //            launchCallIntent(recipient, null)
 //        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun setDefaultCallerIdApp() {
+        val roleManager = getSystemService(RoleManager::class.java)
+        if (roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) && !roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+            val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+            startActivityForResult(intent, REQUEST_CODE_SET_DEFAULT_CALLER_ID)
+        }
+    }
+
+    fun handleNotificationPermission(callback: (granted: Boolean) -> Unit) {
+        if (!isTiramisuPlus()) {
+            callback(true)
+        } else {
+            handlePermission(PERMISSION_POST_NOTIFICATIONS) { granted ->
+                callback(granted)
+            }
+        }
+    }
+
+    @SuppressLint("InlinedApi")
+    protected fun launchSetDefaultDialerIntent() {
+        if (isQPlus()) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && !roleManager.isRoleHeld(RoleManager.ROLE_DIALER)) {
+                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER)
+                startActivityForResult(intent, REQUEST_CODE_SET_DEFAULT_DIALER)
+            }
+        } else {
+            Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).putExtra(
+                TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME,
+                packageName
+            ).apply {
+                try {
+                    startActivityForResult(this, REQUEST_CODE_SET_DEFAULT_DIALER)
+                } catch (e: ActivityNotFoundException) {
+                    toast(R.string.no_app_found)
+                } catch (e: Exception) {
+                    showErrorToast(e)
+                }
+            }
+        }
     }
 }

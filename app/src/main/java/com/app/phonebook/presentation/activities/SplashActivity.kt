@@ -2,6 +2,7 @@ package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.WindowManager
 import androidx.core.view.WindowCompat
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : BaseActivity<ActivitySplashBinding>() {
-    override fun initView() {
+    override fun initView(savedInstanceState: Bundle?) {
         if (!baseConfig.isUsingAutoTheme && !baseConfig.isUsingSystemTheme) {
             getSharedTheme {
                 if (it != null) {
