@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ContactsAdapter
+import com.app.phonebook.base.extension.areSystemAnimationsEnabled
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.beGone
 import com.app.phonebook.base.extension.beVisible
@@ -15,11 +16,13 @@ import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.normalizePhoneNumber
 import com.app.phonebook.base.extension.normalizeString
+import com.app.phonebook.base.extension.startContactDetailsIntent
 import com.app.phonebook.base.extension.underlineText
 import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.getProperText
+import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseRecyclerViewAdapter
 import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
@@ -122,25 +125,25 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
                 fragmentList.beVisible()
             }
 
-//            if (binding.fragmentList.adapter == null) {
-//                ContactsAdapter(
-//                    activity = activity as SimpleActivity,
-//                    contacts = contacts,
-//                    recyclerView = binding.fragmentList,
-//                    refreshItemsListener = this
-//                ) {
-//                    val contact = it as Contact
-//                    activity?.startContactDetailsIntent(contact)
-//                }.apply {
-//                    binding.fragmentList.adapter = this
-//                }
-//
-//                if (context.areSystemAnimationsEnabled) {
-//                    binding.fragmentList.scheduleLayoutAnimation()
-//                }
-//            } else {
-//                (binding.fragmentList.adapter as ContactsAdapter).updateItems(contacts)
-//            }
+            if (binding.fragmentList.adapter == null) {
+                ContactsAdapter(
+                    activity = activity as BaseActivity<*>,
+                    contacts = contacts,
+                    recyclerView = binding.fragmentList,
+                    refreshItemsListener = this
+                ) {
+                    val contact = it as Contact
+                    activity?.startContactDetailsIntent(contact)
+                }.apply {
+                    binding.fragmentList.adapter = this
+                }
+
+                if (context.areSystemAnimationsEnabled) {
+                    binding.fragmentList.scheduleLayoutAnimation()
+                }
+            } else {
+                (binding.fragmentList.adapter as ContactsAdapter).updateItems(contacts)
+            }
         }
     }
 
@@ -160,7 +163,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
 
     override fun onSearchClosed() {
         binding.fragmentPlaceholder.beVisibleIf(allContacts.isEmpty())
-//        (binding.fragmentList.adapter as? ContactsAdapter)?.updateItems(allContacts)
+        (binding.fragmentList.adapter as? ContactsAdapter)?.updateItems(allContacts)
         setupLetterFastScroller(allContacts)
     }
 
@@ -213,7 +216,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
             if (it) {
                 binding.fragmentPlaceholder.text = context.getString(R.string.no_contacts_found)
                 binding.fragmentPlaceholder2.text = context.getString(R.string.create_new_contact)
-                com.app.phonebook.helpers.ContactsHelper(context)
+                ContactsHelper(context)
                     .getContacts(showOnlyContactsWithNumbers = true) { contacts ->
                         activity?.runOnUiThread {
                             gotContacts(contacts)
