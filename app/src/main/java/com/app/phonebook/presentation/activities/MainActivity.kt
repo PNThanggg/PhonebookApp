@@ -277,58 +277,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
-    private fun showSortingDialog(showCustomSorting: Boolean) {
-        ChangeSortingDialog(this, showCustomSorting) {
-            getFavoritesFragment()?.refreshItems {
-                if (binding.mainMenu.isSearchOpen) {
-                    getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
-                    )
-                }
-            }
 
-            getContactsFragment()?.refreshItems {
-                if (binding.mainMenu.isSearchOpen) {
-                    getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
-                    )
-                }
-            }
-        }
-    }
-
-    private fun showFilterDialog() {
-        FilterContactSourcesDialog(this) {
-            getFavoritesFragment()?.refreshItems {
-                if (binding.mainMenu.isSearchOpen) {
-                    getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
-                    )
-                }
-            }
-
-            getContactsFragment()?.refreshItems {
-                if (binding.mainMenu.isSearchOpen) {
-                    getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
-                    )
-                }
-            }
-
-            getRecentsFragment()?.refreshItems {
-                if (binding.mainMenu.isSearchOpen) {
-                    getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
-                    )
-                }
-            }
-        }
-    }
 
     private fun changeViewType() {
         ChangeViewTypeDialog(this) {
@@ -705,6 +654,102 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
             } else {
                 refreshFragments()
+            }
+        }
+    }
+
+    /**
+     * Displays a dialog for changing the sorting order of contacts.
+     *
+     * This function presents a `ChangeSortingDialog` to the user, allowing them to select their preferred
+     * sorting order for contacts. The dialog can optionally include custom sorting options based on the
+     * `showCustomSorting` parameter. Upon confirming their selection, the application will refresh the contacts
+     * displayed in the Favorites and Contacts fragments to reflect the new sorting order.
+     *
+     * If a search is currently active (indicated by the search component of the main menu being open), this
+     * function also updates the search results in the currently visible fragment to align with the newly
+     * selected sorting criteria. This is accomplished by invoking the `onSearchQueryChanged` method for the
+     * current fragment, ensuring that the search results are consistent with both the search query and the
+     * updated sorting order.
+     *
+     * @param showCustomSorting A boolean flag indicating whether custom sorting options should be included
+     *                          in the sorting dialog. This allows for additional customization of the sorting
+     *                          behavior beyond the default options.
+     *
+     * Usage:
+     * This function is typically invoked in response to a user action, such as selecting a "Change Sorting"
+     * option from a menu. It does not return a value, but directly affects the UI by updating the display of
+     * contacts based on the selected sorting criteria and refreshing search results if necessary.
+     */
+    private fun showSortingDialog(showCustomSorting: Boolean) {
+        ChangeSortingDialog(this, showCustomSorting) {
+            getFavoritesFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+
+            getContactsFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Displays a dialog allowing users to filter contact sources.
+     *
+     * This function launches a `FilterContactSourcesDialog` that enables users to select which contact sources
+     * they wish to see in the application. Upon the dialog's dismissal, it triggers a refresh of the contacts list
+     * in the Favorites, Contacts, and Recent fragments, if they exist.
+     *
+     * Additionally, if a search query is currently active in the main menu's search component, this function
+     * will ensure that the search results are updated in the currently visible fragment to reflect any changes
+     * made to the filter settings.
+     *
+     * The refresh and search query update are handled through callbacks defined in each fragment's `refreshItems`
+     * method, and the `onSearchQueryChanged` method, respectively. This ensures that the application's UI
+     * remains consistent with the user's filtering choices and search intentions.
+     *
+     * Usage:
+     * This function is intended to be called when the user interacts with the UI element (e.g., a button or menu item)
+     * designated for filtering contact sources. It does not return a value but updates the application's UI state
+     * directly.
+     */
+    private fun showFilterDialog() {
+        FilterContactSourcesDialog(this) {
+            getFavoritesFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+
+            getContactsFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+
+            getRecentsFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
             }
         }
     }
