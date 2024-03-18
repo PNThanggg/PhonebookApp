@@ -17,7 +17,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.view.ScrollingView
 import androidx.viewpager.widget.ViewPager
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ViewPagerAdapter
@@ -81,7 +80,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     private var mainCoordinatorLayout: CoordinatorLayout? = null
     private var nestedView: View? = null
-    private var scrollingView: ScrollingView? = null
     private var useTransparentNavigation = false
 
     override fun initView(savedInstanceState: Bundle?) {
@@ -276,7 +274,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             }
         }
     }
-
 
 
     private fun changeViewType() {
