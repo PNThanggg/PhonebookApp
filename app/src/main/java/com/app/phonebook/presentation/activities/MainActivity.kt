@@ -87,17 +87,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             checkContactPermissions()
 
             if (!config.wasOverlaySnackbarConfirmed && !Settings.canDrawOverlays(this)) {
-                val snackbar =
+                val snackBar =
                     Snackbar.make(binding.mainHolder, R.string.allow_displaying_over_other_apps, Snackbar.LENGTH_INDEFINITE)
                         .setAction(R.string.ok) {
                             config.wasOverlaySnackbarConfirmed = true
                             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
                         }
 
-                snackbar.setBackgroundTint(getProperBackgroundColor().darkenColor())
-                snackbar.setTextColor(getProperTextColor())
-                snackbar.setActionTextColor(getProperTextColor())
-                snackbar.show()
+                snackBar.setBackgroundTint(getProperBackgroundColor().darkenColor())
+                snackBar.setTextColor(getProperTextColor())
+                snackBar.setActionTextColor(getProperTextColor())
+                snackBar.show()
             }
 
             handleNotificationPermission { granted ->
