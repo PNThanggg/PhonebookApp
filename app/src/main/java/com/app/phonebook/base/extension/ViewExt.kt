@@ -3,6 +3,7 @@ package com.app.phonebook.base.extension
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Rect
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.StyleRes
@@ -79,6 +80,23 @@ fun View.setupViewBackground(context: Context) {
         resources.getDrawable(R.drawable.selector_clickable, context.theme)
     }
 }
+
+/**
+ * Triggers haptic feedback for this view.
+ *
+ * This extension function for `View` invokes the system's haptic feedback mechanism specifically
+ * for a virtual key press. It utilizes the `VIRTUAL_KEY` constant from `HapticFeedbackConstants`
+ * to simulate the feeling of pressing a physical button, enhancing the user's tactile experience
+ * with the UI.
+ *
+ * The function directly calls `performHapticFeedback` without additional flags, relying on the
+ * system's default settings to respect the user's preferences regarding haptic feedback.
+ *
+ * Note: For this function to work, the calling view must be enabled and must have haptic feedback
+ * enabled in its view hierarchy. Additionally, the device needs to support haptic feedback, and the
+ * feature must be enabled in the user's device settings.
+ */
+fun View.performHapticFeedback() = performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
 val View.boundingBox
     get() = Rect().also { getGlobalVisibleRect(it) }
