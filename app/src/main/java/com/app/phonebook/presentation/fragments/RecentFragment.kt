@@ -70,7 +70,10 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
     }
 
     override fun refreshItems(callback: (() -> Unit)?) {
-        val privateCursor = context?.getMyContactsCursor(false, true)
+        val privateCursor = context?.getMyContactsCursor(
+            favoritesOnly = false,
+            withPhoneNumbersOnly = true
+        )
         val groupSubsequentCalls = context?.config?.groupSubsequentCalls ?: false
         val querySize = allRecentCalls.size.coerceAtLeast(MIN_RECENTS_THRESHOLD)
         RecentHelper(context).getRecentCalls(groupSubsequentCalls, querySize) { recent ->
