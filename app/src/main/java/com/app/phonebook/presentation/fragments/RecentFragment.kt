@@ -27,6 +27,7 @@ import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
 import com.app.phonebook.helpers.RecentHelper
+import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.view.MyRecyclerView
 
 class RecentFragment(context: Context, attributeSet: AttributeSet) :
@@ -77,20 +78,22 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
                 val privateContacts = MyContactsContentProvider.getContacts(privateCursor)
 
                 allRecentCalls = recent.setNamesIfEmpty(
-                    context = context, contacts = contacts, privateContacts = privateContacts
+                    context = context,
+                    contacts = contacts,
+                    privateContacts = privateContacts,
                 ).hidePrivateContacts(
                     privateContacts, SMT_PRIVATE in context.baseConfig.ignoredContactSources
                 )
 
                 activity?.runOnUiThread {
-                    gotRecents(allRecentCalls)
+                    gotRecent(allRecentCalls)
                 }
             }
         }
     }
 
-    private fun gotRecents(recents: List<RecentCall>) {
-        if (recents.isEmpty()) {
+    private fun gotRecent(listRecent: List<RecentCall>) {
+        if (listRecent.isEmpty()) {
             binding.apply {
                 recentsPlaceholder.beVisible()
                 recentsPlaceholder2.beGoneIf(context.hasPermission(PERMISSION_READ_CALL_LOG))
@@ -106,16 +109,19 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
             if (binding.recentsList.adapter == null) {
                 recentAdapter = RecentCallsAdapter(
                     activity as BaseActivity,
-                    recents.toMutableList(),
+                    listRecent.toMutableList(),
                     binding.recentsList,
                     this,
                     true
                 ) {
                     val recentCall = it as RecentCall
                     if (context.config.showCallConfirmation) {
-//                        CallConfirmationDialog(activity as BaseActivity, recentCall.name) {
-//                            activity?.launchCallIntent(recentCall.phoneNumber)
-//                        }
+                        CallConfirmationDialog(
+                            activity = activity as BaseActivity,
+                            callee = recentCall.name
+                        ) {
+                            activity?.launchCallIntent(recentCall.phoneNumber)
+                        }
                     } else {
                         activity?.launchCallIntent(recentCall.phoneNumber)
                     }
@@ -137,27 +143,27 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
                     }
 
             } else {
-                recentAdapter?.updateItems(recents)
+                recentAdapter?.updateItems(listRecent)
             }
         }
     }
 
     private fun getMoreRecentCalls() {
-        val privateCursor = context?.getMyContactsCursor(false, true)
+        val privateCursor = context?.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
         val groupSubsequentCalls = context?.config?.groupSubsequentCalls ?: false
         val querySize = allRecentCalls.size.plus(MIN_RECENTS_THRESHOLD)
-        RecentHelper(context).getRecentCalls(groupSubsequentCalls, querySize) { recents ->
+        RecentHelper(context).getRecentCalls(groupSubsequentCalls, querySize) { listRecent ->
             ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
                 val privateContacts = MyContactsContentProvider.getContacts(privateCursor)
 
-                allRecentCalls = recents.setNamesIfEmpty(
+                allRecentCalls = listRecent.setNamesIfEmpty(
                     context = context, contacts = contacts, privateContacts = privateContacts
                 ).hidePrivateContacts(
                     privateContacts, SMT_PRIVATE in context.baseConfig.ignoredContactSources
                 )
 
                 activity?.runOnUiThread {
-                    gotRecents(allRecentCalls)
+                    gotRecent(allRecentCalls)
                 }
             }
         }
@@ -170,9 +176,9 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
                 binding.recentsPlaceholder2.beGone()
 
                 val groupSubsequentCalls = context?.config?.groupSubsequentCalls ?: false
-                RecentHelper(context).getRecentCalls(groupSubsequentCalls) { recents ->
+                RecentHelper(context).getRecentCalls(groupSubsequentCalls) { listRecent ->
                     activity?.runOnUiThread {
-                        gotRecents(recents)
+                        gotRecent(listRecent)
                     }
                 }
             }
@@ -187,7 +193,8 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
     override fun onSearchQueryChanged(context: Context, text: String) {
         val recentCalls = allRecentCalls.filter {
             it.name.contains(text, true) || it.doesContainPhoneNumber(
-                text = text, telephonyManager = context.telephonyManager
+                text = text,
+                telephonyManager = context.telephonyManager
             )
         }.sortedByDescending {
             it.name.startsWith(text, true)
