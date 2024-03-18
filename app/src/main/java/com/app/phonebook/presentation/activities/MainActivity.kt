@@ -297,6 +297,37 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
+    private fun showFilterDialog() {
+        FilterContactSourcesDialog(this) {
+            getFavoritesFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+
+            getContactsFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+
+            getRecentsFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getCurrentFragment()?.onSearchQueryChanged(
+                        context = this,
+                        text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+        }
+    }
+
     private fun getCurrentFragment(): BaseViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
 
     private fun refreshMenuItems() {
