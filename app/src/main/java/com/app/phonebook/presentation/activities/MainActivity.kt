@@ -1,8 +1,10 @@
 package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
@@ -13,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.ScrollingView
 import androidx.viewpager.widget.ViewPager
@@ -33,12 +36,16 @@ import com.app.phonebook.base.extension.onGlobalLayout
 import com.app.phonebook.base.extension.onTabSelectionChanged
 import com.app.phonebook.base.extension.openNotificationSettings
 import com.app.phonebook.base.extension.telecomManager
+import com.app.phonebook.base.extension.toast
 import com.app.phonebook.base.extension.updateBottomTabItemColors
 import com.app.phonebook.base.extension.updateTextColors
 import com.app.phonebook.base.helpers.AutoFitHelper
 import com.app.phonebook.base.utils.APP_NAME
+import com.app.phonebook.base.utils.CONTACTS_GRID_MAX_COLUMNS_COUNT
 import com.app.phonebook.base.utils.OPEN_DIAL_PAD_AT_LAUNCH
 import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
+import com.app.phonebook.base.utils.REQUEST_CODE_SET_DEFAULT_CALLER_ID
+import com.app.phonebook.base.utils.REQUEST_CODE_SET_DEFAULT_DIALER
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
@@ -50,8 +57,15 @@ import com.app.phonebook.base.utils.tabsList
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
+import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.ActivityMainBinding
+import com.app.phonebook.helpers.RecentHelper
+import com.app.phonebook.presentation.dialog.ChangeSortingDialog
+import com.app.phonebook.presentation.dialog.ChangeViewTypeDialog
+import com.app.phonebook.presentation.dialog.ConfirmationDialog
+import com.app.phonebook.presentation.dialog.FilterContactSourcesDialog
 import com.app.phonebook.presentation.dialog.PermissionRequiredDialog
+import com.app.phonebook.presentation.dialog.RadioGroupDialog
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
 import com.app.phonebook.presentation.fragments.RecentFragment
@@ -135,9 +149,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         val properPrimaryColor = getProperPrimaryColor()
         val dialpadIcon = resources.getColoredDrawableWithColor(
-            drawableId = R.drawable.ic_dialpad_vector,
-            color = properPrimaryColor.getContrastColor(),
-            context = this@MainActivity
+            drawableId = R.drawable.ic_dialpad_vector, color = properPrimaryColor.getContrastColor(), context = this@MainActivity
         )
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
 
@@ -158,6 +170,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         if (!binding.mainMenu.isSearchOpen) {
             refreshItems(true)
         }
+
+        val configFontSize = config.fontSize
+        if (storedFontSize != configFontSize) {
+            getAllFragments().forEach {
+                it?.fontSizeChanged()
+            }
+        }
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            getRecentsFragment()?.refreshItems()
+        }, 2000)
     }
 
     override fun initData() {
@@ -172,6 +195,40 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     override fun inflateViewBinding(inflater: LayoutInflater): ActivityMainBinding {
         return ActivityMainBinding.inflate(inflater)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        storedShowTabs = config.showTabs
+        storedStartNameWithSurname = config.startNameWithSurname
+        config.lastUsedViewPagerPage = binding.viewPager.currentItem
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
+        super.onActivityResult(requestCode, resultCode, resultData)
+        // we don't really care about the result, the app can work without being the default Dialer too
+        if (requestCode == REQUEST_CODE_SET_DEFAULT_DIALER) {
+            checkContactPermissions()
+        } else if (requestCode == REQUEST_CODE_SET_DEFAULT_CALLER_ID && resultCode != Activity.RESULT_OK) {
+            toast(R.string.must_make_default_caller_id_app, length = Toast.LENGTH_LONG)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(OPEN_DIAL_PAD_AT_LAUNCH, launchedDialer)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        refreshItems()
+    }
+
+    override fun onBack() {
+        if (binding.mainMenu.isSearchOpen) {
+            binding.mainMenu.closeSearch()
+        }
     }
 
     private fun setupOptionsMenu(context: Context) {
@@ -194,16 +251,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             getToolbar().setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
-//                    R.id.clear_call_history -> clearCallHistory()
+                    R.id.clear_call_history -> clearCallHistory()
                     R.id.create_new_contact -> launchCreateNewContactIntent()
-//                    R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is FavoritesFragment)
-//                    R.id.filter -> showFilterDialog()
-//
-//                    R.id.change_view_type -> changeViewType()
-//                    R.id.column_count -> changeColumnCount()
-////                    R.id.about -> launchAbout()
-////                    R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
-////                    R.id.settings -> launchSettings()
+                    R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is FavoritesFragment)
+                    R.id.filter -> showFilterDialog()
+                    R.id.change_view_type -> changeViewType()
+                    R.id.column_count -> changeColumnCount()
                     else -> return@setOnMenuItemClickListener false
                 }
                 return@setOnMenuItemClickListener true
@@ -211,8 +264,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
-    private fun getCurrentFragment(): BaseViewPagerFragment<*>? =
-        getAllFragments().getOrNull(binding.viewPager.currentItem)
+    private fun clearCallHistory() {
+        val confirmationText = "${getString(R.string.clear_history_confirmation)}\n\n${getString(R.string.cannot_be_undone)}"
+        ConfirmationDialog(this, confirmationText) {
+            RecentHelper(this).removeAllRecentCalls(this) {
+                runOnUiThread {
+                    getRecentsFragment()?.refreshItems()
+                }
+            }
+        }
+    }
+
+    private fun getCurrentFragment(): BaseViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
 
     private fun refreshMenuItems() {
         val currentFragment = getCurrentFragment()
@@ -221,8 +284,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             findItem(R.id.sort).isVisible = currentFragment != getRecentsFragment()
             findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
             findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
-            findItem(R.id.column_count).isVisible =
-                currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
+            findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
         }
     }
 
@@ -411,16 +473,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainTabsHolder.removeAllTabs()
         tabsList.forEachIndexed { index, value ->
             if (config.showTabs and value != 0) {
-                binding.mainTabsHolder.newTab().setCustomView(R.layout.bottom_tablayout_item)
-                    .apply {
-                        customView?.findViewById<ImageView>(R.id.tab_item_icon)
-                            ?.setImageDrawable(getTabIcon(index))
-                        customView?.findViewById<TextView>(R.id.tab_item_label)?.text =
-                            getTabLabel(index)
-                        customView?.findViewById<TextView>(R.id.tab_item_label)
-                            ?.let { AutoFitHelper.create(it) }
-                        binding.mainTabsHolder.addTab(this)
-                    }
+                binding.mainTabsHolder.newTab().setCustomView(R.layout.bottom_tablayout_item).apply {
+                    customView?.findViewById<ImageView>(R.id.tab_item_icon)?.setImageDrawable(getTabIcon(index))
+                    customView?.findViewById<TextView>(R.id.tab_item_label)?.text = getTabLabel(index)
+                    customView?.findViewById<TextView>(R.id.tab_item_label)?.let { AutoFitHelper.create(it) }
+                    binding.mainTabsHolder.addTab(this)
+                }
             }
         }
 
@@ -446,8 +504,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainMenu.updateColors()
     }
 
-    private fun getInactiveTabIndexes(activeIndex: Int) =
-        (0 until binding.mainTabsHolder.tabCount).filter { it != activeIndex }
+    private fun getInactiveTabIndexes(activeIndex: Int) = (0 until binding.mainTabsHolder.tabCount).filter { it != activeIndex }
 
     private fun setupTabColors() {
         val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
@@ -573,8 +630,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.apply {
             if (viewPager.adapter == null) {
                 viewPager.adapter = ViewPagerAdapter(this@MainActivity)
-                viewPager.currentItem =
-                    if (openLastTab) config.lastUsedViewPagerPage else getDefaultTab()
+                viewPager.currentItem = if (openLastTab) config.lastUsedViewPagerPage else getDefaultTab()
                 viewPager.onGlobalLayout {
                     refreshFragments()
                 }
