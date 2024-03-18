@@ -13,6 +13,8 @@ const val EXTRA_SHOW_ADVANCED = "android.content.extra.SHOW_ADVANCED"
 
 const val MIN_RECENTS_THRESHOLD = 30
 
+const val DIALPAD_TONE_LENGTH_MS = 150L // The
+
 const val APP_NAME = "Phone Book"
 const val APP_ID = "app_id"
 const val APP_LAUNCHER_NAME = "app_launcher_name"
