@@ -29,6 +29,7 @@ import com.app.phonebook.databinding.FragmentFavoritesBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.view.FastScrollItemIndicator
 import com.app.phonebook.presentation.view.MyGridLayoutManager
 import com.app.phonebook.presentation.view.MyLinearLayoutManager
@@ -36,15 +37,13 @@ import com.google.gson.Gson
 import java.util.Locale
 
 class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
-    BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet),
-    RefreshItemsListener {
+    BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
 
     override fun onFinishInflate() {
         super.onFinishInflate()
-        binding =
-            FragmentLettersLayoutBinding.bind(FragmentFavoritesBinding.bind(this).favoritesFragment)
+        binding = FragmentLettersLayoutBinding.bind(FragmentFavoritesBinding.bind(this).favoritesFragment)
         innerBinding = LettersInnerBinding(binding)
     }
 
@@ -77,7 +76,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
             allContacts = contacts
 
             if (SMT_PRIVATE !in context.baseConfig.ignoredContactSources) {
-                val privateCursor = context?.getMyContactsCursor(true, true)
+                val privateCursor = context?.getMyContactsCursor(favoritesOnly = true, withPhoneNumbersOnly = true)
                 val privateContacts = MyContactsContentProvider.getContacts(privateCursor).map {
                     it.copy(starred = 1)
                 }
@@ -88,7 +87,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
             }
             val favorites = contacts.filter { it.starred == 1 } as ArrayList<Contact>
 
-            allContacts = if (activity!!.config.isCustomOrderSelected) {
+            allContacts = if (activity?.config?.isCustomOrderSelected == true) {
                 sortByCustomOrder(favorites)
             } else {
                 favorites
@@ -131,19 +130,23 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
                 showDeleteButton = false,
                 enableDrag = true,
             ) {
-//                if (context.com.app.phonebook.base.compose.extensions.getConfig.showCallConfirmation) {
-//                    CallConfirmationDialog(
-//                        activity as BaseActivity, (it as Contact).getNameToDisplay()
-//                    ) {
-//                        activity?.apply {
-//                            initiateCall(it) { launchCallIntent(it) }
-//                        }
-//                    }
-//                } else {
-//                    activity?.apply {
-//                        initiateCall(it as Contact) { launchCallIntent(it) }
-//                    }
-//                }
+                if (context.config.showCallConfirmation) {
+                    CallConfirmationDialog(
+                        activity as BaseActivity, (it as Contact).getNameToDisplay()
+                    ) {
+                        activity?.apply {
+                            initiateCall(it) { str ->
+                                launchCallIntent(str)
+                            }
+                        }
+                    }
+                } else {
+                    activity?.apply {
+                        initiateCall(it as Contact) { str ->
+                            launchCallIntent(str)
+                        }
+                    }
+                }
             }.apply {
                 binding.fragmentList.adapter = this
 
@@ -171,8 +174,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
     }
 
     fun columnCountChanged() {
-        (binding.fragmentList.layoutManager as MyGridLayoutManager).spanCount =
-            context!!.config.contactsGridColumnCount
+        (binding.fragmentList.layoutManager as MyGridLayoutManager).spanCount = context!!.config.contactsGridColumnCount
         binding.fragmentList.adapter?.apply {
             notifyItemRangeChanged(0, allContacts.size)
         }
