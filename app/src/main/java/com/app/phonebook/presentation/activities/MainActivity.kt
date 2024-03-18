@@ -131,12 +131,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         Contact.sorting = config.sorting
     }
 
-    private fun checkContactPermissions() {
-        handlePermission(PERMISSION_READ_CONTACTS) {
-            initFragments()
-        }
-    }
-
     override fun onResume() {
         super.onResume()
 
@@ -149,7 +143,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         val properPrimaryColor = getProperPrimaryColor()
         val dialpadIcon = resources.getColoredDrawableWithColor(
-            drawableId = R.drawable.ic_dialpad_vector, color = properPrimaryColor.getContrastColor(), context = this@MainActivity
+            drawableId = R.drawable.ic_dialpad_vector,
+            color = properPrimaryColor.getContrastColor(),
+            context = this@MainActivity
         )
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
 
@@ -181,6 +177,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         Handler(Looper.getMainLooper()).postDelayed({
             getRecentsFragment()?.refreshItems()
         }, 2000)
+    }
+
+    private fun checkContactPermissions() {
+        handlePermission(PERMISSION_READ_CONTACTS) {
+            initFragments()
+        }
     }
 
     override fun initData() {
@@ -376,7 +378,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         this.useTransparentNavigation = useTransparentNavigation
         this.useTopSearchMenu = useTopSearchMenu
 
-//        handleNavigationAndScrolling()
+        handleNavigationAndScrolling()
 
         val backgroundColor = getProperBackgroundColor()
         updateStatusBarColor(backgroundColor)
@@ -408,15 +410,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun getFavoritesFragment(): FavoritesFragment? = findViewById(R.id.favorites_fragment)
 
     private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
-
-    fun cacheContacts(contacts: List<Contact>) {
-        try {
-            cachedContacts.clear()
-            cachedContacts.addAll(contacts)
-        } catch (e: Exception) {
-            Log.e(APP_NAME, "cacheContacts: ${e.message}")
-        }
-    }
 
     fun refreshFragments() {
         getContactsFragment()?.refreshItems()
@@ -713,6 +706,31 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             } else {
                 refreshFragments()
             }
+        }
+    }
+
+    /**
+     * Caches a list of contacts.
+     *
+     * This function updates the cache with a new list of contacts. It first clears any existing contacts
+     * in the cache and then adds all the contacts from the provided list. If an exception occurs during
+     * the process, it logs the error message to the console.
+     *
+     * This approach ensures that the cache always reflects the most recent set of contacts provided to
+     * this function, making it a critical component of the application's data management strategy, especially
+     * in scenarios where access to the latest contact information is essential.
+     *
+     * @param contacts The list of [Contact] objects to be cached.
+     *
+     * Note: This function is designed to be safe and will not crash the application on failure. Instead,
+     * it logs an error message with the application's log tag for debugging purposes.
+     */
+    fun cacheContacts(contacts: List<Contact>) {
+        try {
+            cachedContacts.clear()
+            cachedContacts.addAll(contacts)
+        } catch (e: Exception) {
+            Log.e(APP_NAME, "cacheContacts: ${e.message}")
         }
     }
 }
