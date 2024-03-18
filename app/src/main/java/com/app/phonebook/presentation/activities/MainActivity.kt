@@ -328,6 +328,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
+    private fun changeViewType() {
+        ChangeViewTypeDialog(this) {
+            refreshMenuItems()
+            getFavoritesFragment()?.refreshItems()
+        }
+    }
+
     private fun getCurrentFragment(): BaseViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
 
     private fun refreshMenuItems() {
