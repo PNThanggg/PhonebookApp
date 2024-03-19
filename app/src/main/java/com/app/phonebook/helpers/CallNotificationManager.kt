@@ -1,4 +1,4 @@
-package com.simplemobiletools.dialer.helpers
+package com.app.phonebook.helpers
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -10,19 +10,23 @@ import android.content.Intent
 import android.telecom.Call
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import com.simplemobiletools.commons.extensions.notificationManager
-import com.simplemobiletools.commons.extensions.setText
-import com.simplemobiletools.commons.extensions.setVisibleIf
-import com.simplemobiletools.commons.helpers.isOreoPlus
-import com.simplemobiletools.dialer.R
-import com.simplemobiletools.dialer.activities.CallActivity
-import com.simplemobiletools.dialer.extensions.powerManager
-import com.simplemobiletools.dialer.receivers.CallActionReceiver
+import com.app.phonebook.R
+import com.app.phonebook.base.extension.notificationManager
+import com.app.phonebook.base.extension.powerManager
+import com.app.phonebook.base.extension.setText
+import com.app.phonebook.base.extension.setVisibleIf
+import com.app.phonebook.helpers.CallContactHelper.getCallContact
+import com.app.phonebook.presentation.activities.CallActivity
+import com.app.phonebook.receivers.CallActionReceiver
 
 class CallNotificationManager(private val context: Context) {
-    private val CALL_NOTIFICATION_ID = 42
-    private val ACCEPT_CALL_CODE = 0
-    private val DECLINE_CALL_CODE = 1
+    companion object {
+        private const val CALL_NOTIFICATION_ID = 42
+        private const val ACCEPT_CALL_CODE = 0
+        private const val DECLINE_CALL_CODE = 1
+    }
+
+
     private val notificationManager = context.notificationManager
     private val callContactAvatarHelper = CallContactAvatarHelper(context)
 
@@ -33,14 +37,13 @@ class CallNotificationManager(private val context: Context) {
             val callState = CallManager.getState()
             val isHighPriority = context.powerManager.isInteractive && callState == Call.STATE_RINGING && !forceLowPriority
             val channelId = if (isHighPriority) "simple_dialer_call_high_priority" else "simple_dialer_call"
-            if (isOreoPlus()) {
-                val importance = if (isHighPriority) NotificationManager.IMPORTANCE_HIGH else NotificationManager.IMPORTANCE_DEFAULT
-                val name = if (isHighPriority) "call_notification_channel_high_priority" else "call_notification_channel"
 
-                NotificationChannel(channelId, name, importance).apply {
-                    setSound(null, null)
-                    notificationManager.createNotificationChannel(this)
-                }
+            val importance = if (isHighPriority) NotificationManager.IMPORTANCE_HIGH else NotificationManager.IMPORTANCE_DEFAULT
+            val name = if (isHighPriority) "call_notification_channel_high_priority" else "call_notification_channel"
+
+            NotificationChannel(channelId, name, importance).apply {
+                setSound(null, null)
+                notificationManager.createNotificationChannel(this)
             }
 
             val openAppIntent = CallActivity.getStartIntent(context)
@@ -49,14 +52,24 @@ class CallNotificationManager(private val context: Context) {
             val acceptCallIntent = Intent(context, CallActionReceiver::class.java)
             acceptCallIntent.action = ACCEPT_CALL
             val acceptPendingIntent =
-                PendingIntent.getBroadcast(context, ACCEPT_CALL_CODE, acceptCallIntent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
+                PendingIntent.getBroadcast(
+                    context,
+                    ACCEPT_CALL_CODE,
+                    acceptCallIntent,
+                    PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+                )
 
             val declineCallIntent = Intent(context, CallActionReceiver::class.java)
             declineCallIntent.action = DECLINE_CALL
             val declinePendingIntent =
-                PendingIntent.getBroadcast(context, DECLINE_CALL_CODE, declineCallIntent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
+                PendingIntent.getBroadcast(
+                    context,
+                    DECLINE_CALL_CODE,
+                    declineCallIntent,
+                    PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+                )
 
-            var callerName = if (callContact.name.isNotEmpty()) callContact.name else context.getString(R.string.unknown_caller)
+            var callerName = callContact.name.ifEmpty { context.getString(R.string.unknown_caller) }
             if (callContact.numberLabel.isNotEmpty()) {
                 callerName += " - ${callContact.numberLabel}"
             }
