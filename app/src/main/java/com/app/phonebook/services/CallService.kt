@@ -9,9 +9,9 @@ import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.isOutgoing
 import com.app.phonebook.base.extension.powerManager
 import com.app.phonebook.helpers.CallManager
+import com.app.phonebook.helpers.CallNotificationManager
 import com.app.phonebook.helpers.NoCall
 import com.app.phonebook.presentation.activities.CallActivity
-import com.simplemobiletools.dialer.helpers.CallNotificationManager
 
 class CallService : InCallService() {
     private val callNotificationManager by lazy {
