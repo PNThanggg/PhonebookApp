@@ -76,7 +76,12 @@ class ContactsAdapter(
         }
 
         if (enableDrag) {
-            touchHelper = ItemTouchHelper(ItemMoveCallback(this, viewType == VIEW_TYPE_GRID))
+            touchHelper = ItemTouchHelper(
+                ItemMoveCallback(
+                    this,
+                    viewType == VIEW_TYPE_GRID
+                )
+            )
             touchHelper?.attachToRecyclerView(recyclerView)
 
             startReorderDragListener = object : StartReorderDragListener {
@@ -189,7 +194,9 @@ class ContactsAdapter(
         val numbers = ArrayList<String>()
         getSelectedItems().map { simpleContact ->
             val contactNumbers = simpleContact.phoneNumbers
-            val primaryNumber = contactNumbers.firstOrNull { it.isPrimary }
+            val primaryNumber = contactNumbers.firstOrNull {
+                it.isPrimary
+            }
             val normalizedNumber =
                 primaryNumber?.normalizedNumber ?: contactNumbers.firstOrNull()?.normalizedNumber
 
@@ -257,12 +264,6 @@ class ContactsAdapter(
 
     private fun tryCreateShortcut() {
         createShortcut()
-
-//        if (activity.isOrWasThankYouInstalled()) {
-//            createShortcut()
-//        } else {
-//            FeatureLockedDialog(activity) { }
-//        }
     }
 
     @SuppressLint("NewApi")
