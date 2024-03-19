@@ -27,6 +27,8 @@ import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
 import com.app.phonebook.helpers.RecentHelper
+import com.app.phonebook.helpers.hidePrivateContacts
+import com.app.phonebook.helpers.setNamesIfEmpty
 import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.view.MyRecyclerView
 
@@ -74,6 +76,7 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
             favoritesOnly = false,
             withPhoneNumbersOnly = true
         )
+
         val groupSubsequentCalls = context?.config?.groupSubsequentCalls ?: false
         val querySize = allRecentCalls.size.coerceAtLeast(MIN_RECENTS_THRESHOLD)
         RecentHelper(context).getRecentCalls(groupSubsequentCalls, querySize) { recent ->
@@ -160,7 +163,9 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
                 val privateContacts = MyContactsContentProvider.getContacts(privateCursor)
 
                 allRecentCalls = listRecent.setNamesIfEmpty(
-                    context = context, contacts = contacts, privateContacts = privateContacts
+                    context = context,
+                    contacts = contacts,
+                    privateContacts = privateContacts
                 ).hidePrivateContacts(
                     privateContacts, SMT_PRIVATE in context.baseConfig.ignoredContactSources
                 )
@@ -206,43 +211,4 @@ class RecentFragment(context: Context, attributeSet: AttributeSet) :
         binding.recentsPlaceholder.beVisibleIf(recentCalls.isEmpty())
         recentAdapter?.updateItems(recentCalls, text)
     }
-}
-
-// hide private contacts from recent calls
-private fun List<RecentCall>.hidePrivateContacts(
-    privateContacts: List<Contact>, shouldHide: Boolean
-): List<RecentCall> {
-    return if (shouldHide) {
-        filterNot { recent ->
-            val privateNumbers = privateContacts.flatMap { it.phoneNumbers }.map { it.value }
-            recent.phoneNumber in privateNumbers
-        }
-    } else {
-        this
-    }
-}
-
-private fun List<RecentCall>.setNamesIfEmpty(
-    context: Context, contacts: List<Contact>, privateContacts: List<Contact>
-): ArrayList<RecentCall> {
-    val contactsWithNumbers = contacts.filter { it.phoneNumbers.isNotEmpty() }
-    return map { recent ->
-        if (recent.phoneNumber == recent.name) {
-            val privateContact = privateContacts.firstOrNull {
-                it.doesContainPhoneNumber(
-                    recent.phoneNumber, telephonyManager = context.telephonyManager
-                )
-            }
-            val contact =
-                contactsWithNumbers.firstOrNull { it.phoneNumbers.first().normalizedNumber == recent.phoneNumber }
-
-            when {
-                privateContact != null -> recent.copy(name = privateContact.getNameToDisplay())
-                contact != null -> recent.copy(name = contact.getNameToDisplay())
-                else -> recent
-            }
-        } else {
-            recent
-        }
-    } as ArrayList
 }
