@@ -1,4 +1,4 @@
-package com.app.phonebook.base.helpers
+package com.app.phonebook.helpers
 
 import android.content.Context
 import android.net.Uri
@@ -10,17 +10,21 @@ import com.app.phonebook.base.extension.isConference
 import com.app.phonebook.base.extension.telephonyManager
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.data.models.CallContact
-import com.app.phonebook.helpers.ContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
 
 object CallContactHelper {
-    fun getCallContact(context: Context, call: Call?, callback: (CallContact) -> Unit) {
+    fun getCallContact(
+        context: Context,
+        call: Call?,
+        callback: (CallContact) -> Unit
+    ) {
         if (call.isConference()) {
             callback(CallContact(context.getString(R.string.conference), "", "", ""))
             return
         }
 
-        val privateCursor = context.getMyContactsCursor(false, true)
+        val privateCursor = context.getMyContactsCursor(
+            favoritesOnly = false, withPhoneNumbersOnly = true
+        )
         ensureBackgroundThread {
             val callContact = CallContact("", "", "", "")
             val handle = try {
@@ -55,7 +59,7 @@ object CallContactHelper {
                     callContact.number = number
                     val contact = contacts.firstOrNull {
                         it.doesHavePhoneNumber(
-                            number, context.telephonyManager
+                            text = number, telephonyManager = context.telephonyManager
                         )
                     }
                     if (contact != null) {
@@ -63,12 +67,10 @@ object CallContactHelper {
                         callContact.photoUri = contact.photoUri
 
                         if (contact.phoneNumbers.size > 1) {
-                            val specificPhoneNumber =
-                                contact.phoneNumbers.firstOrNull { it.value == number }
+                            val specificPhoneNumber = contact.phoneNumbers.firstOrNull { it.value == number }
                             if (specificPhoneNumber != null) {
-                                callContact.numberLabel = context.getPhoneNumberTypeText(
-                                    specificPhoneNumber.type, specificPhoneNumber.label
-                                )
+                                callContact.numberLabel =
+                                    context.getPhoneNumberTypeText(specificPhoneNumber.type, specificPhoneNumber.label)
                             }
                         }
                     } else {
