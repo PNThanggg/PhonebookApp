@@ -77,7 +77,7 @@ class ContactsAdapter(
 
         if (enableDrag) {
             touchHelper = ItemTouchHelper(ItemMoveCallback(this, viewType == VIEW_TYPE_GRID))
-            touchHelper!!.attachToRecyclerView(recyclerView)
+            touchHelper?.attachToRecyclerView(recyclerView)
 
             startReorderDragListener = object : StartReorderDragListener {
                 override fun requestDrag(viewHolder: RecyclerView.ViewHolder) {
@@ -460,8 +460,9 @@ class ContactsAdapter(
         val dragHandleIcon: ImageView
     }
 
-    private class ItemContactGridBindingAdapter(val binding: ItemContactWithoutNumberGridBinding) :
-        ItemViewBinding {
+    private class ItemContactGridBindingAdapter(
+        val binding: ItemContactWithoutNumberGridBinding
+    ) : ItemViewBinding {
         override val itemContactName = binding.itemContactName
         override val itemContactImage = binding.itemContactImage
         override val itemContactFrame = binding.itemContactFrame
@@ -470,8 +471,9 @@ class ContactsAdapter(
         override fun getRoot(): View = binding.root
     }
 
-    private class ItemContactBindingAdapter(val binding: ItemContactWithoutNumberBinding) :
-        ItemViewBinding {
+    private class ItemContactBindingAdapter(
+        val binding: ItemContactWithoutNumberBinding
+    ) : ItemViewBinding {
         override val itemContactName = binding.itemContactName
         override val itemContactImage = binding.itemContactImage
         override val itemContactFrame = binding.itemContactFrame
