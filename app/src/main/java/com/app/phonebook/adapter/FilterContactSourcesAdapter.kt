@@ -15,7 +15,6 @@ class FilterContactSourcesAdapter(
     private val contactSources: List<ContactSource>,
     private val displayContactSources: ArrayList<String>
 ) : RecyclerView.Adapter<FilterContactSourcesAdapter.ViewHolder>() {
-
     private val selectedKeys = HashSet<Int>()
 
     init {
@@ -40,10 +39,17 @@ class FilterContactSourcesAdapter(
         notifyItemChanged(position)
     }
 
-    fun getSelectedContactSources() = contactSources.filter { selectedKeys.contains(it.hashCode()) }
+    fun getSelectedContactSources() = contactSources.filter {
+        selectedKeys.contains(it.hashCode())
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemFilterContactSourceBinding.inflate(activity.layoutInflater, parent, false)
+        val binding = ItemFilterContactSourceBinding.inflate(
+            activity.layoutInflater,
+            parent,
+            false
+        )
+
         return ViewHolder(binding.root)
     }
 
