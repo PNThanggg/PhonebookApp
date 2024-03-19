@@ -12,9 +12,13 @@ import com.app.phonebook.base.extension.hasCapability
 import com.app.phonebook.base.extension.isConference
 import com.app.phonebook.base.utils.DIALPAD_TONE_LENGTH_MS
 import com.app.phonebook.data.models.AudioRoute
+import com.app.phonebook.data.models.NoCall
+import com.app.phonebook.data.models.PhoneState
+import com.app.phonebook.data.models.SingleCall
+import com.app.phonebook.data.models.TwoCalls
+import com.app.phonebook.interfaces.CallManagerListener
 import java.util.concurrent.CopyOnWriteArraySet
 
-// inspired by https://github.com/Chooloo/call_manage
 class CallManager {
     companion object {
         @SuppressLint("StaticFieldLeak")
@@ -59,10 +63,13 @@ class CallManager {
         fun getPhoneState(): PhoneState {
             return when (calls.size) {
                 0 -> NoCall
+
                 1 -> SingleCall(calls.first())
+
                 2 -> {
                     val active = calls.find { it.getStateCompat() == Call.STATE_ACTIVE }
-                    val newCall = calls.find { it.getStateCompat() == Call.STATE_CONNECTING || it.getStateCompat() == Call.STATE_DIALING }
+                    val newCall =
+                        calls.find { it.getStateCompat() == Call.STATE_CONNECTING || it.getStateCompat() == Call.STATE_DIALING }
                     val onHold = calls.find { it.getStateCompat() == Call.STATE_HOLDING }
                     if (active != null && newCall != null) {
                         TwoCalls(newCall, active)
@@ -74,15 +81,18 @@ class CallManager {
                         TwoCalls(calls[0], calls[1])
                     }
                 }
+
                 else -> {
-                    val conference = calls.find { it.isConference() } ?: return NoCall
+                    val conference = calls.find {
+                        it.isConference()
+                    } ?: return NoCall
+
                     val secondCall = if (conference.children.size + 1 != calls.size) {
-                        calls.filter { !it.isConference() }
-                            .subtract(conference.children.toSet())
-                            .firstOrNull()
+                        calls.filter { !it.isConference() }.subtract(conference.children.toSet()).firstOrNull()
                     } else {
                         null
                     }
+
                     if (secondCall == null) {
                         SingleCall(conference)
                     } else {
@@ -97,6 +107,7 @@ class CallManager {
             }
         }
 
+        @Suppress("DEPRECATION")
         private fun getCallAudioState() = inCallService?.callAudioState
 
         fun getSupportedAudioRoutes(): Array<AudioRoute> {
@@ -112,6 +123,7 @@ class CallManager {
 
         fun getCallAudioRoute() = AudioRoute.fromRoute(getCallAudioState()?.route)
 
+        @Suppress("DEPRECATION")
         fun setAudioRoute(newRoute: Int) {
             inCallService?.setAudioRoute(newRoute)
         }
@@ -158,9 +170,11 @@ class CallManager {
             if (call != null) {
                 val state = getState()
                 if (state == Call.STATE_RINGING) {
-                    call!!.reject(false, null)
+                    call?.reject(
+                        false, null
+                    )
                 } else if (state != Call.STATE_DISCONNECTED && state != Call.STATE_DISCONNECTING) {
-                    call!!.disconnect()
+                    call?.disconnect()
                 }
             }
         }
@@ -177,7 +191,9 @@ class CallManager {
 
         fun swap() {
             if (calls.size > 1) {
-                calls.find { it.getStateCompat() == Call.STATE_HOLDING }?.unhold()
+                calls.find {
+                    it.getStateCompat() == Call.STATE_HOLDING
+                }?.unhold()
             }
         }
 
@@ -203,21 +219,16 @@ class CallManager {
         fun getState() = getPrimaryCall()?.getStateCompat()
 
         fun keypad(char: Char) {
-                call?.playDtmfTone(char)
-                Handler(Looper.getMainLooper()).postDelayed({
+            call?.playDtmfTone(char)
+
+            Handler(
+                Looper.getMainLooper()
+            ).postDelayed(
+                {
                     call?.stopDtmfTone()
-                }, DIALPAD_TONE_LENGTH_MS)
+                }, DIALPAD_TONE_LENGTH_MS
+            )
         }
     }
 }
 
-interface CallManagerListener {
-    fun onStateChanged()
-    fun onAudioStateChanged(audioState: AudioRoute)
-    fun onPrimaryCallChanged(call: Call)
-}
-
-sealed class PhoneState
-object NoCall : PhoneState()
-class SingleCall(val call: Call) : PhoneState()
-class TwoCalls(val active: Call, val onHold: Call) : PhoneState()
