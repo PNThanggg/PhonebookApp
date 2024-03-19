@@ -7,11 +7,11 @@ import android.view.ViewGroup
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.hasCapability
 import com.app.phonebook.base.extension.toast
-import com.app.phonebook.base.helpers.CallContactHelper.getCallContact
 import com.app.phonebook.base.utils.LOWER_ALPHA
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseRecyclerViewAdapter
 import com.app.phonebook.databinding.ItemConferenceCallBinding
+import com.app.phonebook.helpers.CallContactHelper.getCallContact
 import com.app.phonebook.helpers.SimpleContactsHelper
 import com.app.phonebook.presentation.view.MyRecyclerView
 import com.bumptech.glide.Glide
