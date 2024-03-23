@@ -16,7 +16,9 @@ import com.app.phonebook.databinding.DialogFilterContactSourcesBinding
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
 
-class FilterContactSourcesDialog(val activity: BaseActivity<*>, private val callback: () -> Unit) {
+class FilterContactSourcesDialog(
+    val activity: BaseActivity<*>, private val callback: () -> Unit
+) {
     private val binding = DialogFilterContactSourcesBinding.inflate(activity.layoutInflater)
 
     private var dialog: AlertDialog? = null
@@ -36,8 +38,7 @@ class FilterContactSourcesDialog(val activity: BaseActivity<*>, private val call
         contactHelper.getContacts(getAll = true, showOnlyContactsWithNumbers = true) {
             it.mapTo(contacts) { contact -> contact.copy() }
             val privateCursor = activity.getMyContactsCursor(
-                favoritesOnly = false,
-                withPhoneNumbersOnly = true
+                favoritesOnly = false, withPhoneNumbersOnly = true
             )
             val privateContacts = MyContactsContentProvider.getContacts(cursor = privateCursor)
             this.contacts.addAll(privateContacts)
@@ -83,14 +84,21 @@ class FilterContactSourcesDialog(val activity: BaseActivity<*>, private val call
     private fun confirmContactSources() {
         val selectedContactSources =
             (binding.filterContactSourcesList.adapter as FilterContactSourcesAdapter).getSelectedContactSources()
-        val ignoredContactSources = contactSources.filter { !selectedContactSources.contains(it) }.map {
-            if (it.type == SMT_PRIVATE) SMT_PRIVATE else it.getFullIdentifier()
+        val ignoredContactSources = contactSources.filter {
+            !selectedContactSources.contains(it)
+        }.map {
+            if (it.type == SMT_PRIVATE) {
+                SMT_PRIVATE
+            } else {
+                it.getFullIdentifier()
+            }
         }.toHashSet()
 
         if (activity.getVisibleContactSources() != ignoredContactSources) {
             activity.config.ignoredContactSources = ignoredContactSources
             callback()
         }
+
         dialog?.dismiss()
     }
 }

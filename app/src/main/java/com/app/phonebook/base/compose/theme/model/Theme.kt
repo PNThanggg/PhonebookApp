@@ -61,7 +61,7 @@ sealed class Theme : CommonTheme {
                 primaryColorInt = config.primaryColor,
                 backgroundColorInt = config.backgroundColor,
                 textColorInt = if (isSPlus()) {
-                    colorResource(R.color.you_neutral_text_color).toArgb()
+                    colorResource(R.color.neutral_text_color).toArgb()
                 } else {
                     (if (isInDarkThemeAndSurfaceIsNotLitWell()) {
                         Color.White

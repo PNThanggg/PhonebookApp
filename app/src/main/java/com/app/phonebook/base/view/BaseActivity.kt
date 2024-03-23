@@ -88,52 +88,35 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         private const val TIME_DELAY_CLICK = 200L
         private const val GENERIC_PERM_HANDLER = 100
 
-        var funAfterSAFPermission: ((success: Boolean) -> Unit)? = null
-        var funAfterSdk30Action: ((success: Boolean) -> Unit)? = null
-        var funAfterUpdate30File: ((success: Boolean) -> Unit)? = null
-        var funAfterTrash30File: ((success: Boolean) -> Unit)? = null
-        var funRecoverableSecurity: ((success: Boolean) -> Unit)? = null
-        var funAfterManageMediaPermission: (() -> Unit)? = null
     }
 
     lateinit var binding: VB
     private var isAvailableClick = true
-    var useTopSearchMenu = false
+    private var useTopSearchMenu = false
 
-    var actionOnPermission: ((granted: Boolean) -> Unit)? = null
+    private var actionOnPermission: ((granted: Boolean) -> Unit)? = null
 
-    var isAskingPermissions = false
+    private var isAskingPermissions = false
 
     var isMaterialActivity = false
-    var useDynamicTheme = true
-    var showTransparentTop = false
+    private var showTransparentTop = false
 
     private var mainCoordinatorLayout: CoordinatorLayout? = null
     private var nestedView: View? = null
     private var scrollingView: ScrollingView? = null
     private var toolbar: Toolbar? = null
     private var useTransparentNavigation = false
-    private val GENERIC_PERM_HANDLER = 100
-    private val DELETE_FILE_SDK_30_HANDLER = 300
-    private val RECOVERABLE_SECURITY_HANDLER = 301
-    private val UPDATE_FILE_SDK_30_HANDLER = 302
-    private val MANAGE_MEDIA_RC = 303
-    private val TRASH_FILE_SDK_30_HANDLER = 304
 
-    var materialScrollColorAnimation: ValueAnimator? = null
+    private var materialScrollColorAnimation: ValueAnimator? = null
     var copyMoveCallback: ((destinationPath: String) -> Unit)? = null
     var checkedDocumentPath = ""
     var configItemsToExport = LinkedHashMap<String, Any>()
 
-    var currentScrollY = 0
+    private var currentScrollY = 0
     //endregion
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (useDynamicTheme) {
-            setTheme(getThemeId(showTransparentTop = showTransparentTop))
-        }
-
         beforeCreate()
 
         super.onCreate(savedInstanceState)
@@ -296,18 +279,6 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (useDynamicTheme) {
-            setTheme(getThemeId(showTransparentTop = showTransparentTop))
-
-            val backgroundColor = if (baseConfig.isUsingSystemTheme) {
-                resources.getColor(R.color.you_background_color, theme)
-            } else {
-                baseConfig.backgroundColor
-            }
-
-            updateBackgroundColor(backgroundColor)
-        }
-
         if (showTransparentTop) {
             window.statusBarColor = Color.TRANSPARENT
         } else if (!isMaterialActivity) {
@@ -405,7 +376,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     }
 
     fun startCallIntent(recipient: String) {
-//        launchCallIntent(recipient, null)
+        launchCallIntent(recipient, null)
 
         if (isDefaultDialer()) {
             getHandleToUse(null, recipient) { handle ->
@@ -485,13 +456,13 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         this.scrollingView = scrollingView
         this.toolbar = toolbar
         if (scrollingView is RecyclerView) {
-            scrollingView.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+            scrollingView.setOnScrollChangeListener { _, _, _, _, _ ->
                 val newScrollY = scrollingView.computeVerticalScrollOffset()
                 scrollingChanged(newScrollY, currentScrollY)
                 currentScrollY = newScrollY
             }
         } else if (scrollingView is NestedScrollView) {
-            scrollingView.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+            scrollingView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
                 scrollingChanged(scrollY, oldScrollY)
             }
         }
@@ -561,7 +532,8 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         if (color.getContrastColor() == DARK_GREY) {
             window.decorView.systemUiVisibility = window.decorView.systemUiVisibility.addBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
         } else {
-            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility.removeBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            window.decorView.systemUiVisibility =
+                window.decorView.systemUiVisibility.removeBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
         }
     }
 
