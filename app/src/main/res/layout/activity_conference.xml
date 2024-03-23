@@ -13,7 +13,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@color/color_primary"
         app:title="@string/conference"
-        app:titleTextAppearance="@style/AppTheme.ActionBar.TitleTextStyle" />
+        app:titleTextAppearance="@style/TitleTextStyle" />
 
     <FrameLayout
         android:id="@+id/conference_frame"
