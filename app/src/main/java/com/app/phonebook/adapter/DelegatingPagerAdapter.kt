@@ -9,20 +9,6 @@ import androidx.viewpager.widget.PagerAdapter
 open class DelegatingPagerAdapter(
     private val delegate: PagerAdapter
 ) : PagerAdapter() {
-    companion object {
-        class MyDataSetObserver(
-            private val parent: DelegatingPagerAdapter?,
-        ) : DataSetObserver() {
-            override fun onChanged() {
-                parent?.superNotifyDataSetChanged()
-            }
-
-            override fun onInvalidated() {
-                onChanged()
-            }
-        }
-    }
-
     fun getDelegate(): PagerAdapter {
         return delegate
     }
@@ -84,9 +70,5 @@ open class DelegatingPagerAdapter(
 
     override fun getPageWidth(position: Int): Float {
         return delegate.getPageWidth(position)
-    }
-
-    private fun superNotifyDataSetChanged() {
-        super.notifyDataSetChanged()
     }
 }

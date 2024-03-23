@@ -209,11 +209,6 @@ class ContactsAdapter(
         activity.launchSendSMSIntent(recipient)
     }
 
-    private fun viewContactDetails() {
-        val contact = getSelectedItems().firstOrNull() ?: return
-        activity.startContactDetailsIntent(contact)
-    }
-
     private fun askConfirmDelete() {
         val itemsCnt = selectedKeys.size
         val firstItem = getSelectedItems().firstOrNull() ?: return
