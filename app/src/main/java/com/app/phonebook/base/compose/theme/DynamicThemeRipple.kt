@@ -10,7 +10,11 @@ import androidx.compose.ui.graphics.Color
 @Immutable
 internal object DynamicThemeRipple : RippleTheme {
     @Composable
-    override fun defaultColor(): Color = if (isSurfaceLitWell()) ripple_light else LocalContentColor.current
+    override fun defaultColor(): Color = if (isSurfaceLitWell()) {
+        ripple_light
+    } else {
+        LocalContentColor.current
+    }
 
     @Composable
     override fun rippleAlpha(): RippleAlpha = DefaultRippleAlpha

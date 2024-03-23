@@ -8,6 +8,7 @@ internal val darkColorScheme = darkColorScheme(
     secondary = color_primary_dark,
     tertiary = color_accent,
 )
+
 internal val lightColorScheme = lightColorScheme(
     primary = color_primary,
     secondary = color_primary_dark,

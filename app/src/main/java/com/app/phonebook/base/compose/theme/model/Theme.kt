@@ -57,6 +57,7 @@ sealed class Theme : CommonTheme {
         fun systemDefaultMaterialYou(): SystemDefaultMaterialYou {
             val context = LocalContext.current
             val config = remember { context.config }
+
             return SystemDefaultMaterialYou(
                 primaryColorInt = config.primaryColor,
                 backgroundColorInt = config.backgroundColor,
@@ -68,7 +69,7 @@ sealed class Theme : CommonTheme {
                     } else {
                         Color.Black
                     }).toArgb()
-                }
+                },
             )
         }
     }

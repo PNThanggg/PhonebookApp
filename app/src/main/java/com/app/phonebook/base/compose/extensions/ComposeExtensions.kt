@@ -1,9 +1,5 @@
 package com.app.phonebook.base.compose.extensions
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,29 +18,17 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LifecycleStartEffect
 import com.app.phonebook.base.compose.system_ui_controller.rememberSystemUiController
 import com.app.phonebook.base.compose.theme.SimpleTheme
 import com.app.phonebook.base.compose.theme.isLitWell
 import com.app.phonebook.base.extension.darkenColor
 
-fun Context.getActivity(): Activity {
-    return when (this) {
-        is Activity -> this
-        is ContextWrapper -> baseContext.getActivity()
-        else -> getActivity()
-    }
-}
-
-fun Context.getComponentActivity(): ComponentActivity = getActivity() as ComponentActivity
-
 @Composable
-fun rememberMutableInteractionSource() = remember { MutableInteractionSource() }
+fun rememberMutableInteractionSource() = remember {
+    MutableInteractionSource()
+}
 
 @Composable
 fun AdjustNavigationBarColors() {
@@ -68,33 +52,6 @@ fun <T : Any> onEventValue(event: Lifecycle.Event = Lifecycle.Event.ON_START, va
     }
     return rememberedValue
 }
-
-@Composable
-fun <T : Any> onStartEventValue(vararg keys: Any?, onStopOrDispose: (LifecycleOwner.() -> Unit)? = null, value: () -> T): T {
-    val rememberLatestUpdateState by rememberUpdatedState(newValue = value)
-    var rememberedValue by remember { mutableStateOf(value()) }
-    LifecycleStartEffect(keys = keys, effects = {
-        rememberedValue = rememberLatestUpdateState()
-        onStopOrDispose {
-            onStopOrDispose?.invoke(this)
-        }
-    })
-    return rememberedValue
-}
-
-@Composable
-fun <T : Any> onResumeEventValue(vararg keys: Any?, onPauseOrDispose: (LifecycleOwner.() -> Unit)? = null, value: () -> T): T {
-    val rememberLatestUpdateState by rememberUpdatedState(newValue = value)
-    var rememberedValue by remember { mutableStateOf(value()) }
-    LifecycleResumeEffect(keys = keys, effects = {
-        rememberedValue = rememberLatestUpdateState()
-        onPauseOrDispose {
-            onPauseOrDispose?.invoke(this)
-        }
-    })
-    return rememberedValue
-}
-
 
 @Composable
 operator fun PaddingValues.plus(otherPaddingValues: PaddingValues): PaddingValues {
@@ -146,10 +103,6 @@ private fun Sequence<Dp>.sumOfDps(): Dp {
         sum += element
     }
     return sum
-}
-
-fun ComponentActivity.enableEdgeToEdgeSimple() {
-    WindowCompat.setDecorFitsSystemWindows(window, false)
 }
 
 @Composable

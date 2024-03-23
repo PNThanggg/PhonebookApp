@@ -29,21 +29,18 @@ val dialogContainerColor
     @ReadOnlyComposable
     @Composable get() = when (LocalTheme.current) {
         is Theme.BlackAndWhite -> Color.Black
-        is Theme.SystemDefaultMaterialYou -> if (isSPlus()) colorResource(R.color.dialog_background_color) else SimpleTheme.colorScheme.surface
+
+        is Theme.SystemDefaultMaterialYou -> if (isSPlus()) {
+            colorResource(R.color.dialog_background_color)
+        } else {
+            SimpleTheme.colorScheme.surface
+        }
+
         else -> {
             val context = LocalContext.current
             Color(context.baseConfig.backgroundColor)
         }
     }
-
-val Modifier.dialogBackgroundShapeAndBorder: Modifier
-    @ReadOnlyComposable
-    @Composable get() = then(
-        Modifier
-            .fillMaxWidth()
-            .background(dialogContainerColor, dialogShape)
-            .dialogBorder
-    )
 
 val dialogShape = Shapes.extraLarge
 
@@ -72,19 +69,5 @@ fun DialogSurface(
         tonalElevation = dialogElevation,
     ) {
         content()
-    }
-}
-
-@Composable
-fun ShowKeyboardWhenDialogIsOpenedAndRequestFocus(
-    keyboardController: SoftwareKeyboardController? = LocalSoftwareKeyboardController.current,
-    focusRequester: FocusRequester?
-) {
-    LaunchedEffect(Unit) {
-        //await two frames to render the scrim and the dialog
-        awaitFrame()
-        awaitFrame()
-        keyboardController?.show()
-        focusRequester?.requestFocus()
     }
 }

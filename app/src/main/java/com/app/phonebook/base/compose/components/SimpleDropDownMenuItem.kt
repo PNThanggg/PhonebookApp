@@ -13,10 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.app.phonebook.R
 import com.app.phonebook.base.compose.extensions.MyDevices
 import com.app.phonebook.base.compose.extensions.rememberMutableInteractionSource
+import com.app.phonebook.base.compose.theme.AppFont
 import com.app.phonebook.base.compose.theme.AppThemeSurface
 import com.app.phonebook.base.compose.theme.SimpleTheme
 
@@ -55,7 +58,11 @@ fun SimpleDropDownMenuItem(
                 text = text,
                 modifier = Modifier
                     .fillMaxWidth(),
-                color = SimpleTheme.colorScheme.onSurface
+                color = SimpleTheme.colorScheme.onSurface,
+                style = TextStyle(
+                    fontFamily = AppFont,
+                    fontWeight = FontWeight.Normal,
+                )
             )
         }
     )

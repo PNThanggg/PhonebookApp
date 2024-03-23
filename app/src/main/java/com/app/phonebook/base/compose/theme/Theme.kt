@@ -9,14 +9,12 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import com.app.phonebook.base.compose.theme.model.Theme
 import com.app.phonebook.base.compose.theme.model.Theme.Companion.systemDefaultMaterialYou
-import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.utils.isSPlus
 
 @Composable

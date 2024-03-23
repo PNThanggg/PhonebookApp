@@ -14,17 +14,6 @@ fun rememberAlertDialogState(
     isShownInitially: Boolean = false
 ) = remember { AlertDialogState(isShownInitially) }
 
-///**
-// * Use this function to control the state whenever you want its visibility to be retained
-// * even after configuration and process death
-// * @param isShownInitially Boolean
-// * @return com.app.phonebook.base.compose.alert_dialog.AlertDialogState
-// */
-//@Composable
-//fun rememberAlertDialogStateSaveable(
-//    isShownInitially: Boolean = SAVER
-//) = rememberSaveable(saver = SAVER) { AlertDialogState(isShownInitially) }
-
 @Stable
 class AlertDialogState(isShownInitially: Boolean = false) {
     companion object {
@@ -46,22 +35,5 @@ class AlertDialogState(isShownInitially: Boolean = false) {
 
     fun hide() {
         isShown = false
-    }
-
-    fun toggleVisibility() {
-        isShown = !isShown
-    }
-
-    fun changeVisibility(predicate: Boolean) {
-        isShown = predicate
-    }
-
-    @Composable
-    fun DialogMember(
-        content: @Composable () -> Unit
-    ) {
-        if (isShown) {
-            content()
-        }
     }
 }

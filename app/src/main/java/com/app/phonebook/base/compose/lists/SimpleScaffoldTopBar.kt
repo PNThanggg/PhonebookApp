@@ -61,64 +61,6 @@ fun SimpleScaffoldTopBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SimpleScaffoldTopBar(
-    modifier: Modifier = Modifier,
-    title: @Composable (scrolledColor: Color) -> Unit,
-    scrolledColor: Color,
-    navigationIconInteractionSource: MutableInteractionSource = rememberMutableInteractionSource(),
-    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
-    statusBarColor: Int,
-    colorTransitionFraction: Float,
-    contrastColor: Color,
-    goBack: () -> Unit,
-) {
-    TopAppBar(title = {
-        title(scrolledColor)
-    },
-        navigationIcon = {
-            SimpleNavigationIcon(
-                goBack = goBack, navigationIconInteractionSource = navigationIconInteractionSource, iconColor = scrolledColor
-            )
-        },
-        scrollBehavior = scrollBehavior,
-        colors = simpleTopAppBarColors(statusBarColor, colorTransitionFraction, contrastColor),
-        modifier = modifier.topAppBarPaddings(),
-        windowInsets = topAppBarInsets()
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SimpleScaffoldTopBar(
-    modifier: Modifier = Modifier,
-    title: @Composable (scrolledColor: Color) -> Unit,
-    actions: @Composable RowScope.() -> Unit,
-    scrolledColor: Color,
-    navigationIconInteractionSource: MutableInteractionSource = rememberMutableInteractionSource(),
-    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
-    statusBarColor: Int,
-    colorTransitionFraction: Float,
-    contrastColor: Color,
-    goBack: () -> Unit,
-) {
-    TopAppBar(title = {
-        title(scrolledColor)
-    },
-        navigationIcon = {
-            SimpleNavigationIcon(
-                goBack = goBack, navigationIconInteractionSource = navigationIconInteractionSource, iconColor = scrolledColor
-            )
-        },
-        actions = actions,
-        scrollBehavior = scrollBehavior,
-        colors = simpleTopAppBarColors(statusBarColor, colorTransitionFraction, contrastColor),
-        modifier = modifier.topAppBarPaddings(),
-        windowInsets = topAppBarInsets()
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun simpleTopAppBarColors(
     statusBarColor: Int, colorTransitionFraction: Float, contrastColor: Color
 ) = TopAppBarDefaults.topAppBarColors(
