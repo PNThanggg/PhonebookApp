@@ -101,15 +101,14 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
     override fun initView(savedInstanceState: Bundle?) {
         if (CallManager.getPhoneState() == NoCall) {
             finish()
-            return
+        } else {
+            updateTextColors(binding.callHolder)
+            initButtons()
+            audioManager.mode = AudioManager.MODE_IN_CALL
+            addLockScreenFlags()
+            CallManager.addListener(callCallback)
+            updateCallContactInfo(CallManager.getPrimaryCall())
         }
-
-        updateTextColors(binding.callHolder)
-        initButtons()
-        audioManager.mode = AudioManager.MODE_IN_CALL
-        addLockScreenFlags()
-        CallManager.addListener(callCallback)
-        updateCallContactInfo(CallManager.getPrimaryCall())
     }
 
     override fun initData() {
