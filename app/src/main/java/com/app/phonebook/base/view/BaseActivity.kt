@@ -49,7 +49,6 @@ import com.app.phonebook.base.extension.getPermissionString
 import com.app.phonebook.base.extension.getPhoneNumberTypeText
 import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperStatusBarColor
-import com.app.phonebook.base.extension.getThemeId
 import com.app.phonebook.base.extension.handleBackPressed
 import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.hideKeyboard
