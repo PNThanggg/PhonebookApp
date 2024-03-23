@@ -17,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : BaseActivity<ActivitySplashBinding>() {
     override fun initView(savedInstanceState: Bundle?) {
@@ -34,12 +33,8 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
                         primaryColor = it.primaryColor
                         accentColor = it.accentColor
                     }
-
-//                    if (baseConfig.appIconColor != it.appIconColor) {
-//                        baseConfig.appIconColor = it.appIconColor
-//                        checkAppIconColor()
-//                    }
                 }
+
                 initActivity()
             }
         } else {
