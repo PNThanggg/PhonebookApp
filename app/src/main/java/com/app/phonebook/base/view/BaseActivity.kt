@@ -233,7 +233,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     }
 
     @Suppress("DEPRECATION")
-    fun updateNavigationBarButtons(color: Int) {
+    private fun updateNavigationBarButtons(color: Int) {
         if (isRPlus()) {
             val controller = window.insetsController
             if (color.getContrastColor() == DARK_GREY) {
@@ -258,7 +258,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     }
 
     @Suppress("DEPRECATION")
-    fun updateActionbarColor(color: Int = getProperStatusBarColor()) {
+    private fun updateActionbarColor(color: Int = getProperStatusBarColor()) {
         updateStatusBarColor(color)
         if (isTiramisuPlus()) {
             setTaskDescription(
@@ -350,16 +350,6 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
                     putExtra(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)
                 }
 
-//                if (isDefaultDialer()) {
-//                    val packageName = if (baseConfig.appId.contains(
-//                            ".debug",
-//                            true
-//                        )
-//                    ) "com.simplemobiletools.dialer.debug" else "com.simplemobiletools.dialer"
-//                    val className = "com.simplemobiletools.dialer.activities.DialerActivity"
-//                    setClassName(packageName, className)
-//                }
-
                 launchActivityIntent(this)
             }
         }
@@ -405,7 +395,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
      * Note: This function should be called whenever the scroll position of the view might change, such as in
      * a scroll listener or after updating the content of the view.
      */
-    fun getRequiredStatusBarColor(): Int {
+    private fun getRequiredStatusBarColor(): Int {
         return if ((scrollingView is RecyclerView || scrollingView is NestedScrollView) && scrollingView?.computeVerticalScrollOffset() == 0) {
             getProperBackgroundColor()
         } else {
@@ -433,7 +423,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         updateActionbarColor(backgroundColor)
     }
 
-    fun animateTopBarColors(colorFrom: Int, colorTo: Int) {
+    private fun animateTopBarColors(colorFrom: Int, colorTo: Int) {
         if (toolbar == null) {
             return
         }
@@ -521,18 +511,6 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
                     showErrorToast(e)
                 }
             }
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    fun updateStatuBbarColor(color: Int) {
-        window.statusBarColor = color
-
-        if (color.getContrastColor() == DARK_GREY) {
-            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility.addBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
-        } else {
-            window.decorView.systemUiVisibility =
-                window.decorView.systemUiVisibility.removeBit(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
         }
     }
 

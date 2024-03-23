@@ -21,14 +21,6 @@ import com.app.phonebook.data.models.SharedTheme
  *
  * @return The `SharedPreferences` instance associated with `PREFS_KEY`.
  *
- * Example usage:
- * ```
- * val prefs: SharedPreferences = context.getSharedPrefs()
- * val editor = prefs.edit()
- * editor.putString("key", "value")
- * editor.apply()
- * ```
- *
  * Note: `PREFS_KEY` should be a constant defined in your application's code that uniquely identifies the
  * shared preferences file. It is recommended to use a specific string that relates to your application's domain
  * or package name to avoid conflicts with other applications.

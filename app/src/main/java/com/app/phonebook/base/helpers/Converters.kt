@@ -38,7 +38,7 @@ class Converters {
     @TypeConverter
     fun jsonToPhoneNumberList(value: String): ArrayList<PhoneNumber> {
         val numbers = gson.fromJson<ArrayList<PhoneNumber>>(value, numberType)
-        return if (numbers.any { it.value == null }) {
+        return if (numbers.any { false }) {
             val phoneNumbers = ArrayList<PhoneNumber>()
             val numberConverters =
                 gson.fromJson<ArrayList<PhoneNumberConverter>>(value, numberConverterType)

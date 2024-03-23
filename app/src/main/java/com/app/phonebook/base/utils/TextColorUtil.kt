@@ -7,7 +7,6 @@ import android.widget.TextView
 import androidx.core.text.clearSpans
 
 object TextColorUtil {
-
     fun highlightAtIndex(textView: TextView, highlightedIndex: Int?, color: Int) {
         textView.apply {
             if (highlightedIndex == null) {
