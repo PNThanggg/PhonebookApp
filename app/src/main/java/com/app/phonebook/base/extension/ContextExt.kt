@@ -11,7 +11,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutManager
-import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Color
 import android.graphics.Point
@@ -23,7 +22,6 @@ import android.os.PowerManager
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.TelecomManager
-import android.telephony.PhoneNumberUtils
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.View
@@ -74,6 +72,8 @@ import com.app.phonebook.base.utils.TIME_FORMAT_24
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.isSPlus
+import com.app.phonebook.base.utils.isTiramisuPlus
+import com.app.phonebook.base.utils.isUpsideDownCakePlus
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.helpers.Config
@@ -146,25 +146,6 @@ fun Context.getAvailableSIMCardLabels(): List<SIMAccount> {
         Log.e(APP_NAME, "getAvailableSIMCardLabels: ${ignored.message}")
     }
     return simAccounts
-}
-
-fun Context.getContactsHasMap(
-    withComparableNumbers: Boolean = false, callback: (HashMap<String, String>) -> Unit
-) {
-    ContactsHelper(this).getContacts(showOnlyContactsWithNumbers = true) { contactList ->
-        val privateContacts: HashMap<String, String> = HashMap()
-        for (contact in contactList) {
-            for (phoneNumber in contact.phoneNumbers) {
-                var number = PhoneNumberUtils.stripSeparators(phoneNumber.value)
-                if (withComparableNumbers) {
-                    number = number.trimToComparableNumber()
-                }
-
-                privateContacts[number] = contact.name
-            }
-        }
-        callback(privateContacts)
-    }
 }
 
 /**
@@ -303,8 +284,7 @@ val Context.realScreenSize: Point
     }
 
 val Context.newNavigationBarHeight: Int
-    @SuppressLint("DiscouragedApi", "InternalInsetResource")
-    get() {
+    @SuppressLint("DiscouragedApi", "InternalInsetResource") get() {
         var navigationBarHeight = 0
         val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
         if (resourceId > 0) {
@@ -314,8 +294,7 @@ val Context.newNavigationBarHeight: Int
     }
 
 val Context.statusBarHeight: Int
-    @SuppressLint("DiscouragedApi", "InternalInsetResource")
-    get() {
+    @SuppressLint("DiscouragedApi", "InternalInsetResource") get() {
         var statusBarHeight = 0
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
         if (resourceId > 0) {
@@ -331,11 +310,11 @@ val Context.navigationBarSize: Point
         else -> Point()
     }
 
-val Context.portrait get() = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 val Context.navigationBarOnSide: Boolean get() = usableScreenSize.x < realScreenSize.x && usableScreenSize.x > usableScreenSize.y
+
 val Context.navigationBarOnBottom: Boolean get() = usableScreenSize.y < realScreenSize.y
+
 val Context.navigationBarHeight: Int get() = if (navigationBarOnBottom && navigationBarSize.y != usableScreenSize.y) navigationBarSize.y else 0
-val Context.navigationBarWidth: Int get() = if (navigationBarOnSide) navigationBarSize.x else 0
 
 @SuppressLint("DiscouragedApi")
 fun Context.isUsingGestureNavigation(): Boolean {
@@ -444,7 +423,6 @@ fun Context.getBottomNavigationBackgroundColor(context: Context): Int {
     return bottomColor
 }
 
-
 fun Context.updateTextColors(viewGroup: ViewGroup) {
     val textColor = when {
         baseConfig.isUsingSystemTheme -> getProperTextColor()
@@ -470,10 +448,6 @@ fun Context.updateTextColors(viewGroup: ViewGroup) {
         }
     }
 }
-
-
-fun Context.getAppIconColors() = resources.getIntArray(R.array.md_app_icon_colors).toCollection(ArrayList())
-
 
 fun Context.getTimeFormat() = if (baseConfig.use24HourFormat) TIME_FORMAT_24 else TIME_FORMAT_12
 
@@ -598,7 +572,7 @@ fun Context.openNotificationSettings() {
 //    }
 }
 
-fun Context.getCurrentFormattedDateTime(): String {
+fun getCurrentFormattedDateTime(): String {
     val simpleDateFormat = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault())
     return simpleDateFormat.format(Date(System.currentTimeMillis()))
 }
@@ -635,13 +609,13 @@ fun Context.getPermissionString(id: Int) = when (id) {
     PERMISSION_SEND_SMS -> Manifest.permission.SEND_SMS
     PERMISSION_READ_PHONE_STATE -> Manifest.permission.READ_PHONE_STATE
     PERMISSION_MEDIA_LOCATION -> if (isQPlus()) Manifest.permission.ACCESS_MEDIA_LOCATION else ""
-    PERMISSION_POST_NOTIFICATIONS -> Manifest.permission.POST_NOTIFICATIONS
-    PERMISSION_READ_MEDIA_IMAGES -> Manifest.permission.READ_MEDIA_IMAGES
-    PERMISSION_READ_MEDIA_VIDEO -> Manifest.permission.READ_MEDIA_VIDEO
-    PERMISSION_READ_MEDIA_AUDIO -> Manifest.permission.READ_MEDIA_AUDIO
+    PERMISSION_POST_NOTIFICATIONS -> if (isTiramisuPlus()) Manifest.permission.POST_NOTIFICATIONS else ""
+    PERMISSION_READ_MEDIA_IMAGES -> if (isTiramisuPlus()) Manifest.permission.READ_MEDIA_IMAGES else ""
+    PERMISSION_READ_MEDIA_VIDEO -> if (isTiramisuPlus()) Manifest.permission.READ_MEDIA_VIDEO else ""
+    PERMISSION_READ_MEDIA_AUDIO -> if (isTiramisuPlus()) Manifest.permission.READ_MEDIA_AUDIO else ""
     PERMISSION_ACCESS_COARSE_LOCATION -> Manifest.permission.ACCESS_COARSE_LOCATION
     PERMISSION_ACCESS_FINE_LOCATION -> Manifest.permission.ACCESS_FINE_LOCATION
-    PERMISSION_READ_MEDIA_VISUAL_USER_SELECTED -> Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+    PERMISSION_READ_MEDIA_VISUAL_USER_SELECTED -> if (isUpsideDownCakePlus()) Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED else ""
     PERMISSION_READ_SYNC_SETTINGS -> Manifest.permission.READ_SYNC_SETTINGS
     else -> ""
 }
