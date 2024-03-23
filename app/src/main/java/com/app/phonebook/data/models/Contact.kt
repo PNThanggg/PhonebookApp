@@ -147,11 +147,6 @@ data class Contact(
         return firstId.compareTo(secondId)
     }
 
-    fun getBubbleText() = when {
-        sorting and SORT_BY_FIRST_NAME != 0 -> firstName
-        sorting and SORT_BY_MIDDLE_NAME != 0 -> middleName
-        else -> surname
-    }
 
     fun getNameToDisplay(): String {
         val firstMiddle = "$firstName $middleName".trim()
@@ -178,12 +173,6 @@ data class Contact(
             !phoneNumber.isNullOrBlank() -> phoneNumber
             else -> return ""
         }
-    }
-
-    // photos stored locally always have different hashcodes. Avoid constantly refreshing the contact lists as the app thinks something changed.
-    fun getHashWithoutPrivatePhoto(): Int {
-        val photoToUse = if (isPrivate()) null else photo
-        return copy(photo = photoToUse).hashCode()
     }
 
     fun getStringToCompare(): String {
@@ -224,9 +213,6 @@ data class Contact(
         return fullOrganization.trim().trimEnd(',')
     }
 
-    fun isABusinessContact() =
-        prefix.isEmpty() && firstName.isEmpty() && middleName.isEmpty() && surname.isEmpty() && suffix.isEmpty() && organization.isNotEmpty()
-
     @Suppress("DEPRECATION")
     fun doesContainPhoneNumber(
         text: String, convertLetters: Boolean = false, telephonyManager: TelephonyManager
@@ -243,8 +229,10 @@ data class Contact(
                     PhoneNumberUtils.compare(it.normalizedNumber, normalizedText)
                 }
 
-                isCompare || it.value.contains(text) || it.normalizedNumber.contains(normalizedText) || it.value.normalizePhoneNumber()
-                    .contains(normalizedText)
+                isCompare ||
+                        it.value.contains(text) ||
+                        it.normalizedNumber.contains(normalizedText) ||
+                        it.value.normalizePhoneNumber().contains(normalizedText)
             }
         } else {
             false
@@ -281,8 +269,6 @@ data class Contact(
     }
 
     fun isPrivate() = source == SMT_PRIVATE
-
-    fun getSignatureKey() = photoUri.ifEmpty { hashCode() }
 
     fun getPrimaryNumber(): String? {
         val primaryNumber = phoneNumbers.firstOrNull { it.isPrimary }
