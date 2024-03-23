@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
 import android.app.Dialog
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -25,7 +24,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowInsetsCompat
 import com.app.phonebook.R
 import com.app.phonebook.base.utils.CONTACT_ID
-import com.app.phonebook.base.utils.DARK_GREY
 import com.app.phonebook.base.utils.IS_PRIVATE
 import com.app.phonebook.base.utils.PERMISSION_READ_PHONE_STATE
 import com.app.phonebook.base.utils.ensureBackgroundThread
@@ -35,6 +33,7 @@ import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.DialogTitleBinding
 import com.app.phonebook.helpers.SimpleContactsHelper
+import com.app.phonebook.presentation.dialog.SelectSIMDialog
 import com.app.phonebook.presentation.view.MyTextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -45,22 +44,12 @@ fun Activity.finishWithSlide() {
             OVERRIDE_TRANSITION_CLOSE, R.anim.slide_in_left, R.anim.slide_out_right, Color.TRANSPARENT
         )
     } else {
-        @Suppress("DEPRECATION") overridePendingTransition(
+        @Suppress("DEPRECATION")
+        overridePendingTransition(
             R.anim.slide_in_left, R.anim.slide_out_right
         )
     }
 }
-
-//@SuppressLint("UseCompatLoadingForDrawables")
-//fun Activity.isAppSideLoaded(): Boolean {
-//    return try {
-//        getDrawable(R.drawable.ic_camera_vector)
-//        false
-//    } catch (e: Exception) {
-//        true
-//    }
-//}
-
 
 fun Activity.hideKeyboard() {
     if (isOnMainThread()) {
@@ -75,7 +64,7 @@ fun Activity.hideKeyboard() {
 fun Activity.hideKeyboardSync() {
     val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     inputMethodManager.hideSoftInputFromWindow((currentFocus ?: View(this)).windowToken, 0)
-    window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+    window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
     currentFocus?.clearFocus()
 }
 
@@ -84,11 +73,6 @@ fun Activity.showKeyboard(editText: EditText) {
     editText.requestFocus()
     val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
-}
-
-fun Activity.hideKeyboard(view: View) {
-    val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-    inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
 fun Activity.launchCreateNewContactIntent() {
@@ -235,21 +219,6 @@ fun Activity.getAlertDialogBuilder() = if (baseConfig.isUsingSystemTheme) {
     AlertDialog.Builder(this)
 }
 
-fun Activity.launchViewIntent(url: String) {
-    hideKeyboard()
-    ensureBackgroundThread {
-        Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-            try {
-                startActivity(this)
-            } catch (e: ActivityNotFoundException) {
-                toast(R.string.no_browser_found)
-            } catch (e: Exception) {
-                showErrorToast(e)
-            }
-        }
-    }
-}
-
 fun Activity.onApplyWindowInsets(callback: (WindowInsetsCompat) -> Unit) {
     window.decorView.setOnApplyWindowInsetsListener { view, insets ->
         callback(WindowInsetsCompat.toWindowInsetsCompat(insets))
@@ -260,6 +229,7 @@ fun Activity.onApplyWindowInsets(callback: (WindowInsetsCompat) -> Unit) {
 
 // used at devices with multiple SIM cards
 @SuppressLint("MissingPermission")
+@Suppress("DEPRECATION")
 fun BaseActivity<*>.getHandleToUse(intent: Intent?, phoneNumber: String, callback: (handle: PhoneAccountHandle?) -> Unit) {
     handlePermission(PERMISSION_READ_PHONE_STATE) {
         if (it) {
@@ -277,33 +247,15 @@ fun BaseActivity<*>.getHandleToUse(intent: Intent?, phoneNumber: String, callbac
 
                 defaultHandle != null -> callback(defaultHandle)
                 else -> {
-//                    SelectSIMDialog(this, phoneNumber, onDismiss = {
+                    SelectSIMDialog(this, phoneNumber, onDismiss = {
 //                        if (this is DialerActivity) {
 //                            finish()
 //                        }
-//                    }) { handle ->
-//                        callback(handle)
-//                    }
+                    }) { handle ->
+                        callback(handle)
+                    }
                 }
             }
         }
     }
-}
-
-
-fun Activity.getThemeId(showTransparentTop: Boolean = false) = when {
-    baseConfig.isUsingSystemTheme -> if (isUsingSystemDarkTheme()) R.style.AppTheme_Base_System else R.style.AppTheme_Base_System_Light
-    isBlackAndWhiteTheme() -> when {
-        showTransparentTop -> R.style.AppTheme_BlackAndWhite_NoActionBar
-        baseConfig.primaryColor.getContrastColor() == DARK_GREY -> R.style.AppTheme_BlackAndWhite_DarkTextColor
-        else -> R.style.AppTheme_BlackAndWhite
-    }
-
-    isWhiteTheme() -> when {
-        showTransparentTop -> R.style.AppTheme_White_NoActionBar
-        baseConfig.primaryColor.getContrastColor() == Color.WHITE -> R.style.AppTheme_White_LightTextColor
-        else -> R.style.AppTheme_White
-    }
-
-    else -> R.style.AppTheme_Base_System
 }
