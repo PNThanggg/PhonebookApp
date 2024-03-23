@@ -1,6 +1,5 @@
 package com.app.phonebook.helpers
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
@@ -8,32 +7,24 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.LayerDrawable
-import android.net.Uri
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.Data
-import android.provider.ContactsContract.PhoneLookup
 import android.text.TextUtils
-import android.util.Log
 import android.util.SparseArray
 import android.widget.ImageView
 import android.widget.TextView
 import com.app.phonebook.R
-import com.app.phonebook.base.extension.applyColorFilter
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getIntValue
 import com.app.phonebook.base.extension.getNameLetter
 import com.app.phonebook.base.extension.getStringValue
-import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.normalizePhoneNumber
 import com.app.phonebook.base.extension.queryCursor
 import com.app.phonebook.base.extension.telephonyManager
-import com.app.phonebook.base.utils.APP_NAME
-import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.getQuestionMarks
 import com.app.phonebook.base.utils.letterBackgroundColors
@@ -47,7 +38,10 @@ import com.bumptech.glide.request.RequestOptions
 import kotlin.math.abs
 
 class SimpleContactsHelper(val context: Context) {
-    fun getAvailableContacts(favoritesOnly: Boolean, callback: (ArrayList<SimpleContact>) -> Unit) {
+    private fun getAvailableContacts(
+        favoritesOnly: Boolean,
+        callback: (ArrayList<SimpleContact>) -> Unit
+    ) {
         ensureBackgroundThread {
             val names = getContactNames(favoritesOnly)
             var allContacts = getContactPhoneNumbers(favoritesOnly)
@@ -67,16 +61,22 @@ class SimpleContactsHelper(val context: Context) {
                 }
             }
 
-            allContacts = allContacts.filter { it.name?.isNotEmpty() == true }.distinctBy {
+            allContacts = allContacts.filter {
+                it.name?.isNotEmpty() == true
+            }.distinctBy {
                 val startIndex =
                     0.coerceAtLeast(it.phoneNumbers.first().normalizedNumber.length - 9)
                 it.phoneNumbers.first().normalizedNumber.substring(startIndex)
-            }.distinctBy { it.rawId }.toMutableList() as ArrayList<SimpleContact>
+            }.distinctBy {
+                it.rawId
+            }.toMutableList() as ArrayList<SimpleContact>
 
             // if there are duplicate contacts with the same name, while the first one has phone numbers 1234 and 4567, second one has only 4567,
             // use just the first contact
             val contactsToRemove = ArrayList<SimpleContact>()
-            allContacts.groupBy { it.name }.forEach {
+            allContacts.groupBy {
+                it.name
+            }.forEach {
                 val contacts = it.value.toMutableList() as ArrayList<SimpleContact>
                 if (contacts.size > 1) {
                     contacts.sortByDescending { contact ->
@@ -122,8 +122,9 @@ class SimpleContactsHelper(val context: Context) {
             size = anniversaries.size()
             for (i in 0 until size) {
                 val key = anniversaries.keyAt(i)
-                allContacts.firstOrNull { it.rawId == key }?.anniversaries =
-                    anniversaries.valueAt(i)
+                allContacts.firstOrNull {
+                    it.rawId == key
+                }?.anniversaries = anniversaries.valueAt(i)
             }
 
             allContacts.sort()
@@ -277,52 +278,52 @@ class SimpleContactsHelper(val context: Context) {
         return eventDates
     }
 
-    fun getNameFromPhoneNumber(number: String): String {
-        if (!context.hasPermission(PERMISSION_READ_CONTACTS)) {
-            return number
-        }
+//    fun getNameFromPhoneNumber(number: String): String {
+//        if (!context.hasPermission(PERMISSION_READ_CONTACTS)) {
+//            return number
+//        }
+//
+//        val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+//        val projection = arrayOf(
+//            PhoneLookup.DISPLAY_NAME
+//        )
+//
+//        try {
+//            val cursor = context.contentResolver.query(uri, projection, null, null, null)
+//            cursor.use {
+//                if (cursor?.moveToFirst() == true) {
+//                    return cursor.getStringValue(PhoneLookup.DISPLAY_NAME) ?: ""
+//                }
+//            }
+//        } catch (ignored: Exception) {
+//            Log.e(APP_NAME, "getNameFromPhoneNumber: ${ignored.message}")
+//        }
+//
+//        return number
+//    }
 
-        val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
-        val projection = arrayOf(
-            PhoneLookup.DISPLAY_NAME
-        )
-
-        try {
-            val cursor = context.contentResolver.query(uri, projection, null, null, null)
-            cursor.use {
-                if (cursor?.moveToFirst() == true) {
-                    return cursor.getStringValue(PhoneLookup.DISPLAY_NAME) ?: ""
-                }
-            }
-        } catch (ignored: Exception) {
-            Log.e(APP_NAME, "getNameFromPhoneNumber: ${ignored.message}")
-        }
-
-        return number
-    }
-
-    fun getPhotoUriFromPhoneNumber(number: String): String {
-        if (!context.hasPermission(PERMISSION_READ_CONTACTS)) {
-            return ""
-        }
-
-        val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
-        val projection = arrayOf(
-            PhoneLookup.PHOTO_URI
-        )
-
-        try {
-            val cursor = context.contentResolver.query(uri, projection, null, null, null)
-            cursor.use {
-                if (cursor?.moveToFirst() == true) {
-                    return cursor.getStringValue(PhoneLookup.PHOTO_URI) ?: ""
-                }
-            }
-        } catch (ignored: Exception) {
-        }
-
-        return ""
-    }
+//    fun getPhotoUriFromPhoneNumber(number: String): String {
+//        if (!context.hasPermission(PERMISSION_READ_CONTACTS)) {
+//            return ""
+//        }
+//
+//        val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+//        val projection = arrayOf(
+//            PhoneLookup.PHOTO_URI
+//        )
+//
+//        try {
+//            val cursor = context.contentResolver.query(uri, projection, null, null, null)
+//            cursor.use {
+//                if (cursor?.moveToFirst() == true) {
+//                    return cursor.getStringValue(PhoneLookup.PHOTO_URI) ?: ""
+//                }
+//            }
+//        } catch (ignored: Exception) {
+//        }
+//
+//        return ""
+//    }
 
     fun loadContactImage(
         path: String,
@@ -343,7 +344,7 @@ class SimpleContactsHelper(val context: Context) {
             .into(imageView)
     }
 
-    fun getContactLetterIcon(name: String): Bitmap {
+    private fun getContactLetterIcon(name: String): Bitmap {
         val letter = name.getNameLetter()
         val size = context.resources.getDimension(R.dimen.normal_icon_size).toInt()
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -375,15 +376,15 @@ class SimpleContactsHelper(val context: Context) {
         return bitmap
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables")
-    fun getColoredGroupIcon(title: String): Drawable {
-        val icon = context.resources.getDrawable(R.drawable.ic_group_circle_bg, context.theme)
-        val bgColor =
-            letterBackgroundColors[abs(title.hashCode()) % letterBackgroundColors.size].toInt()
-        (icon as LayerDrawable).findDrawableByLayerId(R.id.attendee_circular_background)
-            .applyColorFilter(bgColor)
-        return icon
-    }
+//    @SuppressLint("UseCompatLoadingForDrawables")
+//    fun getColoredGroupIcon(title: String): Drawable {
+//        val icon = context.resources.getDrawable(R.drawable.ic_group_circle_bg, context.theme)
+//        val bgColor =
+//            letterBackgroundColors[abs(title.hashCode()) % letterBackgroundColors.size].toInt()
+//        (icon as LayerDrawable).findDrawableByLayerId(R.id.attendee_circular_background)
+//            .applyColorFilter(bgColor)
+//        return icon
+//    }
 
     fun getContactLookupKey(contactId: String): String {
         val uri = Data.CONTENT_URI

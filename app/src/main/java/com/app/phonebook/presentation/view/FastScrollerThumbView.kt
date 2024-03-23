@@ -106,7 +106,6 @@ class FastScrollerThumbView @JvmOverloads constructor(
      *
      * @param fastScrollerView the [FastScrollerView] whose currently pressed indicator will be presented.
      */
-    @SuppressLint("ClickableViewAccessibility")
     fun setupWithFastScroller(fastScrollerView: FastScrollerView) {
 //        check(!isSetup) { "Only set this view's FastScrollerView once!" }
         this.fastScrollerView = fastScrollerView

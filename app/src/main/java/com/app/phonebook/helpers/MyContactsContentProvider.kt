@@ -15,10 +15,9 @@ import com.google.gson.reflect.TypeToken
 
 // used for sharing privately stored contacts in Simple Contacts with Simple Dialer, Simple SMS Messenger and Simple Calendar Pro
 object MyContactsContentProvider {
-    private const val AUTHORITY = "com.simplemobiletools.commons.contactsprovider"
-    val CONTACTS_CONTENT_URI = Uri.parse("content://$AUTHORITY/contacts")
+    private const val AUTHORITY = "com.app.phonebook.contactsprovider"
+    val CONTACTS_CONTENT_URI: Uri = Uri.parse("content://$AUTHORITY/contacts")
 
-    private const val FAVORITES_ONLY = "favorites_only"
     private const val COL_RAW_ID = "raw_id"
     private const val COL_CONTACT_ID = "contact_id"
     private const val COL_NAME = "name"

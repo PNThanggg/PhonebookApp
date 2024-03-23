@@ -12,11 +12,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.viewpager.widget.ViewPager
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ViewPagerAdapter
@@ -78,10 +76,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private var storedStartNameWithSurname = false
     var cachedContacts = ArrayList<Contact>()
 
-    private var mainCoordinatorLayout: CoordinatorLayout? = null
-    private var nestedView: View? = null
-    private var useTransparentNavigation = false
-
     override fun initView(savedInstanceState: Bundle?) {
         setupOptionsMenu(context = this@MainActivity)
         refreshMenuItems()
@@ -99,12 +93,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             checkContactPermissions()
 
             if (!config.wasOverlaySnackbarConfirmed && !Settings.canDrawOverlays(this)) {
-                val snackBar =
-                    Snackbar.make(binding.mainHolder, R.string.allow_displaying_over_other_apps, Snackbar.LENGTH_INDEFINITE)
-                        .setAction(R.string.ok) {
-                            config.wasOverlaySnackbarConfirmed = true
-                            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
-                        }
+                val snackBar = Snackbar.make(
+                    binding.mainHolder, R.string.allow_displaying_over_other_apps, Snackbar.LENGTH_INDEFINITE
+                ).setAction(R.string.ok) {
+                    config.wasOverlaySnackbarConfirmed = true
+                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                }
 
                 snackBar.setBackgroundTint(getProperBackgroundColor().darkenColor())
                 snackBar.setTextColor(getProperTextColor())
@@ -114,14 +108,16 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             handleNotificationPermission { granted ->
                 if (!granted) {
-                    PermissionRequiredDialog(this, R.string.allow_notifications_incoming_calls, { openNotificationSettings() })
+                    PermissionRequiredDialog(this, R.string.allow_notifications_incoming_calls, {
+                        openNotificationSettings()
+                    })
                 }
             }
         } else {
             launchSetDefaultDialerIntent()
         }
 
-        if (isQPlus() && (config.blockUnknownNumbers || config.blockHiddenNumbers)) {
+        if (isQPlus()) {
             setDefaultCallerIdApp()
         }
 
@@ -145,13 +141,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             color = properPrimaryColor.getContrastColor(),
             context = this@MainActivity
         )
+
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
 
         updateTextColors(binding.mainHolder)
         setupTabColors()
 
         getAllFragments().forEach {
-            it?.setupColors(getProperTextColor(), getProperPrimaryColor(), getProperPrimaryColor())
+            it?.setupColors(
+                getProperTextColor(),
+                getProperPrimaryColor(),
+                getProperPrimaryColor(),
+            )
         }
 
         val configStartNameWithSurname = config.startNameWithSurname
@@ -177,12 +178,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }, 2000)
     }
 
-    private fun checkContactPermissions() {
-        handlePermission(PERMISSION_READ_CONTACTS) {
-            initFragments()
-        }
-    }
-
     override fun initData() {
     }
 
@@ -199,6 +194,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     override fun onPause() {
         super.onPause()
+
         storedShowTabs = config.showTabs
         storedStartNameWithSurname = config.startNameWithSurname
         config.lastUsedViewPagerPage = binding.viewPager.currentItem
@@ -231,6 +227,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
+    private fun refreshMenuItems() {
+        val currentFragment = getCurrentFragment()
+        binding.mainMenu.getToolbar().menu.apply {
+            findItem(R.id.clear_call_history).isVisible = currentFragment == getRecentsFragment()
+            findItem(R.id.sort).isVisible = currentFragment != getRecentsFragment()
+            findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
+            findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
+            findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
+        }
+    }
+
     private fun setupOptionsMenu(context: Context) {
         binding.mainMenu.apply {
             getToolbar().inflateMenu(R.menu.menu)
@@ -239,7 +246,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             onSearchClosedListener = {
                 getAllFragments().forEach {
-                    it?.onSearchQueryChanged(context = context, text = "")
+                    it?.onSearchQueryChanged(
+                        context = context, text = ""
+                    )
                 }
             }
 
@@ -264,25 +273,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
-    private fun clearCallHistory() {
-        val confirmationText = "${getString(R.string.clear_history_confirmation)}\n\n${getString(R.string.cannot_be_undone)}"
-        ConfirmationDialog(this, confirmationText) {
-            RecentHelper(this).removeAllRecentCalls(this) {
-                runOnUiThread {
-                    getRecentsFragment()?.refreshItems()
-                }
-            }
-        }
-    }
-
-
-    private fun changeViewType() {
-        ChangeViewTypeDialog(this) {
-            refreshMenuItems()
-            getFavoritesFragment()?.refreshItems()
-        }
-    }
-
     private fun changeColumnCount() {
         val items = ArrayList<RadioItem>()
         for (i in 1..CONTACTS_GRID_MAX_COLUMNS_COUNT) {
@@ -299,68 +289,33 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
-    private fun getCurrentFragment(): BaseViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
-
-    private fun refreshMenuItems() {
-        val currentFragment = getCurrentFragment()
-        binding.mainMenu.getToolbar().menu.apply {
-            findItem(R.id.clear_call_history).isVisible = currentFragment == getRecentsFragment()
-            findItem(R.id.sort).isVisible = currentFragment != getRecentsFragment()
-            findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
-            findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
-            findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
+    private fun changeViewType() {
+        ChangeViewTypeDialog(this) {
+            refreshMenuItems()
+            getFavoritesFragment()?.refreshItems()
         }
     }
 
-    // use translucent navigation bar, set the background color to action and status bars
-    private fun updateMaterialActivityViews(
-        mainCoordinatorLayout: CoordinatorLayout?,
-        nestedView: View?,
-        useTransparentNavigation: Boolean,
-        useTopSearchMenu: Boolean,
-    ) {
-        this.mainCoordinatorLayout = mainCoordinatorLayout
-        this.nestedView = nestedView
-        this.useTransparentNavigation = useTransparentNavigation
-        this.useTopSearchMenu = useTopSearchMenu
-
-        handleNavigationAndScrolling()
-
-        val backgroundColor = getProperBackgroundColor()
-        updateStatusBarColor(backgroundColor)
-        updateActionbarColor(backgroundColor)
+    private fun updateMenuColors() {
+        updateStatusBarColor(getProperBackgroundColor())
+        binding.mainMenu.updateColors()
     }
 
-    private fun getAllFragments(): ArrayList<BaseViewPagerFragment<*>?> {
-        val showTabs = config.showTabs
-        val fragments = arrayListOf<BaseViewPagerFragment<*>?>()
-
-        if (showTabs and TAB_CONTACTS > 0) {
-            fragments.add(getContactsFragment())
+    private fun checkContactPermissions() {
+        handlePermission(PERMISSION_READ_CONTACTS) {
+            initFragments()
         }
-
-        if (showTabs and TAB_FAVORITES > 0) {
-            fragments.add(getFavoritesFragment())
-        }
-
-        if (showTabs and TAB_CALL_HISTORY > 0) {
-            fragments.add(getRecentsFragment())
-        }
-
-        return fragments
     }
 
-
-    private fun getContactsFragment(): ContactsFragment? = findViewById(R.id.contacts_fragment)
-
-    private fun getFavoritesFragment(): FavoritesFragment? = findViewById(R.id.favorites_fragment)
-
-    private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
-
-    fun refreshFragments() {
-        getContactsFragment()?.refreshItems()
-        getFavoritesFragment()?.refreshItems()
-        getRecentsFragment()?.refreshItems()
+    private fun clearCallHistory() {
+        val confirmationText = "${getString(R.string.clear_history_confirmation)}\n\n${getString(R.string.cannot_be_undone)}"
+        ConfirmationDialog(this, confirmationText) {
+            RecentHelper(this).removeAllRecentCalls(this) {
+                runOnUiThread {
+                    getRecentsFragment()?.refreshItems()
+                }
+            }
+        }
     }
 
     private fun getTabIcon(position: Int): Drawable {
@@ -423,14 +378,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         return icons
     }
 
-    private fun launchDialpad() {
-        Intent(applicationContext, DialpadActivity::class.java).apply {
-            startActivity(this)
-        }
-    }
-
     private fun initFragments() {
         binding.viewPager.offscreenPageLimit = 2
+
         binding.viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrollStateChanged(state: Int) {}
 
@@ -491,7 +441,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 binding.mainTabsHolder.newTab().setCustomView(R.layout.bottom_tablayout_item).apply {
                     customView?.findViewById<ImageView>(R.id.tab_item_icon)?.setImageDrawable(getTabIcon(index))
                     customView?.findViewById<TextView>(R.id.tab_item_label)?.text = getTabLabel(index)
-                    customView?.findViewById<TextView>(R.id.tab_item_label)?.let { AutoFitHelper.create(it) }
+                    customView?.findViewById<TextView>(R.id.tab_item_label)?.let {
+                        AutoFitHelper.create(it)
+                    }
                     binding.mainTabsHolder.addTab(this)
                 }
             }
@@ -514,13 +466,20 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         storedStartNameWithSurname = config.startNameWithSurname
     }
 
-    private fun updateMenuColors() {
-        updateStatusBarColor(getProperBackgroundColor())
-        binding.mainMenu.updateColors()
-    }
-
-    private fun getInactiveTabIndexes(activeIndex: Int) = (0 until binding.mainTabsHolder.tabCount).filter { it != activeIndex }
-
+    /**
+     * Updates the colors of the tabs and the bottom navigation bar.
+     *
+     * This method performs the following tasks:
+     * - Identifies the currently active tab based on the current item position in the ViewPager and updates its color.
+     * - Iterates over all the inactive tabs and updates their colors accordingly.
+     * - Sets the background color of the bottom navigation bar based on the determined interface color.
+     *
+     * Each tab is updated with a drawable indicating its active or inactive state, enhancing user awareness of the selected tab.
+     *
+     * The method ensures a cohesive and dynamic visual feedback on the tab selection by altering the appearance of the active tab and maintaining a visual consistency across the navigation elements.
+     *
+     * @see updateBottomTabItemColors Called to update the color of each tab based on its state (active/inactive).
+     */
     private fun setupTabColors() {
         val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
         updateBottomTabItemColors(
@@ -537,29 +496,48 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         updateNavigationBarColor(bottomBarColor)
     }
 
-    /**
-     * Clears missed calls notification.
-     *
-     * This function attempts to clear any missed call notifications using the `telecomManager`.
-     * It requires the application to have permissions related to call management (e.g., CALL_PHONE).
-     * If the application lacks these permissions, an exception will be thrown. However, this exception
-     * is caught and logged, ensuring that the application's execution is not interrupted.
-     *
-     * Note: The use of @SuppressLint("MissingPermission") indicates that the function may not explicitly
-     * check for permissions at the point of invocation, assuming permissions have been checked previously or
-     * the function is operating in an environment where permissions are not required (e.g., an emulator).
-     *
-     * @suppress Indicates suppression of the MissingPermission lint warning, acknowledging that permission
-     * checking is handled elsewhere or is not applicable.
-     */
-    @SuppressLint("MissingPermission")
-    private fun clearMissedCalls() {
-        try {
-            telecomManager.cancelMissedCallsNotification()
-        } catch (ignored: Exception) {
-            Log.e(APP_NAME, "clearMissedCalls: ${ignored.message}")
+    private fun launchDialpad() {
+        Intent(applicationContext, DialpadActivity::class.java).apply {
+            startActivity(this)
         }
     }
+
+    fun refreshFragments() {
+        getContactsFragment()?.refreshItems()
+        getFavoritesFragment()?.refreshItems()
+        getRecentsFragment()?.refreshItems()
+    }
+
+    private fun getAllFragments(): ArrayList<BaseViewPagerFragment<*>?> {
+        val showTabs = config.showTabs
+        val fragments = arrayListOf<BaseViewPagerFragment<*>?>()
+
+        if (showTabs and TAB_CONTACTS > 0) {
+            fragments.add(getContactsFragment())
+        }
+
+        if (showTabs and TAB_FAVORITES > 0) {
+            fragments.add(getFavoritesFragment())
+        }
+
+        if (showTabs and TAB_CALL_HISTORY > 0) {
+            fragments.add(getRecentsFragment())
+        }
+
+        return fragments
+    }
+
+    private fun getInactiveTabIndexes(activeIndex: Int) = (0 until binding.mainTabsHolder.tabCount).filter {
+        it != activeIndex
+    }
+
+    private fun getCurrentFragment(): BaseViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
+
+    private fun getContactsFragment(): ContactsFragment? = findViewById(R.id.contacts_fragment)
+
+    private fun getFavoritesFragment(): FavoritesFragment? = findViewById(R.id.favorites_fragment)
+
+    private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
 
     /**
      * Determines and returns the default tab index based on user preferences and application configuration.
@@ -656,6 +634,30 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     /**
+     * Clears missed calls notification.
+     *
+     * This function attempts to clear any missed call notifications using the `telecomManager`.
+     * It requires the application to have permissions related to call management (e.g., CALL_PHONE).
+     * If the application lacks these permissions, an exception will be thrown. However, this exception
+     * is caught and logged, ensuring that the application's execution is not interrupted.
+     *
+     * Note: The use of @SuppressLint("MissingPermission") indicates that the function may not explicitly
+     * check for permissions at the point of invocation, assuming permissions have been checked previously or
+     * the function is operating in an environment where permissions are not required (e.g., an emulator).
+     *
+     * @suppress Indicates suppression of the MissingPermission lint warning, acknowledging that permission
+     * checking is handled elsewhere or is not applicable.
+     */
+    @SuppressLint("MissingPermission")
+    private fun clearMissedCalls() {
+        try {
+            telecomManager.cancelMissedCallsNotification()
+        } catch (ignored: Exception) {
+            Log.e(APP_NAME, "clearMissedCalls: ${ignored.message}")
+        }
+    }
+
+    /**
      * Displays a dialog for changing the sorting order of contacts.
      *
      * This function presents a `ChangeSortingDialog` to the user, allowing them to select their preferred
@@ -683,8 +685,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getFavoritesFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
+                        context = this, text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -692,8 +693,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getContactsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
+                        context = this, text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -725,8 +725,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getFavoritesFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
+                        context = this, text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -734,8 +733,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getContactsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
+                        context = this, text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -743,8 +741,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getRecentsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this,
-                        text = binding.mainMenu.getCurrentQuery()
+                        context = this, text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }

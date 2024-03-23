@@ -8,9 +8,9 @@ import android.telecom.InCallService
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.isOutgoing
 import com.app.phonebook.base.extension.powerManager
+import com.app.phonebook.data.models.NoCall
 import com.app.phonebook.helpers.CallManager
 import com.app.phonebook.helpers.CallNotificationManager
-import com.app.phonebook.helpers.NoCall
 import com.app.phonebook.presentation.activities.CallActivity
 
 class CallService : InCallService() {

@@ -112,6 +112,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
 
     private fun gotContacts(contacts: ArrayList<Contact>) {
         setupLetterFastScroller(contacts)
+
         if (contacts.isEmpty()) {
             binding.apply {
                 fragmentPlaceholder.beVisible()

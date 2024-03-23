@@ -53,16 +53,23 @@ class SpeedDialAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val speedDial = speedDialValues[position]
-        holder.bindView(speedDial, true, true) { itemView, layoutPosition ->
+        holder.bindView(
+            speedDial,
+            allowSingleClick = true,
+            allowLongClick = true
+        ) { itemView, _ ->
             val binding = ItemSpeedDialBinding.bind(itemView)
             setupView(binding, speedDial)
         }
+
         bindViewHolder(holder)
     }
 
     override fun getItemCount() = speedDialValues.size
 
-    private fun getSelectedItems() = speedDialValues.filter { selectedKeys.contains(it.hashCode()) } as ArrayList<SpeedDial>
+    private fun getSelectedItems() = speedDialValues.filter {
+        selectedKeys.contains(it.hashCode())
+    } as ArrayList<SpeedDial>
 
     private fun deleteSpeedDial() {
         val ids = getSelectedItems().map { it.id }.toMutableList() as ArrayList<Int>

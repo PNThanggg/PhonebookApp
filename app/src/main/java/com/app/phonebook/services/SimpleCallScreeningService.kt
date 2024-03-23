@@ -2,7 +2,6 @@ package com.app.phonebook.services
 
 import android.telecom.Call
 import android.telecom.CallScreeningService
-import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.getMyContactsCursor
 import com.app.phonebook.helpers.SimpleContactsHelper
 
@@ -29,9 +28,9 @@ class SimpleCallScreeningService : CallScreeningService() {
      * `isBlocked` flag determined by this function's logic.
      */
     override fun onScreenCall(callDetails: Call.Details) {
-        val number = callDetails.handle?.schemeSpecificPart
+        val number: String? = callDetails.handle?.schemeSpecificPart
         when {
-            number != null && baseConfig.blockUnknownNumbers -> {
+            number != null -> {
                 val simpleContactsHelper = SimpleContactsHelper(this)
                 val privateCursor = getMyContactsCursor(
                     favoritesOnly = false,
@@ -42,9 +41,9 @@ class SimpleCallScreeningService : CallScreeningService() {
                 }
             }
 
-            number == null && baseConfig.blockHiddenNumbers -> {
-                respondToCall(callDetails, isBlocked = true)
-            }
+//            number == null -> {
+//                respondToCall(callDetails, isBlocked = true)
+//            }
 
             else -> {
                 respondToCall(callDetails, isBlocked = false)

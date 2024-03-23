@@ -3,7 +3,7 @@ package com.app.phonebook.base.extension
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.role.RoleManager
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -11,11 +11,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutManager
+import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Color
+import android.graphics.Point
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.TelecomManager
@@ -24,6 +28,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -74,7 +79,9 @@ import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.presentation.view.MyAppCompatCheckbox
 import com.app.phonebook.presentation.view.MyButton
+import com.app.phonebook.presentation.view.MyCompatRadioButton
 import com.app.phonebook.presentation.view.MyEditText
 import com.app.phonebook.presentation.view.MyFloatingActionButton
 import com.app.phonebook.presentation.view.MyTextView
@@ -199,8 +206,8 @@ fun Context.getAllContactSources(): ArrayList<ContactSource> {
 fun Context.getVisibleContactSources(): ArrayList<String> {
     val sources = getAllContactSources()
     val ignoredContactSources = baseConfig.ignoredContactSources
-    return ArrayList(sources).filter { !ignoredContactSources.contains(it.getFullIdentifier()) }
-        .map { it.name }.toMutableList() as ArrayList<String>
+    return ArrayList(sources).filter { !ignoredContactSources.contains(it.getFullIdentifier()) }.map { it.name }
+        .toMutableList() as ArrayList<String>
 }
 
 /**
@@ -224,13 +231,10 @@ fun Context.getVisibleContactSources(): ArrayList<String> {
  * and those meant to remain private within the app.
  */
 fun Context.getPrivateContactSource() = ContactSource(
-    SMT_PRIVATE,
-    SMT_PRIVATE,
-    getString(R.string.phone_storage_hidden)
+    SMT_PRIVATE, SMT_PRIVATE, getString(R.string.phone_storage_hidden)
 )
 
-fun Context.getMyContentProviderCursorLoader() =
-    CursorLoader(this, MyContentProvider.MY_CONTENT_URI, null, null, null, null)
+fun Context.getMyContentProviderCursorLoader() = CursorLoader(this, MyContentProvider.MY_CONTENT_URI, null, null, null, null)
 
 
 fun Context.getColoredMaterialStatusBarColor(): Int {
@@ -274,9 +278,76 @@ fun Context.getPhoneNumberTypeText(type: Int, label: String): String {
     }
 }
 
+val Context.notificationManager: NotificationManager get() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+val Context.windowManager: WindowManager get() = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
 val Context.telecomManager: TelecomManager get() = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 val Context.telephonyManager: TelephonyManager get() = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+val Context.usableScreenSize: Point
+    get() {
+        val size = Point()
+        windowManager.defaultDisplay.getSize(size)
+        return size
+    }
+
+@Suppress("DEPRECATION")
+val Context.realScreenSize: Point
+    get() {
+        val size = Point()
+        windowManager.defaultDisplay.getRealSize(size)
+        return size
+    }
+
+val Context.newNavigationBarHeight: Int
+    @SuppressLint("DiscouragedApi", "InternalInsetResource")
+    get() {
+        var navigationBarHeight = 0
+        val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+        if (resourceId > 0) {
+            navigationBarHeight = resources.getDimensionPixelSize(resourceId)
+        }
+        return navigationBarHeight
+    }
+
+val Context.statusBarHeight: Int
+    @SuppressLint("DiscouragedApi", "InternalInsetResource")
+    get() {
+        var statusBarHeight = 0
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        if (resourceId > 0) {
+            statusBarHeight = resources.getDimensionPixelSize(resourceId)
+        }
+        return statusBarHeight
+    }
+
+val Context.navigationBarSize: Point
+    get() = when {
+        navigationBarOnSide -> Point(newNavigationBarHeight, usableScreenSize.y)
+        navigationBarOnBottom -> Point(usableScreenSize.x, newNavigationBarHeight)
+        else -> Point()
+    }
+
+val Context.portrait get() = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+val Context.navigationBarOnSide: Boolean get() = usableScreenSize.x < realScreenSize.x && usableScreenSize.x > usableScreenSize.y
+val Context.navigationBarOnBottom: Boolean get() = usableScreenSize.y < realScreenSize.y
+val Context.navigationBarHeight: Int get() = if (navigationBarOnBottom && navigationBarSize.y != usableScreenSize.y) navigationBarSize.y else 0
+val Context.navigationBarWidth: Int get() = if (navigationBarOnSide) navigationBarSize.x else 0
+
+@SuppressLint("DiscouragedApi")
+fun Context.isUsingGestureNavigation(): Boolean {
+    return try {
+        val resourceId = resources.getIdentifier("config_navBarInteractionMode", "integer", "android")
+        if (resourceId > 0) {
+            resources.getInteger(resourceId) == 2
+        } else {
+            false
+        }
+    } catch (e: Exception) {
+        false
+    }
+}
 
 fun Context.getPopupMenuTheme(): Int {
     return if (isSPlus() && baseConfig.isUsingSystemTheme) {
@@ -301,6 +372,11 @@ fun Context.areMultipleSIMsAvailable(): Boolean {
     }
 }
 
+val Context.powerManager: PowerManager get() = getSystemService(Context.POWER_SERVICE) as PowerManager
+
+val Context.audioManager: AudioManager get() = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+val Context.isRTLLayout: Boolean get() = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
 
 fun Context.launchActivityIntent(intent: Intent) {
     try {
@@ -384,8 +460,8 @@ fun Context.updateTextColors(viewGroup: ViewGroup) {
         when (it) {
             is MyTextView -> it.setColors(textColor = textColor, accentColor = accentColor)
 //            is MyAppCompatSpinner -> it.setColors(textColor, accentColor, backgroundColor)
-//            is MyCompatRadioButton -> it.setColors(textColor, accentColor, backgroundColor)
-//            is MyAppCompatCheckbox -> it.setColors(textColor, accentColor, backgroundColor)
+            is MyCompatRadioButton -> it.setColors(textColor, accentColor)
+            is MyAppCompatCheckbox -> it.setColors(textColor, accentColor)
             is MyEditText -> it.setColors(textColor = textColor, accentColor = accentColor)
 //            is MyAutoCompleteTextView -> it.setColors(textColor, accentColor, backgroundColor)
             is MyFloatingActionButton -> it.setColors(accentColor = accentColor)
@@ -398,8 +474,7 @@ fun Context.updateTextColors(viewGroup: ViewGroup) {
 }
 
 
-fun Context.getAppIconColors() =
-    resources.getIntArray(R.array.md_app_icon_colors).toCollection(ArrayList())
+fun Context.getAppIconColors() = resources.getIntArray(R.array.md_app_icon_colors).toCollection(ArrayList())
 
 
 fun Context.getTimeFormat() = if (baseConfig.use24HourFormat) TIME_FORMAT_24 else TIME_FORMAT_12
@@ -506,17 +581,7 @@ fun Context.hasPermission(permId: Int) = ContextCompat.checkSelfPermission(
 ) == PackageManager.PERMISSION_GRANTED
 
 fun Context.isDefaultDialer(): Boolean {
-    return if (!packageName.startsWith("com.simplemobiletools.contacts") && !packageName.startsWith(
-            "com.simplemobiletools.dialer"
-        )
-    ) {
-        true
-    } else if ((packageName.startsWith("com.simplemobiletools.contacts") || packageName.startsWith("com.simplemobiletools.dialer")) && isQPlus()) {
-        val roleManager = getSystemService(RoleManager::class.java)
-        roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-    } else {
-        telecomManager.defaultDialerPackage == packageName
-    }
+    return telecomManager.defaultDialerPackage == packageName
 }
 
 fun Context.openNotificationSettings() {

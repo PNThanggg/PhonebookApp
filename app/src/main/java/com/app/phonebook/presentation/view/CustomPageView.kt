@@ -53,7 +53,11 @@ open class CustomPageView : ViewPager {
 
     override fun getAdapter(): PagerAdapter? {
         val adapter = super.getAdapter()
-        return if (adapter is ReversingAdapter) adapter.getDelegate() else adapter
+        return if (adapter is ReversingAdapter) {
+            adapter.getDelegate()
+        } else {
+            adapter
+        }
     }
 
     private val isRtl: Boolean
@@ -191,7 +195,7 @@ open class CustomPageView : ViewPager {
 
     private class ReversingOnPageChangeListener(
         private val listener: OnPageChangeListener,
-        private val context: Context,
+        context: Context,
     ) : OnPageChangeListener {
         val customPageView: CustomPageView = CustomPageView(context = context)
 
@@ -245,9 +249,6 @@ open class CustomPageView : ViewPager {
 
     private class ReversingAdapter(adapter: PagerAdapter, context: Context) :
         DelegatingPagerAdapter(adapter) {
-//        val customPageView: CustomPageView =
-//            CustomPageView::class.java.getDeclaredConstructor().newInstance()
-
         val customPageView = CustomPageView(context = context)
 
         override fun destroyItem(container: ViewGroup, position: Int, any: Any) {
@@ -302,5 +303,4 @@ open class CustomPageView : ViewPager {
             super.setPrimaryItem(container, newPosition, any)
         }
     }
-
 }

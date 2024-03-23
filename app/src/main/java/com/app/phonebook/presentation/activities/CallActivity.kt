@@ -59,15 +59,15 @@ import com.app.phonebook.base.utils.isOreoMr1Plus
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.AudioRoute
 import com.app.phonebook.data.models.CallContact
+import com.app.phonebook.data.models.NoCall
 import com.app.phonebook.data.models.SimpleListItem
+import com.app.phonebook.data.models.SingleCall
+import com.app.phonebook.data.models.TwoCalls
 import com.app.phonebook.databinding.ActivityCallBinding
 import com.app.phonebook.helpers.CallContactAvatarHelper
 import com.app.phonebook.helpers.CallContactHelper.getCallContact
 import com.app.phonebook.helpers.CallManager
-import com.app.phonebook.helpers.CallManagerListener
-import com.app.phonebook.helpers.NoCall
-import com.app.phonebook.helpers.SingleCall
-import com.app.phonebook.helpers.TwoCalls
+import com.app.phonebook.interfaces.CallManagerListener
 import com.app.phonebook.presentation.dialog.DynamicBottomSheetChooserDialog
 import kotlin.math.max
 import kotlin.math.min
@@ -125,6 +125,178 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
         return ActivityCallBinding.inflate(inflater)
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        updateState()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateState()
+        updateNavigationBarColor(getProperBackgroundColor())
+
+        if (config.isUsingSystemTheme) {
+            updateStatusBarColor(getProperBackgroundColor())
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        CallManager.removeListener(callCallback)
+        disableProximitySensor()
+
+        if (screenOnWakeLock?.isHeld == true) {
+            screenOnWakeLock!!.release()
+        }
+    }
+
+    override fun onBack() {
+        if (binding.dialpadWrapper.isVisible()) {
+            hideDialpad()
+            return
+        } else {
+            super.onBack()
+        }
+
+        val callState = CallManager.getState()
+        if (callState == Call.STATE_CONNECTING || callState == Call.STATE_DIALING) {
+            endCall()
+        }
+    }
+
+    private fun initButtons() = binding.apply {
+        if (config.disableSwipeToAnswer) {
+            callDraggable.beGone()
+            callDraggableBackground.beGone()
+            callLeftArrow.beGone()
+            callRightArrow.beGone()
+
+            callDecline.setOnClickListener {
+                endCall()
+            }
+
+            callAccept.setOnClickListener {
+                acceptCall()
+            }
+        } else {
+            handleSwipe()
+        }
+
+        callToggleMicrophone.setOnClickListener {
+            toggleMicrophone()
+        }
+
+        callToggleSpeaker.setOnClickListener {
+            changeCallAudioRoute()
+        }
+
+        callDialpad.setOnClickListener {
+            toggleDialpadVisibility()
+        }
+
+        dialpadClose.setOnClickListener {
+            hideDialpad()
+        }
+
+        callToggleHold.setOnClickListener {
+            toggleHold()
+        }
+
+        callAdd.setOnClickListener {
+            Intent(applicationContext, DialpadActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                startActivity(this)
+            }
+        }
+
+        callSwap.setOnClickListener {
+            CallManager.swap()
+        }
+
+        callMerge.setOnClickListener {
+            CallManager.merge()
+        }
+
+        callManage.setOnClickListener {
+            startActivity(Intent(this@CallActivity, ConferenceActivity::class.java))
+        }
+
+        callEnd.setOnClickListener {
+            endCall()
+        }
+
+        dialpadInclude.apply {
+            dialpad0Holder.setOnClickListener { dialpadPressed('0') }
+            dialpad1Holder.setOnClickListener { dialpadPressed('1') }
+            dialpad2Holder.setOnClickListener { dialpadPressed('2') }
+            dialpad3Holder.setOnClickListener { dialpadPressed('3') }
+            dialpad4Holder.setOnClickListener { dialpadPressed('4') }
+            dialpad5Holder.setOnClickListener { dialpadPressed('5') }
+            dialpad6Holder.setOnClickListener { dialpadPressed('6') }
+            dialpad7Holder.setOnClickListener { dialpadPressed('7') }
+            dialpad8Holder.setOnClickListener { dialpadPressed('8') }
+            dialpad9Holder.setOnClickListener { dialpadPressed('9') }
+
+            arrayOf(
+                dialpad0Holder,
+                dialpad1Holder,
+                dialpad2Holder,
+                dialpad3Holder,
+                dialpad4Holder,
+                dialpad5Holder,
+                dialpad6Holder,
+                dialpad7Holder,
+                dialpad8Holder,
+                dialpad9Holder,
+                dialpadPlusHolder,
+                dialpadAsteriskHolder,
+                dialpadHashtagHolder
+            ).forEach {
+                it.background = ResourcesCompat.getDrawable(resources, R.drawable.pill_background, theme)
+                it.background?.alpha = LOWER_ALPHA_INT
+            }
+
+            dialpad0Holder.setOnLongClickListener { dialpadPressed('+'); true }
+            dialpadAsteriskHolder.setOnClickListener { dialpadPressed('*') }
+            dialpadHashtagHolder.setOnClickListener { dialpadPressed('#') }
+        }
+
+        dialpadWrapper.setBackgroundColor(getProperBackgroundColor())
+        arrayOf(dialpadClose, callSimImage).forEach {
+            it.applyColorFilter(getProperTextColor())
+        }
+
+        val bgColor = getProperBackgroundColor()
+        val inactiveColor = getInactiveButtonColor()
+        arrayOf(
+            callToggleMicrophone, callToggleSpeaker, callDialpad,
+            callToggleHold, callAdd, callSwap, callMerge, callManage
+        ).forEach {
+            it.applyColorFilter(bgColor.getContrastColor())
+            it.background.applyColorFilter(inactiveColor)
+        }
+
+        arrayOf(
+            callToggleMicrophone, callToggleSpeaker, callDialpad,
+            callToggleHold, callAdd, callSwap, callMerge, callManage
+        ).forEach { imageView ->
+            imageView.setOnLongClickListener {
+                if (!imageView.contentDescription.isNullOrEmpty()) {
+                    toast(imageView.contentDescription.toString())
+                }
+                true
+            }
+        }
+
+        callSimId.setTextColor(getProperTextColor().getContrastColor())
+        dialpadInput.disableKeyboard()
+
+        dialpadWrapper.onGlobalLayout {
+            dialpadHeight = dialpadWrapper.height.toFloat()
+        }
+    }
+
+
     private val callCallback = object : CallManagerListener {
         override fun onStateChanged() {
             updateState()
@@ -142,6 +314,7 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
     }
 
     @SuppressLint("NewApi")
+    @Suppress("DEPRECATION")
     private fun addLockScreenFlags() {
         if (isOreoMr1Plus()) {
             setShowWhenLocked(true)
@@ -757,138 +930,5 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
         toggleButtonColor(binding.callToggleHold, isOnHold)
         binding.callToggleHold.contentDescription = getString(if (isOnHold) R.string.resume_call else R.string.hold_call)
         binding.holdStatusLabel.beVisibleIf(isOnHold)
-    }
-
-
-    private fun initButtons() = binding.apply {
-        if (config.disableSwipeToAnswer) {
-            callDraggable.beGone()
-            callDraggableBackground.beGone()
-            callLeftArrow.beGone()
-            callRightArrow.beGone()
-
-            callDecline.setOnClickListener {
-                endCall()
-            }
-
-            callAccept.setOnClickListener {
-                acceptCall()
-            }
-        } else {
-            handleSwipe()
-        }
-
-        callToggleMicrophone.setOnClickListener {
-            toggleMicrophone()
-        }
-
-        callToggleSpeaker.setOnClickListener {
-            changeCallAudioRoute()
-        }
-
-        callDialpad.setOnClickListener {
-            toggleDialpadVisibility()
-        }
-
-        dialpadClose.setOnClickListener {
-            hideDialpad()
-        }
-
-        callToggleHold.setOnClickListener {
-            toggleHold()
-        }
-
-        callAdd.setOnClickListener {
-            Intent(applicationContext, DialpadActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-                startActivity(this)
-            }
-        }
-
-        callSwap.setOnClickListener {
-            CallManager.swap()
-        }
-
-        callMerge.setOnClickListener {
-            CallManager.merge()
-        }
-
-        callManage.setOnClickListener {
-            startActivity(Intent(this@CallActivity, ConferenceActivity::class.java))
-        }
-
-        callEnd.setOnClickListener {
-            endCall()
-        }
-
-        dialpadInclude.apply {
-            dialpad0Holder.setOnClickListener { dialpadPressed('0') }
-            dialpad1Holder.setOnClickListener { dialpadPressed('1') }
-            dialpad2Holder.setOnClickListener { dialpadPressed('2') }
-            dialpad3Holder.setOnClickListener { dialpadPressed('3') }
-            dialpad4Holder.setOnClickListener { dialpadPressed('4') }
-            dialpad5Holder.setOnClickListener { dialpadPressed('5') }
-            dialpad6Holder.setOnClickListener { dialpadPressed('6') }
-            dialpad7Holder.setOnClickListener { dialpadPressed('7') }
-            dialpad8Holder.setOnClickListener { dialpadPressed('8') }
-            dialpad9Holder.setOnClickListener { dialpadPressed('9') }
-
-            arrayOf(
-                dialpad0Holder,
-                dialpad1Holder,
-                dialpad2Holder,
-                dialpad3Holder,
-                dialpad4Holder,
-                dialpad5Holder,
-                dialpad6Holder,
-                dialpad7Holder,
-                dialpad8Holder,
-                dialpad9Holder,
-                dialpadPlusHolder,
-                dialpadAsteriskHolder,
-                dialpadHashtagHolder
-            ).forEach {
-                it.background = ResourcesCompat.getDrawable(resources, R.drawable.pill_background, theme)
-                it.background?.alpha = LOWER_ALPHA_INT
-            }
-
-            dialpad0Holder.setOnLongClickListener { dialpadPressed('+'); true }
-            dialpadAsteriskHolder.setOnClickListener { dialpadPressed('*') }
-            dialpadHashtagHolder.setOnClickListener { dialpadPressed('#') }
-        }
-
-        dialpadWrapper.setBackgroundColor(getProperBackgroundColor())
-        arrayOf(dialpadClose, callSimImage).forEach {
-            it.applyColorFilter(getProperTextColor())
-        }
-
-        val bgColor = getProperBackgroundColor()
-        val inactiveColor = getInactiveButtonColor()
-        arrayOf(
-            callToggleMicrophone, callToggleSpeaker, callDialpad,
-            callToggleHold, callAdd, callSwap, callMerge, callManage
-        ).forEach {
-            it.applyColorFilter(bgColor.getContrastColor())
-            it.background.applyColorFilter(inactiveColor)
-        }
-
-        arrayOf(
-            callToggleMicrophone, callToggleSpeaker, callDialpad,
-            callToggleHold, callAdd, callSwap, callMerge, callManage
-        ).forEach { imageView ->
-            imageView.setOnLongClickListener {
-                if (!imageView.contentDescription.isNullOrEmpty()) {
-                    toast(imageView.contentDescription.toString())
-                }
-                true
-            }
-        }
-
-        callSimId.setTextColor(getProperTextColor().getContrastColor())
-        dialpadInput.disableKeyboard()
-
-        dialpadWrapper.onGlobalLayout {
-            dialpadHeight = dialpadWrapper.height.toFloat()
-        }
     }
 }
