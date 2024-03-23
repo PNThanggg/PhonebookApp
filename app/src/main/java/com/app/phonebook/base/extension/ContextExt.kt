@@ -84,6 +84,7 @@ import com.app.phonebook.presentation.view.MyButton
 import com.app.phonebook.presentation.view.MyCompatRadioButton
 import com.app.phonebook.presentation.view.MyEditText
 import com.app.phonebook.presentation.view.MyFloatingActionButton
+import com.app.phonebook.presentation.view.MyTextInputLayout
 import com.app.phonebook.presentation.view.MyTextView
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -239,7 +240,7 @@ fun Context.getMyContentProviderCursorLoader() = CursorLoader(this, MyContentPro
 
 fun Context.getColoredMaterialStatusBarColor(): Int {
     return if (baseConfig.isUsingSystemTheme) {
-        resources.getColor(R.color.you_status_bar_color, theme)
+        resources.getColor(R.color.status_bar_color, theme)
     } else {
         getProperPrimaryColor()
     }
@@ -285,6 +286,7 @@ val Context.windowManager: WindowManager get() = getSystemService(Context.WINDOW
 val Context.telecomManager: TelecomManager get() = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 val Context.telephonyManager: TelephonyManager get() = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
+@Suppress("DEPRECATION")
 val Context.usableScreenSize: Point
     get() {
         val size = Point()
@@ -449,7 +451,6 @@ fun Context.updateTextColors(viewGroup: ViewGroup) {
         else -> baseConfig.textColor
     }
 
-    val backgroundColor = baseConfig.backgroundColor
     val accentColor = when {
         isWhiteTheme() || isBlackAndWhiteTheme() -> baseConfig.accentColor
         else -> getProperPrimaryColor()
@@ -459,15 +460,12 @@ fun Context.updateTextColors(viewGroup: ViewGroup) {
     (0 until cnt).map { viewGroup.getChildAt(it) }.forEach {
         when (it) {
             is MyTextView -> it.setColors(textColor = textColor, accentColor = accentColor)
-//            is MyAppCompatSpinner -> it.setColors(textColor, accentColor, backgroundColor)
             is MyCompatRadioButton -> it.setColors(textColor, accentColor)
             is MyAppCompatCheckbox -> it.setColors(textColor, accentColor)
             is MyEditText -> it.setColors(textColor = textColor, accentColor = accentColor)
-//            is MyAutoCompleteTextView -> it.setColors(textColor, accentColor, backgroundColor)
             is MyFloatingActionButton -> it.setColors(accentColor = accentColor)
-//            is MySeekBar -> it.setColors(textColor, accentColor, backgroundColor)
             is MyButton -> it.setColors(textColor = textColor)
-//            is MyTextInputLayout -> it.setColors(textColor, accentColor, backgroundColor)
+            is MyTextInputLayout -> it.setColors(textColor, accentColor)
             is ViewGroup -> updateTextColors(it)
         }
     }
@@ -523,7 +521,7 @@ fun Context.updateBottomTabItemColors(view: View?, isActive: Boolean, drawableId
 
 
 fun Context.getProperTextColor() = if (baseConfig.isUsingSystemTheme) {
-    resources.getColor(R.color.you_neutral_text_color, theme)
+    resources.getColor(R.color.neutral_text_color, theme)
 } else {
     baseConfig.textColor
 }
