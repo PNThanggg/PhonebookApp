@@ -89,7 +89,7 @@ fun String.trimToComparableNumber(): String {
 // get the contact names first letter at showing the placeholder without image
 fun String.getNameLetter() = normalizeString().toCharArray().getOrNull(0)?.toString()?.uppercase(Locale.getDefault()) ?: "A"
 
-fun String.normalizePhoneNumber(): String? = PhoneNumberUtils.normalizeNumber(this)
+fun String.normalizePhoneNumber(): String = PhoneNumberUtils.normalizeNumber(this)
 
 fun String.highlightTextFromNumbers(textToHighlight: String, primaryColor: Int): SpannableString {
     val spannableString = SpannableString(this)
