@@ -86,7 +86,6 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     companion object {
         private const val TIME_DELAY_CLICK = 200L
         private const val GENERIC_PERM_HANDLER = 100
-
     }
 
     lateinit var binding: VB
