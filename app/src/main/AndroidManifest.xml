@@ -141,7 +141,7 @@
             android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
                 <action android:name="com.app.phonebook.action.ACCEPT_CALL" />
-                <action android:name="com.app.phonebook.action.DECLINE_CALL" />
+<!--                <action android:name="com.app.phonebook.action.DECLINE_CALL" />-->
             </intent-filter>
         </receiver>
     </application>
