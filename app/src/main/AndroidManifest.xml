@@ -110,7 +110,6 @@
             </intent-filter>
         </activity>
 
-
         <service
             android:name=".services.CallService"
             android:enabled="true"

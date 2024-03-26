@@ -2,8 +2,6 @@ package com.app.phonebook.services
 
 import android.telecom.Call
 import android.telecom.CallScreeningService
-import com.app.phonebook.base.extension.getMyContactsCursor
-import com.app.phonebook.helpers.SimpleContactsHelper
 
 class SimpleCallScreeningService : CallScreeningService() {
     /**
@@ -31,32 +29,21 @@ class SimpleCallScreeningService : CallScreeningService() {
         val number: String? = callDetails.handle?.schemeSpecificPart
         when {
             number != null -> {
-                val simpleContactsHelper = SimpleContactsHelper(this)
-                val privateCursor = getMyContactsCursor(
-                    favoritesOnly = false,
-                    withPhoneNumbersOnly = true
-                )
-                simpleContactsHelper.exists(number, privateCursor) { exists ->
-                    respondToCall(callDetails, isBlocked = !exists)
-                }
+                respondToCall(callDetails)
             }
 
-//            number == null -> {
-//                respondToCall(callDetails, isBlocked = true)
-//            }
-
             else -> {
-                respondToCall(callDetails, isBlocked = false)
+                respondToCall(callDetails)
             }
         }
     }
 
-    private fun respondToCall(callDetails: Call.Details, isBlocked: Boolean) {
+    private fun respondToCall(callDetails: Call.Details) {
         val response = CallResponse.Builder()
-            .setDisallowCall(isBlocked)
-            .setRejectCall(isBlocked)
-            .setSkipCallLog(isBlocked)
-            .setSkipNotification(isBlocked)
+            .setDisallowCall(false)
+            .setRejectCall(false)
+            .setSkipCallLog(false)
+            .setSkipNotification(false)
             .build()
 
         respondToCall(callDetails, response)
