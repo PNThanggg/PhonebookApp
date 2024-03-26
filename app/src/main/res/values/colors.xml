@@ -10,7 +10,7 @@
     <color name="selected_item_background_color">#D1E5F4</color>
     <color name="ripple_color">#2E3133</color>
     <color name="status_bar_color">#E0F3FF</color>
-    <color name="neutral_text_color">#001E2C</color>
+    <color name="neutral_text_color">@color/theme_dark_text_color</color>
     <color name="you_background_color">#FCFCFF</color>
     <color name="you_primary_color">#219BCC</color>
     <color name="you_status_bar_color">#219BCC</color>

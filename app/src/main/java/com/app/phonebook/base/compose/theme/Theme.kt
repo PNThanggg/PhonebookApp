@@ -4,18 +4,14 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import com.app.phonebook.base.compose.theme.model.Theme
 import com.app.phonebook.base.compose.theme.model.Theme.Companion.systemDefaultMaterialYou
-import com.app.phonebook.base.utils.isSPlus
 
 @Composable
 internal fun Theme(
@@ -23,31 +19,21 @@ internal fun Theme(
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
-    val context = LocalContext.current
-    val isSystemInDarkTheme = isSystemInDarkTheme()
 
     val colorScheme = if (!view.isInEditMode) {
-        when {
-            theme is Theme.SystemDefaultMaterialYou && isSPlus() -> {
-                if (isSystemInDarkTheme) {
-                    dynamicDarkColorScheme(context)
-                } else {
-                    dynamicLightColorScheme(context)
-                }
-            }
-
-            theme is Theme.Custom || theme is Theme.Dark -> darkColorScheme(
+        when (theme) {
+            is Theme.Custom, is Theme.Dark -> darkColorScheme(
                 primary = theme.primaryColor, surface = theme.backgroundColor, onSurface = theme.textColor
             )
 
-            theme is Theme.White -> darkColorScheme(
+            is Theme.White -> darkColorScheme(
                 primary = Color(theme.accentColor),
                 surface = theme.backgroundColor,
                 tertiary = theme.primaryColor,
                 onSurface = theme.textColor,
             )
 
-            theme is Theme.BlackAndWhite -> darkColorScheme(
+            is Theme.BlackAndWhite -> darkColorScheme(
                 primary = Color(theme.accentColor),
                 surface = theme.backgroundColor,
                 tertiary = theme.primaryColor,

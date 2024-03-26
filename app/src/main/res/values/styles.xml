@@ -19,6 +19,7 @@
 
     <style name="TitleTextStyle">
         <item name="android:textSize">@dimen/actionbar_text_size</item>
+        <item name="fontFamily">@font/sofia_pro</item>
     </style>
 
     <style name="OverflowMenuAnchorStyle">

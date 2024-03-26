@@ -61,15 +61,11 @@ sealed class Theme : CommonTheme {
             return SystemDefaultMaterialYou(
                 primaryColorInt = config.primaryColor,
                 backgroundColorInt = config.backgroundColor,
-                textColorInt = if (isSPlus()) {
-                    colorResource(R.color.neutral_text_color).toArgb()
+                textColorInt =  (if (isInDarkThemeAndSurfaceIsNotLitWell()) {
+                    Color.White
                 } else {
-                    (if (isInDarkThemeAndSurfaceIsNotLitWell()) {
-                        Color.White
-                    } else {
-                        Color.Black
-                    }).toArgb()
-                },
+                    Color.Black
+                }).toArgb(),
             )
         }
     }
