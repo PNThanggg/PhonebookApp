@@ -52,6 +52,7 @@ class FastScrollerThumbView @JvmOverloads constructor(
     private var iconColor: Int by onUpdate(::applyStyle)
     private var textAppearanceRes: Int by onUpdate(::applyStyle)
     var textColor: Int by onUpdate(::applyStyle)
+    var fontSize: Float by onUpdate(::applyStyle)
 
     private val thumbView: ViewGroup
     private val textView: TextView
