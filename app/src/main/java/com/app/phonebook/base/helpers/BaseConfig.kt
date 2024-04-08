@@ -32,6 +32,7 @@ import com.app.phonebook.base.utils.MERGE_DUPLICATE_CONTACTS
 import com.app.phonebook.base.utils.PRIMARY_COLOR
 import com.app.phonebook.base.utils.SHOW_CALL_CONFIRMATION
 import com.app.phonebook.base.utils.SHOW_ONLY_CONTACTS_WITH_NUMBERS
+import com.app.phonebook.base.utils.SHOW_PRIVATE_CONTACTS
 import com.app.phonebook.base.utils.SORT_ORDER
 import com.app.phonebook.base.utils.SPEED_DIAL
 import com.app.phonebook.base.utils.START_NAME_WITH_SURNAME
@@ -43,7 +44,6 @@ import com.app.phonebook.base.utils.VIEW_TYPE_LIST
 import com.app.phonebook.base.utils.WAS_LOCAL_ACCOUNT_INITIALIZED
 import com.app.phonebook.base.utils.WAS_SHARED_THEME_EVER_ACTIVATED
 import com.app.phonebook.base.utils.WAS_SHARED_THEME_FORCED
-import com.app.phonebook.base.utils.isSPlus
 import java.text.SimpleDateFormat
 
 open class BaseConfig(private val context: Context) {
@@ -202,4 +202,8 @@ open class BaseConfig(private val context: Context) {
             context.resources.getInteger(R.integer.contacts_grid_columns_count_landscape)
         }
     }
+
+    var showPrivateContacts: Boolean
+        get() = prefs.getBoolean(SHOW_PRIVATE_CONTACTS, true)
+        set(showPrivateContacts) = prefs.edit().putBoolean(SHOW_PRIVATE_CONTACTS, showPrivateContacts).apply()
 }

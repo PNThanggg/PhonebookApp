@@ -72,6 +72,7 @@ const val DIALPAD_BEEPS = "dialpad_beeps"
 const val HIDE_DIALPAD_NUMBERS = "hide_dialpad_numbers"
 const val ALWAYS_SHOW_FULLSCREEN = "always_show_fullscreen"
 
+const val SHOW_PRIVATE_CONTACTS = "show_private_contacts"
 
 // contact grid view constants
 const val CONTACTS_GRID_MAX_COLUMNS_COUNT = 10

@@ -133,6 +133,11 @@
             </intent-filter>
         </service>
 
+        <provider
+            android:name=".provider.ContactsContentProvider"
+            android:authorities="com.app.phonebook.contactsprovider"
+            android:exported="false" />
+
         <receiver
             android:name=".receivers.CallActionReceiver"
             android:enabled="true"
