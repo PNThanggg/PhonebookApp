@@ -84,7 +84,7 @@
             android:id="@+id/dialpad_input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
+            android:layout_marginStart="16dp"
             android:gravity="center"
             android:inputType="phone"
             android:layoutDirection="ltr"
