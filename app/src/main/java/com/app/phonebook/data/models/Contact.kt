@@ -46,12 +46,10 @@ data class Contact(
 ) : Comparable<Contact> {
     val rawId = id
     val name = getNameToDisplay()
-    var birthdays =
-        events.filter { it.type == ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY }
-            .map { it.value }.toMutableList() as ArrayList<String>
-    var anniversaries =
-        events.filter { it.type == ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY }
-            .map { it.value }.toMutableList() as ArrayList<String>
+    var birthdays = events.filter { it.type == ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY }.map { it.value }
+        .toMutableList() as ArrayList<String>
+    var anniversaries = events.filter { it.type == ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY }.map { it.value }
+        .toMutableList() as ArrayList<String>
 
     companion object {
         var sorting = 0
@@ -118,13 +116,9 @@ data class Contact(
             }
         }
 
-        return if (firstValue.firstOrNull()?.isLetter() == true && secondValue.firstOrNull()
-                ?.isLetter() == false
-        ) {
+        return if (firstValue.firstOrNull()?.isLetter() == true && secondValue.firstOrNull()?.isLetter() == false) {
             -1
-        } else if (firstValue.firstOrNull()?.isLetter() == false && secondValue.firstOrNull()
-                ?.isLetter() == true
-        ) {
+        } else if (firstValue.firstOrNull()?.isLetter() == false && secondValue.firstOrNull()?.isLetter() == true) {
             1
         } else {
             if (firstValue.isEmpty() && secondValue.isNotEmpty()) {
@@ -147,6 +141,11 @@ data class Contact(
         return firstId.compareTo(secondId)
     }
 
+    fun getBubbleText() = when {
+        sorting and SORT_BY_FIRST_NAME != 0 -> firstName
+        sorting and SORT_BY_MIDDLE_NAME != 0 -> middleName
+        else -> surname
+    }
 
     fun getNameToDisplay(): String {
         val firstMiddle = "$firstName $middleName".trim()
@@ -173,6 +172,12 @@ data class Contact(
             !phoneNumber.isNullOrBlank() -> phoneNumber
             else -> return ""
         }
+    }
+
+    // photos stored locally always have different hashcodes. Avoid constantly refreshing the contact lists as the app thinks something changed.
+    fun getHashWithoutPrivatePhoto(): Int {
+        val photoToUse = if (isPrivate()) null else photo
+        return copy(photo = photoToUse).hashCode()
     }
 
     fun getStringToCompare(): String {
@@ -206,12 +211,20 @@ data class Contact(
 
     fun getHashToCompare() = getStringToCompare().hashCode()
 
-    private fun getFullCompany(): String {
-        var fullOrganization =
-            if (organization.company.isEmpty()) "" else "${organization.company}, "
+    fun getFullCompany(): String {
+        var fullOrganization = if (organization.company.isEmpty()) {
+            ""
+        } else {
+            "${organization.company}, "
+        }
+
         fullOrganization += organization.jobPosition
         return fullOrganization.trim().trimEnd(',')
     }
+
+    fun isABusinessContact() =
+        prefix.isEmpty() && firstName.isEmpty() && middleName.isEmpty() && surname.isEmpty() && suffix.isEmpty() && organization.isNotEmpty()
+
 
     @Suppress("DEPRECATION")
     fun doesContainPhoneNumber(
@@ -229,10 +242,8 @@ data class Contact(
                     PhoneNumberUtils.compare(it.normalizedNumber, normalizedText)
                 }
 
-                isCompare ||
-                        it.value.contains(text) ||
-                        it.normalizedNumber.contains(normalizedText) ||
-                        it.value.normalizePhoneNumber().contains(normalizedText)
+                isCompare || it.value.contains(text) || it.normalizedNumber.contains(normalizedText) || it.value.normalizePhoneNumber()
+                    .contains(normalizedText)
             }
         } else {
             false
@@ -252,9 +263,7 @@ data class Contact(
 
                     val isCompare = if (isSPlus()) {
                         PhoneNumberUtils.areSamePhoneNumber(
-                            phoneNumber.normalizePhoneNumber(),
-                            normalizedText,
-                            telephonyManager.networkCountryIso
+                            phoneNumber.normalizePhoneNumber(), normalizedText, telephonyManager.networkCountryIso
                         )
                     } else {
                         PhoneNumberUtils.compare(phoneNumber.normalizePhoneNumber(), normalizedText)
@@ -269,6 +278,8 @@ data class Contact(
     }
 
     fun isPrivate() = source == SMT_PRIVATE
+
+    fun getSignatureKey() = photoUri.ifEmpty { hashCode() }
 
     fun getPrimaryNumber(): String? {
         val primaryNumber = phoneNumbers.firstOrNull { it.isPrimary }

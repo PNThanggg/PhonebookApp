@@ -25,6 +25,9 @@ import androidx.core.view.WindowInsetsCompat
 import com.app.phonebook.R
 import com.app.phonebook.base.utils.CONTACT_ID
 import com.app.phonebook.base.utils.IS_PRIVATE
+import com.app.phonebook.base.utils.ON_CLICK_CALL_CONTACT
+import com.app.phonebook.base.utils.ON_CLICK_EDIT_CONTACT
+import com.app.phonebook.base.utils.ON_CLICK_VIEW_CONTACT
 import com.app.phonebook.base.utils.PERMISSION_READ_PHONE_STATE
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isOnMainThread
@@ -33,6 +36,8 @@ import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.DialogTitleBinding
 import com.app.phonebook.helpers.SimpleContactsHelper
+import com.app.phonebook.presentation.activities.EditContactActivity
+import com.app.phonebook.presentation.activities.ViewContactActivity
 import com.app.phonebook.presentation.dialog.SelectSIMDialog
 import com.app.phonebook.presentation.view.MyTextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -257,5 +262,40 @@ fun BaseActivity<*>.getHandleToUse(intent: Intent?, phoneNumber: String, callbac
                 }
             }
         }
+    }
+}
+
+fun Activity.handleGenericContactClick(contact: Contact) {
+    when (config.onContactClick) {
+        ON_CLICK_CALL_CONTACT -> callContact(contact)
+        ON_CLICK_VIEW_CONTACT -> viewContact(contact)
+        ON_CLICK_EDIT_CONTACT -> editContact(contact)
+    }
+}
+
+fun Activity.callContact(contact: Contact) {
+    hideKeyboard()
+//    if (contact.phoneNumbers.isNotEmpty()) {
+//        tryInitiateCall(contact) { startCallIntent(it) }
+//    } else {
+//        toast(R.string.no_phone_number_found)
+//    }
+}
+
+fun Activity.viewContact(contact: Contact) {
+    hideKeyboard()
+    Intent(applicationContext, ViewContactActivity::class.java).apply {
+        putExtra(CONTACT_ID, contact.id)
+        putExtra(IS_PRIVATE, contact.isPrivate())
+        startActivity(this)
+    }
+}
+
+fun Activity.editContact(contact: Contact) {
+    hideKeyboard()
+    Intent(applicationContext, EditContactActivity::class.java).apply {
+        putExtra(CONTACT_ID, contact.id)
+        putExtra(IS_PRIVATE, contact.isPrivate())
+        startActivity(this)
     }
 }

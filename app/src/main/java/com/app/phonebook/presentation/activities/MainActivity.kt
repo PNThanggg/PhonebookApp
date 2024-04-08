@@ -27,6 +27,7 @@ import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
+import com.app.phonebook.base.extension.handleGenericContactClick
 import com.app.phonebook.base.extension.isDefaultDialer
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.onGlobalLayout
@@ -46,6 +47,7 @@ import com.app.phonebook.base.utils.REQUEST_CODE_SET_DEFAULT_DIALER
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
+import com.app.phonebook.base.utils.TAB_GROUPS
 import com.app.phonebook.base.utils.TAB_LAST_USED
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
 import com.app.phonebook.base.utils.ensureBackgroundThread
@@ -56,7 +58,9 @@ import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.ActivityMainBinding
+import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.RecentHelper
+import com.app.phonebook.interfaces.RefreshContactsListener
 import com.app.phonebook.presentation.dialog.ChangeSortingDialog
 import com.app.phonebook.presentation.dialog.ChangeViewTypeDialog
 import com.app.phonebook.presentation.dialog.ConfirmationDialog
@@ -69,12 +73,16 @@ import com.app.phonebook.presentation.fragments.RecentFragment
 import com.google.android.material.snackbar.Snackbar
 import kotlin.system.exitProcess
 
-class MainActivity : BaseActivity<ActivityMainBinding>() {
+class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListener {
     private var launchedDialer = false
     private var storedShowTabs = 0
     private var storedFontSize = 0
     private var storedStartNameWithSurname = false
     var cachedContacts = ArrayList<Contact>()
+
+    private var isGettingContacts = false
+    var skipHashComparing = false
+    var forceListRedraw = false
 
     override fun initView(savedInstanceState: Bundle?) {
         setupOptionsMenu(context = this@MainActivity)
@@ -322,6 +330,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         val drawableId = when (position) {
             0 -> R.drawable.ic_person_vector
             1 -> R.drawable.ic_star_vector
+            2 -> R.drawable.ic_people_vector
             else -> R.drawable.ic_clock_vector
         }
 
@@ -334,6 +343,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         val stringId = when (position) {
             0 -> R.string.contacts_tab
             1 -> R.string.favorites_tab
+            2 -> R.string.groups_tab
             else -> R.string.call_history_tab
         }
 
@@ -350,6 +360,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         if (showTabs and TAB_FAVORITES != 0) {
             icons.add(R.drawable.ic_star_outline_vector)
+        }
+
+        if (showTabs and TAB_GROUPS != 0) {
+            icons.add(R.drawable.ic_people_outline_vector)
         }
 
         if (showTabs and TAB_CALL_HISTORY != 0) {
@@ -369,6 +383,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         if (showTabs and TAB_FAVORITES != 0) {
             icons.add(R.drawable.ic_star_vector)
+        }
+
+        if (showTabs and TAB_GROUPS != 0) {
+            icons.add(R.drawable.ic_people_vector)
         }
 
         if (showTabs and TAB_CALL_HISTORY != 0) {
@@ -771,5 +789,57 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         } catch (e: Exception) {
             Log.e(APP_NAME, "cacheContacts: ${e.message}")
         }
+    }
+
+    override fun refreshContacts(refreshTabsMask: Int) {
+        if (isDestroyed || isFinishing || isGettingContacts) {
+            return
+        }
+
+        isGettingContacts = true
+
+        if (binding.viewPager.adapter == null) {
+            binding.viewPager.adapter = ViewPagerAdapter(this)
+            binding.viewPager.currentItem = getDefaultTab()
+        }
+
+        ContactsHelper(this).getContacts { contacts ->
+            isGettingContacts = false
+            if (isDestroyed || isFinishing) {
+                return@getContacts
+            }
+
+//            if (refreshTabsMask and TAB_CONTACTS != 0) {
+//                findViewById<BaseViewPagerFragment<*>>(R.id.contacts_fragment)?.apply {
+//                    skipHashComparing = true
+//                    refreshContacts(contacts)
+//                }
+//            }
+//
+//            if (refreshTabsMask and TAB_FAVORITES != 0) {
+//                findViewById<BaseViewPagerFragment<*>>(R.id.favorites_fragment)?.apply {
+//                    skipHashComparing = true
+//                    refreshContacts(contacts)
+//                }
+//            }
+//
+//            if (refreshTabsMask and TAB_GROUPS != 0) {
+//                findViewById<BaseViewPagerFragment<*>>(R.id.groups_fragment)?.apply {
+//                    if (refreshTabsMask == TAB_GROUPS) {
+//                        skipHashComparing = true
+//                    }
+//
+//                    refreshContacts(contacts)
+//                }
+//            }
+
+            if (binding.mainMenu.isSearchOpen) {
+                getCurrentFragment()?.onSearchQueryChanged(context = this@MainActivity, text = binding.mainMenu.getCurrentQuery())
+            }
+        }
+    }
+
+    override fun contactClicked(contact: Contact) {
+        handleGenericContactClick(contact)
     }
 }

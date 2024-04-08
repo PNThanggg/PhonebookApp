@@ -34,9 +34,10 @@ import com.app.phonebook.presentation.activities.MainActivity
 import com.app.phonebook.presentation.view.FastScrollItemIndicator
 import java.util.Locale
 
-class ContactsFragment(context: Context, attributeSet: AttributeSet) :
-    BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet),
-    RefreshItemsListener {
+class ContactsFragment(
+    context: Context,
+    attributeSet: AttributeSet
+) : BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
 
@@ -90,7 +91,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
     }
 
     override fun refreshItems(callback: (() -> Unit)?) {
-        val privateCursor = context?.getMyContactsCursor(false, true)
+        val privateCursor = context?.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
         ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
             allContacts = contacts
 

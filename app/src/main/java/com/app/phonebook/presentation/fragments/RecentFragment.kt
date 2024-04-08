@@ -21,7 +21,6 @@ import com.app.phonebook.base.utils.PERMISSION_READ_CALL_LOG
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
-import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RecentCall
 import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.ContactsHelper
@@ -32,9 +31,10 @@ import com.app.phonebook.helpers.setNamesIfEmpty
 import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.view.MyRecyclerView
 
-class RecentFragment(context: Context, attributeSet: AttributeSet) :
-    BaseViewPagerFragment<BaseViewPagerFragment.RecentInnerBinding>(context, attributeSet),
-    RefreshItemsListener {
+class RecentFragment(
+    context: Context,
+    attributeSet: AttributeSet
+) : BaseViewPagerFragment<BaseViewPagerFragment.RecentInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentRecentBinding
     private var allRecentCalls = listOf<RecentCall>()
     private var recentAdapter: RecentCallsAdapter? = null

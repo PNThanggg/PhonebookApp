@@ -8,6 +8,7 @@ import com.app.phonebook.base.extension.putPhoneAccountHandle
 import com.app.phonebook.base.helpers.BaseConfig
 import com.app.phonebook.base.utils.ALL_TABS_MASK
 import com.app.phonebook.base.utils.ALWAYS_SHOW_FULLSCREEN
+import com.app.phonebook.base.utils.AUTO_BACKUP_CONTACT_SOURCES
 import com.app.phonebook.base.utils.DIALPAD_BEEPS
 import com.app.phonebook.base.utils.DIALPAD_VIBRATION
 import com.app.phonebook.base.utils.DISABLE_PROXIMITY_SENSOR
@@ -67,6 +68,11 @@ class Config(context: Context) : BaseConfig(context) {
     var showTabs: Int
         get() = prefs.getInt(SHOW_TABS, ALL_TABS_MASK)
         set(showTabs) = prefs.edit().putInt(SHOW_TABS, showTabs).apply()
+
+    var autoBackupContactSources: Set<String>
+        get() = prefs.getStringSet(AUTO_BACKUP_CONTACT_SOURCES, setOf())!!
+        set(autoBackupContactSources) = prefs.edit().remove(AUTO_BACKUP_CONTACT_SOURCES).putStringSet(AUTO_BACKUP_CONTACT_SOURCES, autoBackupContactSources)
+            .apply()
 
     var groupSubsequentCalls: Boolean
         get() = prefs.getBoolean(GROUP_SUBSEQUENT_CALLS, true)

@@ -42,6 +42,11 @@ const val WAS_SHARED_THEME_EVER_ACTIVATED = "was_shared_theme_ever_activated"
 const val IS_USING_SHARED_THEME = "is_using_shared_theme"
 const val IS_USING_AUTO_THEME = "is_using_auto_theme"
 const val IS_USING_SYSTEM_THEME = "is_using_system_theme"
+const val AUTO_BACKUP_CONTACT_SOURCES = "auto_backup_contact_sources"
+const val SHOW_PRIVATE_CONTACTS = "show_private_contacts"
+const val ON_CONTACT_CLICK = "on_contact_click"
+const val SHOW_CONTACT_THUMBNAILS = "show_contact_thumbnails"
+const val SHOW_PHONE_NUMBERS = "show_phone_numbers"
 const val WAS_SHARED_THEME_FORCED = "was_shared_theme_forced"
 const val LAST_USED_VIEW_PAGER_PAGE = "last_used_view_pager_page"
 const val USE_24_HOUR_FORMAT = "use_24_hour_format"
@@ -100,11 +105,15 @@ const val TAB_LAST_USED = 0
 const val TAB_CONTACTS = 1
 const val TAB_FAVORITES = 2
 const val TAB_CALL_HISTORY = 4
+const val TAB_GROUPS = 8
 
-const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
+const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY or TAB_GROUPS
 
-val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_CALL_HISTORY)
+val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_GROUPS, TAB_CALL_HISTORY)
 
+const val ON_CLICK_CALL_CONTACT = 1
+const val ON_CLICK_VIEW_CONTACT = 2
+const val ON_CLICK_EDIT_CONTACT = 3
 
 const val DATE_FORMAT_ONE = "dd.MM.yyyy"
 const val DATE_FORMAT_TWO = "dd/MM/yyyy"
@@ -138,6 +147,7 @@ fun ensureBackgroundThread(callback: () -> Unit) {
         callback()
     }
 }
+
 val normalizeRegex = "\\p{InCombiningDiacriticalMarks}+".toRegex()
 
 const val FIRST_CONTACT_ID = 1000000
@@ -198,5 +208,7 @@ fun getEmptyLocalContact() = LocalContact(
 )
 
 
-fun getProperText(text: String, shouldNormalize: Boolean) =
-    if (shouldNormalize) text.normalizeString() else text
+fun getProperText(
+    text: String,
+    shouldNormalize: Boolean
+) = if (shouldNormalize) text.normalizeString() else text

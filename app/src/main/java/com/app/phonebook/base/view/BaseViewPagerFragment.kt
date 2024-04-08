@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.RelativeLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import com.app.phonebook.adapter.ContactsAdapter
 import com.app.phonebook.adapter.RecentCallsAdapter
 import com.app.phonebook.base.extension.config
@@ -12,6 +13,9 @@ import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.getTextSize
 import com.app.phonebook.base.utils.SORT_BY_FIRST_NAME
 import com.app.phonebook.base.utils.SORT_BY_SURNAME
+import com.app.phonebook.data.models.Contact
+import com.app.phonebook.data.models.Group
+import com.app.phonebook.databinding.FragmentLayoutBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
 import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.Config
@@ -23,19 +27,26 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
     context: Context, attributeSet: AttributeSet
 ) : RelativeLayout(context, attributeSet) {
     protected var activity: BaseActivity<*>? = null
+
+    private var lastHashCode = 0
+    private var contactsIgnoringSearch = listOf<Contact>()
+    private var groupsIgnoringSearch = listOf<Group>()
     protected lateinit var innerBinding: BINDING
     private lateinit var config: Config
 
+    var skipHashComparing = false
+    var forceListRedraw = false
+
     fun setupFragment(activity: BaseActivity<*>) {
         config = activity.config
+
         if (this.activity == null) {
             this.activity = activity
 
             setupFragment()
+
             setupColors(
-                activity.getProperTextColor(),
-                activity.getProperPrimaryColor(),
-                activity.getProperPrimaryColor()
+                activity.getProperTextColor(), activity.getProperPrimaryColor(), activity.getProperPrimaryColor()
             )
         }
     }
@@ -90,5 +101,10 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
     class RecentInnerBinding(binding: FragmentRecentBinding) : InnerBinding {
         override val fragmentList = null
         override val recentList = binding.recentsList
+    }
+
+    class FragmentLayout(val binding: FragmentLayoutBinding) : InnerBinding {
+        override val fragmentList: MyRecyclerView = binding.fragmentList
+        override val recentList = null
     }
 }

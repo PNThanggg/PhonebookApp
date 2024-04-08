@@ -14,6 +14,7 @@ import android.content.pm.ShortcutManager
 import android.database.Cursor
 import android.graphics.Color
 import android.graphics.Point
+import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Handler
@@ -66,9 +67,13 @@ import com.app.phonebook.base.utils.PERMISSION_WRITE_CALENDAR
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CALL_LOG
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CONTACTS
 import com.app.phonebook.base.utils.PERMISSION_WRITE_STORAGE
+import com.app.phonebook.base.utils.SIGNAL_PACKAGE
 import com.app.phonebook.base.utils.SMT_PRIVATE
+import com.app.phonebook.base.utils.TELEGRAM_PACKAGE
 import com.app.phonebook.base.utils.TIME_FORMAT_12
 import com.app.phonebook.base.utils.TIME_FORMAT_24
+import com.app.phonebook.base.utils.VIBER_PACKAGE
+import com.app.phonebook.base.utils.WHATSAPP_PACKAGE
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.isSPlus
@@ -591,6 +596,18 @@ fun Context.getMyContactsCursor(favoritesOnly: Boolean, withPhoneNumbersOnly: Bo
     null
 }
 
+@SuppressLint("UseCompatLoadingForDrawables")
+fun Context.getPackageDrawable(packageName: String): Drawable {
+    return resources.getDrawable(
+        when (packageName) {
+            TELEGRAM_PACKAGE -> R.drawable.ic_telegram_rect_vector
+            SIGNAL_PACKAGE -> R.drawable.ic_signal_rect_vector
+            WHATSAPP_PACKAGE -> R.drawable.ic_whatsapp_rect_vector
+            VIBER_PACKAGE -> R.drawable.ic_viber_rect_vector
+            else -> R.drawable.ic_threema_rect_vector
+        }, theme
+    )
+}
 
 fun Context.getPermissionString(id: Int) = when (id) {
     PERMISSION_READ_STORAGE -> Manifest.permission.READ_EXTERNAL_STORAGE
