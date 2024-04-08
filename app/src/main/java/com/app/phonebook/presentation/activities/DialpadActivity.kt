@@ -52,7 +52,7 @@ import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.SpeedDial
 import com.app.phonebook.databinding.ActivityDialpadBinding
 import com.app.phonebook.helpers.ContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.provider.MyContactsContentProvider
 import com.app.phonebook.helpers.ToneGeneratorHelper
 import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.view.FastScrollItemIndicator

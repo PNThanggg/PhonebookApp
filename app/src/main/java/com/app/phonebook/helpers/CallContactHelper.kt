@@ -12,6 +12,7 @@ import com.app.phonebook.base.extension.telephonyManager
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.data.models.CallContact
+import com.app.phonebook.provider.MyContactsContentProvider
 
 object CallContactHelper {
     /**

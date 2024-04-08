@@ -8,7 +8,6 @@ import android.database.MatrixCursor
 import android.net.Uri
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.helpers.LocalContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
 import com.google.gson.Gson
 
 class ContactsContentProvider : ContentProvider() {

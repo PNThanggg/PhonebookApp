@@ -29,7 +29,7 @@ import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.FragmentContactsBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
 import com.app.phonebook.helpers.ContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.provider.MyContactsContentProvider
 import com.app.phonebook.presentation.activities.MainActivity
 import com.app.phonebook.presentation.view.FastScrollItemIndicator
 import java.util.Locale

@@ -14,7 +14,7 @@ import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.databinding.DialogFilterContactSourcesBinding
 import com.app.phonebook.helpers.ContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.provider.MyContactsContentProvider
 
 class FilterContactSourcesDialog(
     val activity: BaseActivity<*>, private val callback: () -> Unit

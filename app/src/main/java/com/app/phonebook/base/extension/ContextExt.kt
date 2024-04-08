@@ -78,7 +78,7 @@ import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.provider.MyContactsContentProvider
 import com.app.phonebook.presentation.view.MyAppCompatCheckbox
 import com.app.phonebook.presentation.view.MyButton
 import com.app.phonebook.presentation.view.MyCompatRadioButton

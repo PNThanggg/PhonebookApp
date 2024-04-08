@@ -22,10 +22,14 @@ import com.app.phonebook.base.utils.getQuestionMarks
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RecentCall
+import com.app.phonebook.provider.MyContactsContentProvider
 
 class RecentHelper(private val context: Context) {
-    private val COMPARABLE_PHONE_NUMBER_LENGTH = 9
-    private val QUERY_LIMIT = 200
+    companion object {
+        private const val COMPARABLE_PHONE_NUMBER_LENGTH = 9
+        private const val QUERY_LIMIT = 200
+    }
+
     private val contentUri = Calls.CONTENT_URI
 
     fun getRecentCalls(
@@ -33,7 +37,10 @@ class RecentHelper(private val context: Context) {
         maxSize: Int = QUERY_LIMIT,
         callback: (List<RecentCall>) -> Unit
     ) {
-        val privateCursor = context.getMyContactsCursor(false, true)
+        val privateCursor = context.getMyContactsCursor(
+            favoritesOnly = false,
+            withPhoneNumbersOnly = true
+        )
 
         ensureBackgroundThread {
             if (!context.hasPermission(PERMISSION_READ_CALL_LOG)) {
@@ -124,7 +131,7 @@ class RecentHelper(private val context: Context) {
                         name = contactsNumbersMap[number]!!
                     } else {
                         val normalizedNumber = number.normalizePhoneNumber()
-                        if (normalizedNumber!!.length >= COMPARABLE_PHONE_NUMBER_LENGTH) {
+                        if (normalizedNumber.length >= COMPARABLE_PHONE_NUMBER_LENGTH) {
                             name = contacts.filter { it.phoneNumbers.isNotEmpty() }
                                 .firstOrNull { contact ->
                                     val curNumber = contact.phoneNumbers.first().normalizedNumber

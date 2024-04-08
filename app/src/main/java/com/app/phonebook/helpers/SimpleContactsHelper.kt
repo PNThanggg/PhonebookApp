@@ -30,6 +30,7 @@ import com.app.phonebook.base.utils.getQuestionMarks
 import com.app.phonebook.base.utils.letterBackgroundColors
 import com.app.phonebook.data.models.PhoneNumber
 import com.app.phonebook.data.models.SimpleContact
+import com.app.phonebook.provider.MyContactsContentProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.load.engine.DiskCacheStrategy

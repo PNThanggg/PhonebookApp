@@ -1,4 +1,4 @@
-package com.app.phonebook.helpers
+package com.app.phonebook.provider
 
 import android.database.Cursor
 import android.net.Uri

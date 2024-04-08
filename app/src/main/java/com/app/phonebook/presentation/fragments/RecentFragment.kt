@@ -21,11 +21,10 @@ import com.app.phonebook.base.utils.PERMISSION_READ_CALL_LOG
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
-import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RecentCall
 import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.ContactsHelper
-import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.provider.MyContactsContentProvider
 import com.app.phonebook.helpers.RecentHelper
 import com.app.phonebook.helpers.hidePrivateContacts
 import com.app.phonebook.helpers.setNamesIfEmpty
