@@ -8,6 +8,7 @@ import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
+import com.app.phonebook.base.utils.TAB_GROUPS
 import com.app.phonebook.base.utils.tabsList
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
@@ -42,6 +43,10 @@ class ViewPagerAdapter(val activity: BaseActivity<*>) : PagerAdapter() {
 
         if (showTabs and TAB_FAVORITES > 0) {
             fragments.add(R.layout.fragment_favorites)
+        }
+
+        if (showTabs and TAB_GROUPS != 0) {
+            fragments.add(R.layout.fragment_groups)
         }
 
         if (showTabs and TAB_CALL_HISTORY > 0) {
