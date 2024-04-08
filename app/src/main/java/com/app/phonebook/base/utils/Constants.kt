@@ -13,6 +13,7 @@ const val MIN_RECENTS_THRESHOLD = 30
 const val DIALPAD_TONE_LENGTH_MS = 150L // The
 
 const val APP_NAME = "Phone Book"
+const val TAG = "PhoneBookTag"
 const val KEY_PHONE = "phone"
 const val CONTACT_ID = "contact_id"
 const val IS_PRIVATE = "is_private"
@@ -101,6 +102,7 @@ const val TAB_LAST_USED = 0
 const val TAB_CONTACTS = 1
 const val TAB_FAVORITES = 2
 const val TAB_CALL_HISTORY = 4
+const val TAB_GROUPS = 8
 
 const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
 
@@ -139,6 +141,7 @@ fun ensureBackgroundThread(callback: () -> Unit) {
         callback()
     }
 }
+
 val normalizeRegex = "\\p{InCombiningDiacriticalMarks}+".toRegex()
 
 const val FIRST_CONTACT_ID = 1000000
