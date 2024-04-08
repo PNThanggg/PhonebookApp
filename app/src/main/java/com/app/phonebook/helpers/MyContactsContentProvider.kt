@@ -18,13 +18,13 @@ object MyContactsContentProvider {
     private const val AUTHORITY = "com.app.phonebook.contactsprovider"
     val CONTACTS_CONTENT_URI: Uri = Uri.parse("content://$AUTHORITY/contacts")
 
-    private const val COL_RAW_ID = "raw_id"
-    private const val COL_CONTACT_ID = "contact_id"
-    private const val COL_NAME = "name"
-    private const val COL_PHOTO_URI = "photo_uri"
-    private const val COL_PHONE_NUMBERS = "phone_numbers"
-    private const val COL_BIRTHDAYS = "birthdays"
-    private const val COL_ANNIVERSARIES = "anniversaries"
+    const val COL_RAW_ID = "raw_id"
+    const val COL_CONTACT_ID = "contact_id"
+    const val COL_NAME = "name"
+    const val COL_PHOTO_URI = "photo_uri"
+    const val COL_PHONE_NUMBERS = "phone_numbers"
+    const val COL_BIRTHDAYS = "birthdays"
+    const val COL_ANNIVERSARIES = "anniversaries"
 
     fun getSimpleContacts(cursor: Cursor?): ArrayList<SimpleContact> {
         val contacts = ArrayList<SimpleContact>()
