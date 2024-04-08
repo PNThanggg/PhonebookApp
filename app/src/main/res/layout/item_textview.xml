@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.app.phonebook.presentation.view.MyTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/item_textview"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/activity_margin"
+    android:background="?attr/selectableItemBackground"
+    android:paddingStart="@dimen/medium_margin"
+    android:paddingTop="@dimen/activity_margin"
+    android:paddingBottom="@dimen/activity_margin"
+    tools:ignore="RtlSymmetry" />
