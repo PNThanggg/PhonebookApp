@@ -12,6 +12,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -137,9 +138,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         val properPrimaryColor = getProperPrimaryColor()
         val dialpadIcon = resources.getColoredDrawableWithColor(
-            drawableId = R.drawable.ic_dialpad_vector,
-            color = properPrimaryColor.getContrastColor(),
-            context = this@MainActivity
+            drawableId = R.drawable.ic_dialpad_vector, color = properPrimaryColor.getContrastColor(), context = this@MainActivity
         )
 
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
@@ -387,6 +386,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
 
             override fun onPageSelected(position: Int) {
+                if (position == tabsList.size - 1) {
+                    binding.mainCreateContactButton.visibility = View.GONE
+                } else {
+                    binding.mainCreateContactButton.visibility = View.VISIBLE
+                }
+
                 binding.mainTabsHolder.getTabAt(position)?.select()
                 getAllFragments().forEach {
                     it?.finishActMode()

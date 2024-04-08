@@ -45,6 +45,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:rippleColor="@color/pressed_item_foreground" />
 
+        <com.app.phonebook.presentation.view.MyFloatingActionButton
+            android:id="@+id/main_create_contact_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/activity_margin"
+            android:elevation="@dimen/medium_margin"
+            android:src="@drawable/ic_plus_vector"
+            app:backgroundTint="@color/color_primary"
+            app:layout_constraintBottom_toTopOf="@+id/main_dialpad_button"
+            app:layout_constraintEnd_toEndOf="@+id/main_dialpad_button" />
+
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/main_tabs_holder"
             android:layout_width="match_parent"
