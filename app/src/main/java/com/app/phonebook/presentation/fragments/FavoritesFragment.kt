@@ -36,8 +36,10 @@ import com.app.phonebook.presentation.view.MyLinearLayoutManager
 import com.google.gson.Gson
 import java.util.Locale
 
-class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
-    BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
+class FavoritesFragment(
+    context: Context,
+    attributeSet: AttributeSet
+) : BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
 

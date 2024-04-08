@@ -31,9 +31,10 @@ import com.app.phonebook.helpers.setNamesIfEmpty
 import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.view.MyRecyclerView
 
-class RecentFragment(context: Context, attributeSet: AttributeSet) :
-    BaseViewPagerFragment<BaseViewPagerFragment.RecentInnerBinding>(context, attributeSet),
-    RefreshItemsListener {
+class RecentFragment(
+    context: Context,
+    attributeSet: AttributeSet
+) : BaseViewPagerFragment<BaseViewPagerFragment.RecentInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentRecentBinding
     private var allRecentCalls = listOf<RecentCall>()
     private var recentAdapter: RecentCallsAdapter? = null
