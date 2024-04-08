@@ -97,4 +97,9 @@
         <item name="minHeight">@dimen/min_radio_checkbox_height</item>
         <item name="android:minHeight">@dimen/min_radio_checkbox_height</item>
     </style>
+
+    <style name="FastScrollerTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">18sp</item>
+    </style>
 </resources>
