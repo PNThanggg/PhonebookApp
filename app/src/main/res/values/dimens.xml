@@ -78,4 +78,10 @@
     <!-- keep these 2 values in dp to avoid scaling -->
     <dimen name="dialpad_text_size">28dp</dimen>
     <dimen name="dialpad_letters_text_size">12dp</dimen>
+
+    <!--fastScroller-->
+    <dimen name="default_handle_size">18dp</dimen>
+    <dimen name="default_popup_padding">16dp</dimen>
+
+    <dimen name="default_handle_padding">4dp</dimen>
 </resources>

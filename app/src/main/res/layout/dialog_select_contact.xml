@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/select_contact_holder"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <com.app.phonebook.presentation.view.MySearchMenu
-        android:id="@+id/contact_search_view"
+    <com.app.phonebook.presentation.view.MyRecyclerView
+        android:id="@+id/select_contact_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/medium_margin"
-        android:paddingTop="@dimen/medium_margin" />
+        android:clipToPadding="false"
+        android:layoutAnimation="@anim/layout_animation"
+        android:paddingEnd="@dimen/big_margin"
+        android:scrollbars="none"
+        app:layoutManager=".presentation.view.MyLinearLayoutManager"
+        tools:ignore="RtlSymmetry" />
 
     <com.app.phonebook.presentation.view.MyTextView
-        android:id="@+id/contacts_empty_placeholder"
+        android:id="@+id/select_contact_placeholder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/contact_search_view"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/small_margin"
         android:alpha="0.8"
-        android:gravity="center_horizontal"
+        android:gravity="center"
         android:paddingStart="@dimen/activity_margin"
         android:paddingTop="@dimen/activity_margin"
         android:paddingEnd="@dimen/activity_margin"
@@ -27,31 +33,21 @@
         android:textStyle="italic"
         android:visibility="gone" />
 
-    <com.app.phonebook.presentation.view.MyRecyclerView
-        android:id="@+id/select_contact_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/contacts_empty_placeholder"
-        android:clipToPadding="false"
-        android:scrollbars="none"
-        app:layoutManager=".presentation.view.MyLinearLayoutManager" />
-
     <com.app.phonebook.presentation.view.FastScrollerView
-        android:id="@+id/letter_fast_scroller"
+        android:id="@+id/letter_fastscroller"
         android:layout_width="32dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/contact_search_view"
         android:layout_alignParentEnd="true"
         android:paddingTop="@dimen/big_margin"
         android:paddingBottom="@dimen/big_margin" />
 
     <com.app.phonebook.presentation.view.FastScrollerThumbView
-        android:id="@+id/letter_fast_scroller_thumb"
+        android:id="@+id/letter_fastscroller_thumb"
         style="@style/FastScrollerThumb"
         android:layout_width="@dimen/fab_size"
         android:layout_height="match_parent"
-        android:layout_alignTop="@+id/letter_fast_scroller"
-        android:layout_alignBottom="@+id/letter_fast_scroller"
+        android:layout_alignTop="@+id/letter_fastscroller"
+        android:layout_alignBottom="@+id/letter_fastscroller"
         android:layout_marginEnd="@dimen/activity_margin"
-        android:layout_toStartOf="@+id/letter_fast_scroller" />
+        android:layout_toStartOf="@+id/letter_fastscroller" />
 </RelativeLayout>
