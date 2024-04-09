@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.app.phonebook.presentation.fragments.GroupFragment xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/group_fragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".presentation.fragments.GroupFragment">
+
+    <com.app.phonebook.presentation.view.MyTextView
+        android:id="@+id/group_placeholder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:alpha="0.8"
+        android:gravity="center"
+        android:paddingStart="@dimen/activity_margin"
+        android:paddingTop="@dimen/activity_margin"
+        android:paddingEnd="@dimen/activity_margin"
+        android:text="@string/no_contacts_found"
+        android:textSize="@dimen/bigger_text_size"
+        android:textStyle="italic"
+        android:visibility="gone" />
+
+    <com.app.phonebook.presentation.view.MyTextView
+        android:id="@+id/group_placeholder_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/group_placeholder"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/ripple_all_corners"
+        android:gravity="center"
+        android:padding="@dimen/activity_margin"
+        android:text="@string/request_access"
+        android:textSize="@dimen/bigger_text_size"
+        android:visibility="gone" />
+
+    <com.app.phonebook.presentation.view.RecyclerViewFastScroller
+        android:id="@+id/fragment_fast_scroller"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.app.phonebook.presentation.view.MyRecyclerView
+            android:id="@+id/group_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:layoutAnimation="@anim/layout_animation"
+            android:scrollbars="none"
+            app:layoutManager="com.app.phonebook.presentation.view.MyLinearLayoutManager" />
+    </com.app.phonebook.presentation.view.RecyclerViewFastScroller>
+</com.app.phonebook.presentation.fragments.GroupFragment>
