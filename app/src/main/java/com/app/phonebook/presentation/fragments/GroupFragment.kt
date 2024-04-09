@@ -3,6 +3,7 @@ package com.app.phonebook.presentation.fragments
 import android.content.Context
 import android.content.Intent
 import android.util.AttributeSet
+import android.util.Log
 import android.view.ViewGroup
 import com.app.phonebook.R
 import com.app.phonebook.adapter.GroupsAdapter
@@ -19,6 +20,7 @@ import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.utils.AVOID_CHANGING_VISIBILITY_TAG
 import com.app.phonebook.base.utils.GROUP
 import com.app.phonebook.base.utils.SMT_PRIVATE
+import com.app.phonebook.base.utils.TAG
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
@@ -54,10 +56,10 @@ class GroupFragment(
             text = context.getString(R.string.create_group)
 
             underlineText()
+        }
 
-            setOnClickListener {
-                showNewGroupsDialog()
-            }
+        binding.groupPlaceholder2.setOnClickListener {
+            showNewGroupsDialog()
         }
     }
 
@@ -74,66 +76,70 @@ class GroupFragment(
     }
 
     override fun refreshItems(callback: (() -> Unit)?) {
-        var allContacts: MutableList<Contact> = mutableListOf()
+        val allContacts: MutableList<Contact> = mutableListOf()
 
-        activity?.runOnUiThread {
-            val privateCursor = context?.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-            ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
-                allContacts = contacts
+        val privateCursor = context?.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
+        ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
+            allContacts.addAll(contacts)
 
-                if (SMT_PRIVATE !in context.baseConfig.ignoredContactSources) {
-                    val privateContacts = MyContactsContentProvider.getContacts(privateCursor)
-                    if (privateContacts.isNotEmpty()) {
-                        allContacts.addAll(privateContacts)
-                        allContacts.sort()
-                    }
+            Log.d(TAG, "contacts: ${contacts.size}")
+
+            if (SMT_PRIVATE !in context.baseConfig.ignoredContactSources) {
+                val privateContacts = MyContactsContentProvider.getContacts(privateCursor)
+                if (privateContacts.isNotEmpty()) {
+                    allContacts.addAll(privateContacts)
+                    allContacts.sort()
+                }
+            }
+        }
+
+        Log.d(TAG, "allContacts: ${allContacts.size}")
+
+        ContactsHelper(context).getStoredGroups { groups: ArrayList<Group> ->
+            allContacts.forEach { contact: Contact ->
+                contact.groups.forEach { group ->
+                    val storedGroup = groups.firstOrNull { it.id == group.id }
+                    storedGroup?.addContact()
                 }
             }
 
-            ContactsHelper(activity!!).getStoredGroups { groups: ArrayList<Group> ->
-                allContacts.forEach { contact: Contact ->
-                    contact.groups.forEach { group ->
-                        val storedGroup = groups.firstOrNull { it.id == group.id }
-                        storedGroup?.addContact()
+            allGroups = allGroups.asSequence().sortedWith(compareBy {
+                it.title.lowercase(Locale.ROOT).normalizeString()
+            }).toMutableList() as ArrayList<Group>
+
+            Log.d(TAG, "allGroups: ${allGroups.size}")
+
+            binding.groupPlaceholder.beVisibleIf(allGroups.isEmpty())
+            binding.groupPlaceholder2.beVisibleIf(allGroups.isEmpty())
+
+            if (groupAdapter == null) {
+                GroupsAdapter(
+                    activity as BaseActivity<*>,
+                    allGroups,
+                    binding.groupList,
+                    this,
+                ) {
+                    activity?.hideKeyboard()
+                    Intent(activity, GroupContactsActivity::class.java).apply {
+                        putExtra(GROUP, it as Group)
+                        activity?.startActivity(this)
                     }
+                }.apply {
+                    groupAdapter = this
+                    binding.groupList.adapter = groupAdapter
                 }
 
-                allGroups = allGroups.asSequence().sortedWith(compareBy {
-                    it.title.lowercase(Locale.ROOT).normalizeString()
-                }).toMutableList() as ArrayList<Group>
-
-                binding.groupPlaceholder.beVisibleIf(allGroups.isEmpty())
-                binding.groupPlaceholder2.beVisibleIf(allGroups.isEmpty())
-
-                if (groupAdapter == null) {
-                    GroupsAdapter(
-                        activity as BaseActivity<*>,
-                        allGroups,
-                        binding.groupList,
-                        this,
-                    ) {
-                        activity?.hideKeyboard()
-                        Intent(activity, GroupContactsActivity::class.java).apply {
-                            putExtra(GROUP, it as Group)
-                            activity?.startActivity(this)
-                        }
-                    }.apply {
-                        groupAdapter = this
-                        binding.groupList.adapter = groupAdapter
-                    }
-
-                    if (context.areSystemAnimationsEnabled) {
-                        binding.groupList.scheduleLayoutAnimation()
-                    }
-                } else {
-                    groupAdapter?.apply {
-                        showContactThumbnails = activity.config.showContactThumbnails
-                        updateItems(allGroups)
-                    }
+                if (context.areSystemAnimationsEnabled) {
+                    binding.groupList.scheduleLayoutAnimation()
                 }
-
-                callback?.invoke()
+            } else {
+                groupAdapter?.apply {
+                    showContactThumbnails = activity.config.showContactThumbnails
+                    updateItems(allGroups)
+                }
             }
+
+            callback?.invoke()
         }
     }
 
@@ -168,6 +174,8 @@ class GroupFragment(
     }
 
     private fun showNewGroupsDialog() {
+        Log.d(TAG, "showNewGroupsDialog")
+
         CreateNewGroupDialog(activity as BaseActivity<*>) {
             refreshItems()
         }

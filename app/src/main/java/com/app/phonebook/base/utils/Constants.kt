@@ -74,6 +74,15 @@ const val HIDE_DIALPAD_NUMBERS = "hide_dialpad_numbers"
 const val ALWAYS_SHOW_FULLSCREEN = "always_show_fullscreen"
 
 const val SHOW_PRIVATE_CONTACTS = "show_private_contacts"
+const val SHOW_CONTACT_THUMBNAILS = "show_contact_thumbnails"
+const val ON_CONTACT_CLICK = "on_contact_click"
+
+const val GROUP = "group"
+const val IS_FROM_SIMPLE_CONTACTS = "is_from_simple_contacts"
+const val ADD_NEW_CONTACT_NUMBER = "add_new_contact_number"
+const val DEFAULT_FILE_NAME = "contacts.vcf"
+const val AVOID_CHANGING_TEXT_TAG = "avoid_changing_text_tag"
+const val AVOID_CHANGING_VISIBILITY_TAG = "avoid_changing_visibility_tag"
 
 // contact grid view constants
 const val CONTACTS_GRID_MAX_COLUMNS_COUNT = 10
@@ -104,10 +113,13 @@ const val TAB_FAVORITES = 2
 const val TAB_CALL_HISTORY = 4
 const val TAB_GROUPS = 8
 
-const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
+const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY or TAB_GROUPS
 
-val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_CALL_HISTORY)
+val tabsList = arrayListOf(TAB_CONTACTS, TAB_FAVORITES, TAB_GROUPS, TAB_CALL_HISTORY)
 
+const val ON_CLICK_CALL_CONTACT = 1
+const val ON_CLICK_VIEW_CONTACT = 2
+const val ON_CLICK_EDIT_CONTACT = 3
 
 const val DATE_FORMAT_ONE = "dd.MM.yyyy"
 const val DATE_FORMAT_TWO = "dd/MM/yyyy"

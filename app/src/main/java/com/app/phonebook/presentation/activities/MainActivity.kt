@@ -47,6 +47,7 @@ import com.app.phonebook.base.utils.REQUEST_CODE_SET_DEFAULT_DIALER
 import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
+import com.app.phonebook.base.utils.TAB_GROUPS
 import com.app.phonebook.base.utils.TAB_LAST_USED
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
 import com.app.phonebook.base.utils.ensureBackgroundThread
@@ -66,12 +67,12 @@ import com.app.phonebook.presentation.dialog.PermissionRequiredDialog
 import com.app.phonebook.presentation.dialog.RadioGroupDialog
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
+import com.app.phonebook.presentation.fragments.GroupFragment
 import com.app.phonebook.presentation.fragments.RecentFragment
 import com.google.android.material.snackbar.Snackbar
 import kotlin.system.exitProcess
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
-    private var launchedDialer = false
     private var storedShowTabs = 0
     private var storedFontSize = 0
     private var storedStartNameWithSurname = false
@@ -87,8 +88,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             useTransparentNavigation = false,
             useTopSearchMenu = true
         )
-
-        launchedDialer = savedInstanceState?.getBoolean(OPEN_DIAL_PAD_AT_LAUNCH) ?: false
 
         if (isDefaultDialer()) {
             checkContactPermissions()
@@ -174,7 +173,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             getRecentsFragment()?.refreshItems()
-        }, 2000)
+        }, 500)
     }
 
     override fun initData() {
@@ -210,11 +209,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putBoolean(OPEN_DIAL_PAD_AT_LAUNCH, launchedDialer)
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         refreshItems()
@@ -231,7 +225,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainMenu.getToolbar().menu.apply {
             findItem(R.id.clear_call_history).isVisible = currentFragment == getRecentsFragment()
             findItem(R.id.sort).isVisible = currentFragment != getRecentsFragment()
-            findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
+//            findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
             findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
             findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
         }
@@ -260,7 +254,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getToolbar().setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.clear_call_history -> clearCallHistory()
-                    R.id.create_new_contact -> launchCreateNewContactIntent()
+//                    R.id.create_new_contact -> launchCreateNewContactIntent()
                     R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is FavoritesFragment)
                     R.id.filter -> showFilterDialog()
                     R.id.change_view_type -> changeViewType()
@@ -321,6 +315,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         val drawableId = when (position) {
             0 -> R.drawable.ic_person_vector
             1 -> R.drawable.ic_star_vector
+            2 -> R.drawable.ic_people_vector
             else -> R.drawable.ic_clock_vector
         }
 
@@ -333,6 +328,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         val stringId = when (position) {
             0 -> R.string.contacts_tab
             1 -> R.string.favorites_tab
+            2 -> R.string.groups_tab
             else -> R.string.call_history_tab
         }
 
@@ -349,6 +345,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         if (showTabs and TAB_FAVORITES != 0) {
             icons.add(R.drawable.ic_star_outline_vector)
+        }
+
+        if (showTabs and TAB_GROUPS != 0) {
+            icons.add(R.drawable.ic_people_outline_vector)
         }
 
         if (showTabs and TAB_CALL_HISTORY != 0) {
@@ -368,6 +368,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         if (showTabs and TAB_FAVORITES != 0) {
             icons.add(R.drawable.ic_star_vector)
+        }
+
+        if (showTabs and TAB_GROUPS != 0) {
+            icons.add(R.drawable.ic_people_vector)
         }
 
         if (showTabs and TAB_CALL_HISTORY != 0) {
@@ -430,11 +434,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         binding.viewPager.onGlobalLayout {
             refreshMenuItems()
-        }
-
-        if (config.openDialPadAtLaunch && !launchedDialer) {
-            launchDialpad()
-            launchedDialer = true
         }
     }
 
@@ -510,6 +509,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     fun refreshFragments() {
         getContactsFragment()?.refreshItems()
         getFavoritesFragment()?.refreshItems()
+        getGroupFragment()?.refreshItems()
         getRecentsFragment()?.refreshItems()
     }
 
@@ -523,6 +523,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         if (showTabs and TAB_FAVORITES > 0) {
             fragments.add(getFavoritesFragment())
+        }
+
+        if (showTabs and TAB_GROUPS > 0) {
+            fragments.add(getGroupFragment())
         }
 
         if (showTabs and TAB_CALL_HISTORY > 0) {
@@ -541,6 +545,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun getContactsFragment(): ContactsFragment? = findViewById(R.id.contacts_fragment)
 
     private fun getFavoritesFragment(): FavoritesFragment? = findViewById(R.id.favorites_fragment)
+
+    private fun getGroupFragment(): GroupFragment? = findViewById(R.id.group_fragment)
 
     private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
 
@@ -574,7 +580,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 if (showTabsMask and TAB_CALL_HISTORY > 0) {
                     if (showTabsMask and TAB_CONTACTS > 0) {
                         if (showTabsMask and TAB_FAVORITES > 0) {
-                            2
+                            if (showTabsMask and TAB_GROUPS > 0) {
+                                3
+                            } else {
+                                2
+                            }
                         } else {
                             1
                         }
@@ -738,6 +748,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getContactsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
+                        context = this, text = binding.mainMenu.getCurrentQuery()
+                    )
+                }
+            }
+
+            getGroupFragment()?.refreshItems {
+                if (binding.mainMenu.isSearchOpen) {
+                    getGroupFragment()?.onSearchQueryChanged(
                         context = this, text = binding.mainMenu.getCurrentQuery()
                     )
                 }

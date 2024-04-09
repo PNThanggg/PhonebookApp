@@ -12,6 +12,7 @@ import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.getTextSize
 import com.app.phonebook.base.utils.SORT_BY_FIRST_NAME
 import com.app.phonebook.base.utils.SORT_BY_SURNAME
+import com.app.phonebook.databinding.FragmentGroupBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
 import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.Config
@@ -24,18 +25,19 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
 ) : RelativeLayout(context, attributeSet) {
     protected var activity: BaseActivity<*>? = null
     protected lateinit var innerBinding: BINDING
-    private lateinit var config: Config
+    lateinit var config: Config
 
     fun setupFragment(activity: BaseActivity<*>) {
         config = activity.config
+
         if (this.activity == null) {
             this.activity = activity
 
             setupFragment()
             setupColors(
-                activity.getProperTextColor(),
-                activity.getProperPrimaryColor(),
-                activity.getProperPrimaryColor()
+                textColor = activity.getProperTextColor(),
+                primaryColor = activity.getProperPrimaryColor(),
+                properPrimaryColor = activity.getProperPrimaryColor()
             )
         }
     }
@@ -80,15 +82,24 @@ abstract class BaseViewPagerFragment<BINDING : BaseViewPagerFragment.InnerBindin
     interface InnerBinding {
         val fragmentList: MyRecyclerView?
         val recentList: MyRecyclerView?
+        val groupList: MyRecyclerView?
     }
 
     class LettersInnerBinding(binding: FragmentLettersLayoutBinding) : InnerBinding {
         override val fragmentList: MyRecyclerView = binding.fragmentList
         override val recentList = null
+        override val groupList = null
     }
 
     class RecentInnerBinding(binding: FragmentRecentBinding) : InnerBinding {
         override val fragmentList = null
-        override val recentList = binding.recentsList
+        override val recentList: MyRecyclerView = binding.recentsList
+        override val groupList = null
+    }
+
+    class GroupInnerBinding(binding: FragmentGroupBinding) : InnerBinding {
+        override val fragmentList = null
+        override val recentList = null
+        override val groupList: MyRecyclerView = binding.groupList
     }
 }

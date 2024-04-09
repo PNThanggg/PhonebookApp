@@ -175,6 +175,12 @@ data class Contact(
         }
     }
 
+    // photos stored locally always have different hashcodes. Avoid constantly refreshing the contact lists as the app thinks something changed.
+    fun getHashWithoutPrivatePhoto(): Int {
+        val photoToUse = if (isPrivate()) null else photo
+        return copy(photo = photoToUse).hashCode()
+    }
+
     fun getStringToCompare(): String {
         val photoToUse = if (isPrivate()) null else photo
         return copy(

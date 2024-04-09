@@ -29,8 +29,11 @@ import com.app.phonebook.base.utils.IS_USING_SYSTEM_THEME
 import com.app.phonebook.base.utils.LAST_USED_CONTACT_SOURCE
 import com.app.phonebook.base.utils.LAST_USED_VIEW_PAGER_PAGE
 import com.app.phonebook.base.utils.MERGE_DUPLICATE_CONTACTS
+import com.app.phonebook.base.utils.ON_CLICK_VIEW_CONTACT
+import com.app.phonebook.base.utils.ON_CONTACT_CLICK
 import com.app.phonebook.base.utils.PRIMARY_COLOR
 import com.app.phonebook.base.utils.SHOW_CALL_CONFIRMATION
+import com.app.phonebook.base.utils.SHOW_CONTACT_THUMBNAILS
 import com.app.phonebook.base.utils.SHOW_ONLY_CONTACTS_WITH_NUMBERS
 import com.app.phonebook.base.utils.SHOW_PRIVATE_CONTACTS
 import com.app.phonebook.base.utils.SORT_ORDER
@@ -206,4 +209,12 @@ open class BaseConfig(private val context: Context) {
     var showPrivateContacts: Boolean
         get() = prefs.getBoolean(SHOW_PRIVATE_CONTACTS, true)
         set(showPrivateContacts) = prefs.edit().putBoolean(SHOW_PRIVATE_CONTACTS, showPrivateContacts).apply()
+
+    var showContactThumbnails: Boolean
+        get() = prefs.getBoolean(SHOW_CONTACT_THUMBNAILS, true)
+        set(showContactThumbnails) = prefs.edit().putBoolean(SHOW_CONTACT_THUMBNAILS, showContactThumbnails).apply()
+
+    var onContactClick: Int
+        get() = prefs.getInt(ON_CONTACT_CLICK, ON_CLICK_VIEW_CONTACT)
+        set(onContactClick) = prefs.edit().putInt(ON_CONTACT_CLICK, onContactClick).apply()
 }
