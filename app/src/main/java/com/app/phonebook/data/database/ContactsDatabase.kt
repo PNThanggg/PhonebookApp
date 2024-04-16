@@ -31,15 +31,13 @@ abstract class ContactsDatabase : RoomDatabase() {
             if (db == null) {
                 synchronized(ContactsDatabase::class) {
                     db = Room.databaseBuilder(
-                        context.applicationContext,
-                        ContactsDatabase::class.java,
-                        "local_contacts.db"
+                        context.applicationContext, ContactsDatabase::class.java, "local_contacts.db"
                     ).addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
                             increaseAutoIncrementIds()
                         }
-                    }).build()
+                    }).allowMainThreadQueries().build()
                 }
             }
 

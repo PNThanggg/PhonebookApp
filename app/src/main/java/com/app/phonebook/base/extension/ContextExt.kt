@@ -588,6 +588,7 @@ fun Context.getMyContactsCursor(favoritesOnly: Boolean, withPhoneNumbersOnly: Bo
     ).loadInBackground()
 } catch (e: Exception) {
     Log.e(APP_NAME, "getMyContactsCursor: ${e.message}")
+    e.printStackTrace()
     null
 }
 
