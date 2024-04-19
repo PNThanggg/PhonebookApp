@@ -2,7 +2,6 @@ package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
@@ -18,7 +17,9 @@ import android.widget.Toast
 import androidx.viewpager.widget.ViewPager
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ViewPagerAdapter
+import com.app.phonebook.base.extension.beGone
 import com.app.phonebook.base.extension.beGoneIf
+import com.app.phonebook.base.extension.beVisible
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.darkenColor
 import com.app.phonebook.base.extension.getBottomNavigationBackgroundColor
@@ -27,7 +28,6 @@ import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
-import com.app.phonebook.base.extension.handleGenericContactClick
 import com.app.phonebook.base.extension.isDefaultDialer
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.onGlobalLayout
@@ -48,7 +48,6 @@ import com.app.phonebook.base.utils.TAB_CALL_HISTORY
 import com.app.phonebook.base.utils.TAB_CONTACTS
 import com.app.phonebook.base.utils.TAB_FAVORITES
 import com.app.phonebook.base.utils.TAB_GROUPS
-import com.app.phonebook.base.utils.TAB_LAST_USED
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isQPlus
@@ -57,9 +56,7 @@ import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.ActivityMainBinding
-import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.RecentHelper
-import com.app.phonebook.interfaces.RefreshContactsListener
 import com.app.phonebook.presentation.dialog.ChangeSortingDialog
 import com.app.phonebook.presentation.dialog.ChangeViewTypeDialog
 import com.app.phonebook.presentation.dialog.ConfirmationDialog
@@ -185,12 +182,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         Handler(Looper.getMainLooper()).postDelayed({
             getRecentsFragment()?.refreshItems()
         }, 2000)
-    }
-
-    override fun initData() {
-    }
-
-    override fun initListener() {
     }
 
     override fun beforeCreate() {
@@ -407,6 +398,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             override fun onPageSelected(position: Int) {
                 binding.mainTabsHolder.getTabAt(position)?.select()
+
+                if (position == tabsList.size - 1) {
+                    binding.mainAddContact.beGone()
+                } else {
+                    binding.mainAddContact.beVisible()
+                }
+
                 getAllFragments().forEach {
                     it?.finishActMode()
                 }

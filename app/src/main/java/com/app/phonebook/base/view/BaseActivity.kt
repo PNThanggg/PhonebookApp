@@ -139,11 +139,21 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         }
     }
 
-    abstract fun initView(savedInstanceState: Bundle?)
-    abstract fun initData()
-    abstract fun initListener()
+    open fun initView(savedInstanceState: Bundle?) {
 
-    abstract fun beforeCreate()
+    }
+
+    open fun initData() {
+
+    }
+
+    open fun initListener() {
+
+    }
+
+    open fun beforeCreate() {
+
+    }
 
     /**override it and inflate your view binding, demo in MainActivity*/
     abstract fun inflateViewBinding(inflater: LayoutInflater): VB
