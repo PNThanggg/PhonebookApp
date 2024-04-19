@@ -21,7 +21,7 @@ class ConferenceCallsAdapter(
     recyclerView: MyRecyclerView,
     val data: ArrayList<Call>,
     itemClick: (Any) -> Unit
-) : BaseRecyclerViewAdapter(activity, recyclerView, itemClick) {
+) : MyRecyclerViewAdapter(activity, recyclerView, itemClick) {
 
     override fun actionItemPressed(id: Int) {}
 

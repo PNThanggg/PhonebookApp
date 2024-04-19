@@ -30,6 +30,17 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <com.app.phonebook.presentation.view.MyFloatingActionButton
+            android:id="@+id/main_add_contact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="@dimen/medium_margin"
+            android:src="@drawable/ic_plus_vector"
+            app:backgroundTint="@color/color_primary"
+            app:layout_constraintBottom_toTopOf="@+id/main_dialpad_button"
+            app:layout_constraintEnd_toEndOf="@+id/main_dialpad_button"/>
+
+        <com.app.phonebook.presentation.view.MyFloatingActionButton
             android:id="@+id/main_dialpad_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

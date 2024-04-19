@@ -55,7 +55,7 @@ class FilterContactSourcesDialog(
         val contactSourcesWithCount = ArrayList<ContactSource>()
         for (contactSource in contactSources) {
             val count = if (isContactsReady) {
-                contacts.filter { it.source == contactSource.name }.count()
+                contacts.count { it.source == contactSource.name }
             } else {
                 -1
             }
@@ -71,7 +71,7 @@ class FilterContactSourcesDialog(
                 FilterContactSourcesAdapter(activity, contactSourcesWithCount, selectedSources)
 
             if (dialog == null) {
-                activity.getAlertDialogBuilder().setPositiveButton(R.string.ok) { dialogInterface, i -> confirmContactSources() }
+                activity.getAlertDialogBuilder().setPositiveButton(R.string.ok) { _, _ -> confirmContactSources() }
                     .setNegativeButton(R.string.cancel, null).apply {
                         activity.setupDialogStuff(binding.root, this) { alertDialog ->
                             dialog = alertDialog

@@ -31,7 +31,7 @@ class GroupsAdapter(
     recyclerView: MyRecyclerView,
     private val refreshListener: RefreshContactsListener?,
     itemClick: (Any) -> Unit
-) : BaseRecyclerViewAdapter(activity, recyclerView, itemClick), RecyclerViewFastScroller.OnPopupTextUpdate {
+) : MyRecyclerViewAdapter(activity, recyclerView, itemClick), RecyclerViewFastScroller.OnPopupTextUpdate {
     private var textToHighlight = ""
     private var showContactThumbnails = activity.config.showContactThumbnails
 

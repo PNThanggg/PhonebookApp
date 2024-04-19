@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ContactsAdapter
+import com.app.phonebook.adapter.MyRecyclerViewAdapter
 import com.app.phonebook.base.extension.areSystemAnimationsEnabled
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.beGone
@@ -22,8 +23,6 @@ import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.VIEW_TYPE_GRID
 import com.app.phonebook.base.view.BaseActivity
-import com.app.phonebook.base.view.BaseRecyclerViewAdapter
-import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.FragmentFavoritesBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
@@ -36,8 +35,10 @@ import com.app.phonebook.presentation.view.MyLinearLayoutManager
 import com.google.gson.Gson
 import java.util.Locale
 
-class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
-    BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
+class FavoritesFragment(
+    context: Context,
+    attributeSet: AttributeSet
+) : MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
 
@@ -61,10 +62,11 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
     override fun setupColors(textColor: Int, primaryColor: Int, properPrimaryColor: Int) {
         binding.apply {
             fragmentPlaceholder.setTextColor(textColor)
-            (fragmentList.adapter as? BaseRecyclerViewAdapter)?.updateTextColor(textColor)
+            (fragmentList.adapter as? MyRecyclerViewAdapter)?.updateTextColor(textColor)
 
             letterFastScroller.textColor = textColor.getColorStateList()
             letterFastScroller.pressedTextColor = properPrimaryColor
+
             letterFastScrollerThumb.setupWithFastScroller(letterFastScroller)
             letterFastScrollerThumb.textColor = properPrimaryColor.getContrastColor()
             letterFastScrollerThumb.thumbColor = properPrimaryColor.getColorStateList()
@@ -87,7 +89,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
             }
             val favorites = contacts.filter { it.starred == 1 } as ArrayList<Contact>
 
-            allContacts = if (activity?.config?.isCustomOrderSelected == true) {
+            allContacts = if (activity!!.config.isCustomOrderSelected) {
                 sortByCustomOrder(favorites)
             } else {
                 favorites
@@ -122,7 +124,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
         val currAdapter = binding.fragmentList.adapter as ContactsAdapter?
         if (currAdapter == null) {
             ContactsAdapter(
-                activity = activity as BaseActivity,
+                activity = activity as BaseActivity<*>,
                 contacts = allContacts,
                 recyclerView = binding.fragmentList,
                 refreshItemsListener = this,
@@ -131,9 +133,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
                 enableDrag = true,
             ) {
                 if (context.config.showCallConfirmation) {
-                    CallConfirmationDialog(
-                        activity as BaseActivity, (it as Contact).getNameToDisplay()
-                    ) {
+                    CallConfirmationDialog(activity as BaseActivity<*>, (it as Contact).getNameToDisplay()) {
                         activity?.apply {
                             initiateCall(it) { str ->
                                 launchCallIntent(str)
@@ -207,9 +207,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
             try {
                 val name = contacts[position].getNameToDisplay()
                 val character = if (name.isNotEmpty()) name.substring(0, 1) else ""
-                FastScrollItemIndicator.Text(
-                    character.uppercase(Locale.getDefault()).normalizeString()
-                )
+                FastScrollItemIndicator.Text(character.uppercase(Locale.getDefault()).normalizeString())
             } catch (e: Exception) {
                 FastScrollItemIndicator.Text("")
             }
@@ -222,12 +220,9 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
         setupLetterFastScroller(allContacts)
     }
 
-    override fun onSearchQueryChanged(context: Context, text: String) {
+    override fun onSearchQueryChanged(text: String) {
         val contacts = allContacts.filter {
-            it.name.contains(text, true) || it.doesContainPhoneNumber(
-                text = text,
-                telephonyManager = context.telephonyManager
-            )
+            it.name.contains(text, true) || it.doesContainPhoneNumber(text, true, context.telephonyManager)
         }.sortedByDescending {
             it.name.startsWith(text, true)
         }.toMutableList() as ArrayList<Contact>
@@ -247,6 +242,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) :
             binding.letterFastScroller.beVisible()
             MyLinearLayoutManager(context)
         }
+
         binding.fragmentList.layoutManager = layoutManager
     }
 }

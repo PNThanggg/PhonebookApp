@@ -50,7 +50,7 @@ class RecentCallsAdapter(
     private val refreshItemsListener: RefreshItemsListener?,
     private val showOverflowMenu: Boolean,
     itemClick: (Any) -> Unit
-) : BaseRecyclerViewAdapter(activity, recyclerView, itemClick) {
+) : MyRecyclerViewAdapter(activity, recyclerView, itemClick) {
 
     private lateinit var outgoingCallIcon: Drawable
     private lateinit var incomingCallIcon: Drawable

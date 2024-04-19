@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ContactsAdapter
+import com.app.phonebook.adapter.MyRecyclerViewAdapter
 import com.app.phonebook.base.extension.areSystemAnimationsEnabled
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.beGone
@@ -23,8 +24,6 @@ import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.getProperText
 import com.app.phonebook.base.view.BaseActivity
-import com.app.phonebook.base.view.BaseRecyclerViewAdapter
-import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.databinding.FragmentContactsBinding
 import com.app.phonebook.databinding.FragmentLettersLayoutBinding
@@ -34,17 +33,14 @@ import com.app.phonebook.presentation.activities.MainActivity
 import com.app.phonebook.presentation.view.FastScrollItemIndicator
 import java.util.Locale
 
-class ContactsFragment(
-    context: Context,
-    attributeSet: AttributeSet
-) : BaseViewPagerFragment<BaseViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
+class ContactsFragment(context: Context, attributeSet: AttributeSet) :
+    MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
 
     override fun onFinishInflate() {
         super.onFinishInflate()
-        binding =
-            FragmentLettersLayoutBinding.bind(FragmentContactsBinding.bind(this).contactsFragment)
+        binding = FragmentLettersLayoutBinding.bind(FragmentContactsBinding.bind(this).contactsFragment)
         innerBinding = LettersInnerBinding(binding)
     }
 
@@ -78,12 +74,13 @@ class ContactsFragment(
 
     override fun setupColors(textColor: Int, primaryColor: Int, properPrimaryColor: Int) {
         binding.apply {
-            (fragmentList.adapter as? BaseRecyclerViewAdapter)?.updateTextColor(textColor)
+            (fragmentList.adapter as? MyRecyclerViewAdapter)?.updateTextColor(textColor)
             fragmentPlaceholder.setTextColor(textColor)
             fragmentPlaceholder2.setTextColor(properPrimaryColor)
 
             letterFastScroller.textColor = textColor.getColorStateList()
             letterFastScroller.pressedTextColor = properPrimaryColor
+
             letterFastScrollerThumb.setupWithFastScroller(letterFastScroller)
             letterFastScrollerThumb.textColor = properPrimaryColor.getContrastColor()
             letterFastScrollerThumb.thumbColor = properPrimaryColor.getColorStateList()
@@ -102,6 +99,7 @@ class ContactsFragment(
                     allContacts.sort()
                 }
             }
+
             (activity as MainActivity).cacheContacts(allContacts)
 
             activity?.runOnUiThread {
@@ -113,7 +111,6 @@ class ContactsFragment(
 
     private fun gotContacts(contacts: ArrayList<Contact>) {
         setupLetterFastScroller(contacts)
-
         if (contacts.isEmpty()) {
             binding.apply {
                 fragmentPlaceholder.beVisible()
@@ -125,26 +122,26 @@ class ContactsFragment(
                 fragmentPlaceholder.beGone()
                 fragmentPlaceholder2.beGone()
                 fragmentList.beVisible()
-            }
 
-            if (binding.fragmentList.adapter == null) {
-                ContactsAdapter(
-                    activity = activity as BaseActivity<*>,
-                    contacts = contacts,
-                    recyclerView = binding.fragmentList,
-                    refreshItemsListener = this
-                ) {
-                    val contact = it as Contact
-                    activity?.startContactDetailsIntent(contact)
-                }.apply {
-                    binding.fragmentList.adapter = this
-                }
+                if (fragmentList.adapter == null) {
+                    ContactsAdapter(
+                        activity = activity as BaseActivity<*>,
+                        contacts = contacts,
+                        recyclerView = fragmentList,
+                        refreshItemsListener = this@ContactsFragment
+                    ) {
+                        val contact = it as Contact
+                        activity?.startContactDetailsIntent(contact)
+                    }.apply {
+                        fragmentList.adapter = this
+                    }
 
-                if (context.areSystemAnimationsEnabled) {
-                    binding.fragmentList.scheduleLayoutAnimation()
+                    if (context.areSystemAnimationsEnabled) {
+                        fragmentList.scheduleLayoutAnimation()
+                    }
+                } else {
+                    (fragmentList.adapter as ContactsAdapter).updateItems(contacts)
                 }
-            } else {
-                (binding.fragmentList.adapter as ContactsAdapter).updateItems(contacts)
             }
         }
     }
@@ -154,9 +151,7 @@ class ContactsFragment(
             try {
                 val name = contacts[position].getNameToDisplay()
                 val character = if (name.isNotEmpty()) name.substring(0, 1) else ""
-                FastScrollItemIndicator.Text(
-                    character.uppercase(Locale.getDefault()).normalizeString()
-                )
+                FastScrollItemIndicator.Text(character.uppercase(Locale.getDefault()).normalizeString())
             } catch (e: Exception) {
                 FastScrollItemIndicator.Text("")
             }
@@ -169,43 +164,35 @@ class ContactsFragment(
         setupLetterFastScroller(allContacts)
     }
 
-    override fun onSearchQueryChanged(context: Context, text: String) {
+    override fun onSearchQueryChanged(text: String) {
         val shouldNormalize = text.normalizeString() == text
-        val filtered = allContacts.filter {
-            getProperText(it.getNameToDisplay(), shouldNormalize).contains(
-                text, true
-            ) || getProperText(it.nickname, shouldNormalize).contains(
-                text, true
-            ) || it.phoneNumbers.any { phoneNumber ->
-                text.normalizePhoneNumber().isNotEmpty() && phoneNumber.normalizedNumber.contains(
+        val filtered = allContacts.filter { contact ->
+            getProperText(contact.getNameToDisplay(), shouldNormalize).contains(text, true) || getProperText(
+                contact.nickname,
+                shouldNormalize
+            ).contains(text, true) || contact.phoneNumbers.any {
+                text.normalizePhoneNumber().isNotEmpty() && it.normalizedNumber.contains(
                     text.normalizePhoneNumber(), true
                 )
-            } || it.emails.any { email ->
-                email.value.contains(text, true)
-            } || it.addresses.any { address ->
-                getProperText(address.value, shouldNormalize).contains(
-                    text, true
-                )
-            } || it.listIM.any { im ->
+            } || contact.emails.any { it.value.contains(text, true) } || contact.addresses.any {
+                getProperText(
+                    it.value,
+                    shouldNormalize
+                ).contains(text, true)
+            } || contact.listIM.any { im ->
                 im.value.contains(text, true)
-            } || getProperText(
-                it.notes, shouldNormalize
-            ).contains(text, true) || getProperText(
-                it.organization.company, shouldNormalize
-            ).contains(text, true) || getProperText(
-                it.organization.jobPosition, shouldNormalize
-            ).contains(
-                text, true
-            ) || it.websites.any { website ->
-                website.contains(text, true)
-            }
+            } || getProperText(contact.notes, shouldNormalize).contains(text, true) || getProperText(
+                contact.organization.company,
+                shouldNormalize
+            ).contains(text, true) || getProperText(contact.organization.jobPosition, shouldNormalize).contains(
+                text,
+                true
+            ) || contact.websites.any { it.contains(text, true) }
         } as ArrayList
 
         filtered.sortBy {
             val nameToDisplay = it.getNameToDisplay()
-            !getProperText(nameToDisplay, shouldNormalize).startsWith(
-                text, true
-            ) && !nameToDisplay.contains(text, true)
+            !getProperText(nameToDisplay, shouldNormalize).startsWith(text, true) && !nameToDisplay.contains(text, true)
         }
 
         binding.fragmentPlaceholder.beVisibleIf(filtered.isEmpty())
@@ -218,12 +205,11 @@ class ContactsFragment(
             if (it) {
                 binding.fragmentPlaceholder.text = context.getString(R.string.no_contacts_found)
                 binding.fragmentPlaceholder2.text = context.getString(R.string.create_new_contact)
-                ContactsHelper(context)
-                    .getContacts(showOnlyContactsWithNumbers = true) { contacts ->
-                        activity?.runOnUiThread {
-                            gotContacts(contacts)
-                        }
+                ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
+                    activity?.runOnUiThread {
+                        gotContacts(contacts)
                     }
+                }
             }
         }
     }

@@ -54,7 +54,6 @@ import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.tabsList
 import com.app.phonebook.base.view.BaseActivity
-import com.app.phonebook.base.view.BaseViewPagerFragment
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.ActivityMainBinding
@@ -69,11 +68,13 @@ import com.app.phonebook.presentation.dialog.PermissionRequiredDialog
 import com.app.phonebook.presentation.dialog.RadioGroupDialog
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
+import com.app.phonebook.presentation.fragments.GroupsFragment
+import com.app.phonebook.presentation.fragments.MyViewPagerFragment
 import com.app.phonebook.presentation.fragments.RecentFragment
 import com.google.android.material.snackbar.Snackbar
 import kotlin.system.exitProcess
 
-class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListener {
+class MainActivity : BaseActivity<ActivityMainBinding>() {
     private var launchedDialer = false
     private var storedShowTabs = 0
     private var storedFontSize = 0
@@ -85,7 +86,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
     var forceListRedraw = false
 
     override fun initView(savedInstanceState: Bundle?) {
-        setupOptionsMenu(context = this@MainActivity)
+        setupOptionsMenu()
         refreshMenuItems()
 
         updateMaterialActivityViews(
@@ -246,7 +247,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
         }
     }
 
-    private fun setupOptionsMenu(context: Context) {
+    private fun setupOptionsMenu() {
         binding.mainMenu.apply {
             getToolbar().inflateMenu(R.menu.menu)
             toggleHideOnScroll(false)
@@ -255,14 +256,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             onSearchClosedListener = {
                 getAllFragments().forEach {
                     it?.onSearchQueryChanged(
-                        context = context, text = ""
+                        text = ""
                     )
                 }
             }
 
             onSearchTextChangedListener = { text ->
                 getCurrentFragment()?.onSearchQueryChanged(
-                    text = text, context = context
+                    text = text,
                 )
             }
 
@@ -418,7 +419,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             Looper.myLooper()?.let {
                 Handler(it).postDelayed(
                     {
-                        var wantedTab = getDefaultTab()
+                        var wantedTab = 0
 
                         // open the Recents tab if we got here by clicking a missed call notification
                         if (intent.action == Intent.ACTION_VIEW && config.showTabs and TAB_CALL_HISTORY > 0) {
@@ -523,12 +524,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
     fun refreshFragments() {
         getContactsFragment()?.refreshItems()
         getFavoritesFragment()?.refreshItems()
+        getGroupFragment()?.refreshItems()
         getRecentsFragment()?.refreshItems()
     }
 
-    private fun getAllFragments(): ArrayList<BaseViewPagerFragment<*>?> {
+    private fun getAllFragments(): ArrayList<MyViewPagerFragment<*>?> {
         val showTabs = config.showTabs
-        val fragments = arrayListOf<BaseViewPagerFragment<*>?>()
+        val fragments = arrayListOf<MyViewPagerFragment<*>?>()
 
         if (showTabs and TAB_CONTACTS > 0) {
             fragments.add(getContactsFragment())
@@ -536,6 +538,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
 
         if (showTabs and TAB_FAVORITES > 0) {
             fragments.add(getFavoritesFragment())
+        }
+
+        if (showTabs and TAB_GROUPS > 0) {
+            fragments.add(getGroupFragment())
         }
 
         if (showTabs and TAB_CALL_HISTORY > 0) {
@@ -549,61 +555,15 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
         it != activeIndex
     }
 
-    private fun getCurrentFragment(): BaseViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
+    private fun getCurrentFragment(): MyViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
 
     private fun getContactsFragment(): ContactsFragment? = findViewById(R.id.contacts_fragment)
 
     private fun getFavoritesFragment(): FavoritesFragment? = findViewById(R.id.favorites_fragment)
 
-    private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
+    private fun getGroupFragment(): GroupsFragment? = findViewById(R.id.groups_fragment)
 
-    /**
-     * Determines and returns the default tab index based on user preferences and application configuration.
-     *
-     * This function calculates the default tab to be displayed in the main view of the application, taking into
-     * consideration the user's last used tab, their preferred default tab, and which tabs are enabled
-     * through the application's configuration. The tabs are identified by predefined constants such as
-     * TAB_LAST_USED, TAB_CONTACTS, TAB_FAVORITES, and TAB_CALL_HISTORY.
-     *
-     * @return The index of the default tab to be displayed. The index is determined based on the following logic:
-     *         - If the default tab is set to TAB_LAST_USED, it returns the index of the last used tab if it's
-     *           within the range of the available tabs; otherwise, it defaults to the first tab (index 0).
-     *         - If the default tab is set to TAB_CONTACTS, it returns the index for the Contacts tab, which is 0.
-     *         - If the default tab is set to TAB_FAVORITES and the TAB_CONTACTS is enabled, it returns 1,
-     *           indicating the Favorites tab is the second tab; if TAB_CONTACTS is not enabled, it defaults to 0.
-     *         - For other cases, especially when the default tab is set to TAB_CALL_HISTORY, it calculates the
-     *           index based on which tabs (TAB_CONTACTS and TAB_FAVORITES) are enabled before it in the tabs
-     *           configuration. It ensures the returned index accurately reflects the position of the CALL_HISTORY tab
-     *           among the enabled tabs.
-     *         - If none of the specific cases match, it defaults to the first tab (index 0).
-     */
-    private fun getDefaultTab(): Int {
-        val showTabsMask = config.showTabs
-        return when (config.defaultTab) {
-            TAB_LAST_USED -> if (config.lastUsedViewPagerPage < binding.mainTabsHolder.tabCount) config.lastUsedViewPagerPage else 0
-            TAB_CONTACTS -> 0
-            TAB_FAVORITES -> if (showTabsMask and TAB_CONTACTS > 0) 1 else 0
-            else -> {
-                if (showTabsMask and TAB_CALL_HISTORY > 0) {
-                    if (showTabsMask and TAB_CONTACTS > 0) {
-                        if (showTabsMask and TAB_FAVORITES > 0) {
-                            2
-                        } else {
-                            1
-                        }
-                    } else {
-                        if (showTabsMask and TAB_FAVORITES > 0) {
-                            1
-                        } else {
-                            0
-                        }
-                    }
-                } else {
-                    0
-                }
-            }
-        }
-    }
+    private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
 
     /**
      * Refreshes the items in the main activity, potentially opening the last used tab.
@@ -641,7 +601,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
         binding.apply {
             if (viewPager.adapter == null) {
                 viewPager.adapter = ViewPagerAdapter(this@MainActivity)
-                viewPager.currentItem = if (openLastTab) config.lastUsedViewPagerPage else getDefaultTab()
+                viewPager.currentItem = if (openLastTab) config.lastUsedViewPagerPage else 0
                 viewPager.onGlobalLayout {
                     refreshFragments()
                 }
@@ -703,7 +663,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             getFavoritesFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this, text = binding.mainMenu.getCurrentQuery()
+                        text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -711,7 +671,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             getContactsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this, text = binding.mainMenu.getCurrentQuery()
+                        text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -743,7 +703,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             getFavoritesFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this, text = binding.mainMenu.getCurrentQuery()
+                        text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -751,7 +711,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             getContactsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this, text = binding.mainMenu.getCurrentQuery()
+                        text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -759,7 +719,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
             getRecentsFragment()?.refreshItems {
                 if (binding.mainMenu.isSearchOpen) {
                     getCurrentFragment()?.onSearchQueryChanged(
-                        context = this, text = binding.mainMenu.getCurrentQuery()
+                        text = binding.mainMenu.getCurrentQuery()
                     )
                 }
             }
@@ -789,57 +749,5 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), RefreshContactsListene
         } catch (e: Exception) {
             Log.e(APP_NAME, "cacheContacts: ${e.message}")
         }
-    }
-
-    override fun refreshContacts(refreshTabsMask: Int) {
-        if (isDestroyed || isFinishing || isGettingContacts) {
-            return
-        }
-
-        isGettingContacts = true
-
-        if (binding.viewPager.adapter == null) {
-            binding.viewPager.adapter = ViewPagerAdapter(this)
-            binding.viewPager.currentItem = getDefaultTab()
-        }
-
-        ContactsHelper(this).getContacts { contacts ->
-            isGettingContacts = false
-            if (isDestroyed || isFinishing) {
-                return@getContacts
-            }
-
-//            if (refreshTabsMask and TAB_CONTACTS != 0) {
-//                findViewById<BaseViewPagerFragment<*>>(R.id.contacts_fragment)?.apply {
-//                    skipHashComparing = true
-//                    refreshContacts(contacts)
-//                }
-//            }
-//
-//            if (refreshTabsMask and TAB_FAVORITES != 0) {
-//                findViewById<BaseViewPagerFragment<*>>(R.id.favorites_fragment)?.apply {
-//                    skipHashComparing = true
-//                    refreshContacts(contacts)
-//                }
-//            }
-//
-//            if (refreshTabsMask and TAB_GROUPS != 0) {
-//                findViewById<BaseViewPagerFragment<*>>(R.id.groups_fragment)?.apply {
-//                    if (refreshTabsMask == TAB_GROUPS) {
-//                        skipHashComparing = true
-//                    }
-//
-//                    refreshContacts(contacts)
-//                }
-//            }
-
-            if (binding.mainMenu.isSearchOpen) {
-                getCurrentFragment()?.onSearchQueryChanged(context = this@MainActivity, text = binding.mainMenu.getCurrentQuery())
-            }
-        }
-    }
-
-    override fun contactClicked(contact: Contact) {
-        handleGenericContactClick(contact)
     }
 }

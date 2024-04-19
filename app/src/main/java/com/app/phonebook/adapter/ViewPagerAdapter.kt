@@ -11,7 +11,7 @@ import com.app.phonebook.base.utils.TAB_FAVORITES
 import com.app.phonebook.base.utils.TAB_GROUPS
 import com.app.phonebook.base.utils.tabsList
 import com.app.phonebook.base.view.BaseActivity
-import com.app.phonebook.base.view.BaseViewPagerFragment
+import com.app.phonebook.presentation.fragments.MyViewPagerFragment
 
 class ViewPagerAdapter(val activity: BaseActivity<*>) : PagerAdapter() {
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
@@ -19,7 +19,7 @@ class ViewPagerAdapter(val activity: BaseActivity<*>) : PagerAdapter() {
         val view = activity.layoutInflater.inflate(layout, container, false)
         container.addView(view)
 
-        (view as BaseViewPagerFragment<*>).apply {
+        (view as MyViewPagerFragment<*>).apply {
             setupFragment(activity)
         }
 

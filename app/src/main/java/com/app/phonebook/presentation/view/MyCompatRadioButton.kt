@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatRadioButton
+import androidx.core.content.res.ResourcesCompat
+import com.app.phonebook.R
 import com.app.phonebook.base.extension.adjustAlpha
 
 class MyCompatRadioButton : AppCompatRadioButton {
@@ -13,6 +15,11 @@ class MyCompatRadioButton : AppCompatRadioButton {
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
+
+    init {
+        val fontRes = R.font.sofia_pro_regular
+        typeface = ResourcesCompat.getFont(context, fontRes)
+    }
 
     @SuppressLint("RestrictedApi")
     fun setColors(textColor: Int, accentColor: Int) {

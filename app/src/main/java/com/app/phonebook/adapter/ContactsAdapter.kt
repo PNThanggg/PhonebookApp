@@ -59,7 +59,7 @@ class ContactsAdapter(
     private val enableDrag: Boolean = false,
     private val allowLongClick: Boolean = true,
     itemClick: (Any) -> Unit
-) : BaseRecyclerViewAdapter(activity, recyclerView, itemClick),
+) : MyRecyclerViewAdapter(activity, recyclerView, itemClick),
     ItemTouchHelperContract, MyRecyclerView.MyZoomListener {
     private var textToHighlight = highlightText
     var fontSize: Float = activity.getTextSize()
@@ -362,9 +362,10 @@ class ContactsAdapter(
         notifyItemMoved(fromPosition, toPosition)
     }
 
-    override fun onRowSelected(myViewHolder: ViewHolder?) {}
+    override fun onRowSelected(myViewHolder: BaseRecyclerViewAdapter.ViewHolder?) {
+    }
 
-    override fun onRowClear(myViewHolder: ViewHolder?) {
+    override fun onRowClear(myViewHolder: BaseRecyclerViewAdapter.ViewHolder?) {
         onDragEndListener?.invoke()
     }
 
