@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.AttributeSet
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ContactsAdapter
-import com.app.phonebook.adapter.MyRecyclerViewAdapter
 import com.app.phonebook.base.extension.areSystemAnimationsEnabled
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.beGone
@@ -42,6 +41,8 @@ class FavoritesFragment(
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
 
+    private var contactAdapter: ContactsAdapter? = null
+
     override fun onFinishInflate() {
         super.onFinishInflate()
         binding = FragmentLettersLayoutBinding.bind(FragmentFavoritesBinding.bind(this).favoritesFragment)
@@ -62,7 +63,7 @@ class FavoritesFragment(
     override fun setupColors(textColor: Int, primaryColor: Int, properPrimaryColor: Int) {
         binding.apply {
             fragmentPlaceholder.setTextColor(textColor)
-            (fragmentList.adapter as? MyRecyclerViewAdapter)?.updateTextColor(textColor)
+            contactAdapter?.updateTextColor(textColor)
 
             letterFastScroller.textColor = textColor.getColorStateList()
             letterFastScroller.pressedTextColor = properPrimaryColor
@@ -118,17 +119,15 @@ class FavoritesFragment(
     }
 
     private fun updateListAdapter() {
-        val viewType = context.config.viewType
-        setViewType(viewType)
+        setViewType(context.config.viewType)
 
-        val currAdapter = binding.fragmentList.adapter as ContactsAdapter?
-        if (currAdapter == null) {
+        if (contactAdapter == null) {
             ContactsAdapter(
                 activity = activity as BaseActivity<*>,
                 contacts = allContacts,
                 recyclerView = binding.fragmentList,
                 refreshItemsListener = this,
-                viewType = viewType,
+                viewType = context.config.viewType,
                 showDeleteButton = false,
                 enableDrag = true,
             ) {
@@ -148,7 +147,8 @@ class FavoritesFragment(
                     }
                 }
             }.apply {
-                binding.fragmentList.adapter = this
+                contactAdapter = this
+                binding.fragmentList.adapter = contactAdapter
 
                 onDragEndListener = {
                     val adapter = binding.fragmentList.adapter
@@ -168,8 +168,9 @@ class FavoritesFragment(
                 binding.fragmentList.scheduleLayoutAnimation()
             }
         } else {
-            currAdapter.viewType = viewType
-            currAdapter.updateItems(allContacts)
+            contactAdapter?.apply {
+                updateItems(allContacts)
+            }
         }
     }
 

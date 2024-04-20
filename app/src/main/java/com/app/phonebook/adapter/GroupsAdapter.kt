@@ -11,6 +11,7 @@ import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.getTextSize
 import com.app.phonebook.base.extension.groupsDB
 import com.app.phonebook.base.extension.highlightTextPart
+import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.utils.TAB_GROUPS
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.view.BaseActivity
@@ -29,11 +30,11 @@ class GroupsAdapter(
     activity: BaseActivity<*>,
     var groups: ArrayList<Group>,
     recyclerView: MyRecyclerView,
-    private val refreshListener: RefreshContactsListener?,
+    private val refreshItemsListener: RefreshItemsListener?,
     itemClick: (Any) -> Unit
 ) : MyRecyclerViewAdapter(activity, recyclerView, itemClick), RecyclerViewFastScroller.OnPopupTextUpdate {
     private var textToHighlight = ""
-    private var showContactThumbnails = activity.config.showContactThumbnails
+    var showContactThumbnails = activity.config.showContactThumbnails
 
     var fontSize: Float = activity.getTextSize()
 
@@ -106,7 +107,7 @@ class GroupsAdapter(
         val group = getItemWithKey(selectedKeys.first()) ?: return
         RenameGroupDialog(activity, group) {
             finishActMode()
-            refreshListener?.refreshContacts(TAB_GROUPS)
+            refreshItemsListener?.refreshItems()
         }
     }
 
@@ -148,7 +149,7 @@ class GroupsAdapter(
 
         activity.runOnUiThread {
             if (groups.isEmpty()) {
-                refreshListener?.refreshContacts(TAB_GROUPS)
+                refreshItemsListener?.refreshItems()
                 finishActMode()
             } else {
                 removeSelectedItems(positions)

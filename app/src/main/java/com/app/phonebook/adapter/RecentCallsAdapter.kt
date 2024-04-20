@@ -31,7 +31,6 @@ import com.app.phonebook.base.interfaces.RefreshItemsListener
 import com.app.phonebook.base.utils.KEY_PHONE
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CALL_LOG
 import com.app.phonebook.base.view.BaseActivity
-import com.app.phonebook.base.view.BaseRecyclerViewAdapter
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RecentCall
 import com.app.phonebook.databinding.ItemRecentCallBinding

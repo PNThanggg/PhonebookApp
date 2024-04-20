@@ -37,6 +37,7 @@ class RecentFragment(
 ) : MyViewPagerFragment<MyViewPagerFragment.RecentsInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentRecentBinding
     private var allRecentCalls = listOf<RecentCall>()
+
     private var recentsAdapter: RecentCallsAdapter? = null
 
     override fun onFinishInflate() {

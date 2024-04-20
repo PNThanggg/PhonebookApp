@@ -3,6 +3,8 @@ package com.app.phonebook.presentation.view
 import android.content.Context
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.core.content.res.ResourcesCompat
+import com.app.phonebook.R
 
 class MyTextView : AppCompatTextView {
     constructor(context: Context) : super(context)
@@ -12,6 +14,11 @@ class MyTextView : AppCompatTextView {
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(
         context, attrs, defStyle
     )
+
+    init {
+        val fontRes = R.font.sofia_pro_regular
+        typeface = ResourcesCompat.getFont(context, fontRes)
+    }
 
     fun setColors(textColor: Int, accentColor: Int) {
         setTextColor(textColor)

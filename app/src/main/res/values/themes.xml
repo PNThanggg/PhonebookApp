@@ -84,6 +84,13 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
+    <style name="AppTheme.ActionBar" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+        <item name="android:outlineProvider">none</item>
+    </style>
+
+    <style name="AppTheme.ActionBar.TitleTextStyle">
+        <item name="android:textSize">@dimen/actionbar_text_size</item>
+    </style>
 
     <style name="TopPopupMenu.Overflow.Dark" parent="@style/Widget.MaterialComponents.PopupMenu.Overflow">
         <item name="android:popupBackground">@drawable/top_popup_menu_bg_dark</item>

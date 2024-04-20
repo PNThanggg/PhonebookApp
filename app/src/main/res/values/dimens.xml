@@ -84,4 +84,9 @@
     <dimen name="default_popup_padding">16dp</dimen>
 
     <dimen name="default_handle_padding">4dp</dimen>
+
+    <dimen name="contact_photo_size">88dp</dimen>
+    <dimen name="contact_actions_size">48dp</dimen>
+    <dimen name="contact_icons_size">40dp</dimen>
+    <dimen name="top_contact_image_height">300dp</dimen>
 </resources>

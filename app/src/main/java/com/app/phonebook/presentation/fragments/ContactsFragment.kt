@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.AttributeSet
 import com.app.phonebook.R
 import com.app.phonebook.adapter.ContactsAdapter
-import com.app.phonebook.adapter.MyRecyclerViewAdapter
 import com.app.phonebook.base.extension.areSystemAnimationsEnabled
 import com.app.phonebook.base.extension.baseConfig
 import com.app.phonebook.base.extension.beGone
@@ -37,6 +36,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
     MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
+    private var contactAdapter: ContactsAdapter? = null
 
     override fun onFinishInflate() {
         super.onFinishInflate()
@@ -74,7 +74,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
 
     override fun setupColors(textColor: Int, primaryColor: Int, properPrimaryColor: Int) {
         binding.apply {
-            (fragmentList.adapter as? MyRecyclerViewAdapter)?.updateTextColor(textColor)
+            contactAdapter?.updateTextColor(textColor)
             fragmentPlaceholder.setTextColor(textColor)
             fragmentPlaceholder2.setTextColor(properPrimaryColor)
 
@@ -133,14 +133,15 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
                         val contact = it as Contact
                         activity?.startContactDetailsIntent(contact)
                     }.apply {
-                        fragmentList.adapter = this
+                        contactAdapter = this
+                        fragmentList.adapter = contactAdapter
                     }
 
                     if (context.areSystemAnimationsEnabled) {
                         fragmentList.scheduleLayoutAnimation()
                     }
                 } else {
-                    (fragmentList.adapter as ContactsAdapter).updateItems(contacts)
+                    contactAdapter?.updateItems(contacts)
                 }
             }
         }
@@ -160,7 +161,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) :
 
     override fun onSearchClosed() {
         binding.fragmentPlaceholder.beVisibleIf(allContacts.isEmpty())
-        (binding.fragmentList.adapter as? ContactsAdapter)?.updateItems(allContacts)
+        contactAdapter?.updateItems(allContacts)
         setupLetterFastScroller(allContacts)
     }
 

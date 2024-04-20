@@ -220,8 +220,8 @@ abstract class MyRecyclerViewAdapter(
                 override fun selectRange(initialSelection: Int, lastDraggedIndex: Int, minReached: Int, maxReached: Int) {
                     selectItemRange(
                         initialSelection,
-                        Math.max(0, lastDraggedIndex - positionOffset),
-                        Math.max(0, minReached - positionOffset),
+                        0.coerceAtLeast(lastDraggedIndex - positionOffset),
+                        0.coerceAtLeast(minReached - positionOffset),
                         maxReached - positionOffset
                     )
                     if (minReached != maxReached) {

@@ -21,6 +21,9 @@ const val FIRST_GROUP_ID = 10000L
 const val SHORT_ANIMATION_DURATION = 150L
 const val DARK_GREY = 0xFF333333.toInt()
 
+const val AVOID_CHANGING_TEXT_TAG = "avoid_changing_text_tag"
+const val AVOID_CHANGING_VISIBILITY_TAG = "avoid_changing_visibility_tag"
+
 const val LOWER_ALPHA = 0.25f
 const val MEDIUM_ALPHA = 0.5f
 const val HIGHER_ALPHA = 0.75f
@@ -77,6 +80,12 @@ const val DIALPAD_BEEPS = "dialpad_beeps"
 const val HIDE_DIALPAD_NUMBERS = "hide_dialpad_numbers"
 const val ALWAYS_SHOW_FULLSCREEN = "always_show_fullscreen"
 
+const val GROUP = "group"
+
+const val LOCATION_CONTACTS_TAB = 0
+const val LOCATION_FAVORITES_TAB = 1
+const val LOCATION_GROUP_CONTACTS = 2
+const val LOCATION_INSERT_OR_EDIT = 3
 
 // contact grid view constants
 const val CONTACTS_GRID_MAX_COLUMNS_COUNT = 10

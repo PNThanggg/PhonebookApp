@@ -79,10 +79,12 @@ import com.app.phonebook.base.utils.isQPlus
 import com.app.phonebook.base.utils.isSPlus
 import com.app.phonebook.base.utils.isTiramisuPlus
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
+import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
+import com.app.phonebook.helpers.LocalContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
 import com.app.phonebook.presentation.view.MyAppCompatCheckbox
 import com.app.phonebook.presentation.view.MyButton
@@ -608,6 +610,65 @@ fun Context.getPackageDrawable(packageName: String): Drawable {
         }, theme
     )
 }
+
+fun Context.sendSMSToContacts(contacts: ArrayList<Contact>) {
+    val numbers = StringBuilder()
+    contacts.forEach {
+        val number = it.phoneNumbers.firstOrNull { it.type == ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE }
+            ?: it.phoneNumbers.firstOrNull()
+
+        if (number != null) {
+            numbers.append("${Uri.encode(number.value)};")
+        }
+    }
+
+    val uriString = "smsto:${numbers.toString().trimEnd(';')}"
+    Intent(Intent.ACTION_SENDTO, Uri.parse(uriString)).apply {
+        launchActivityIntent(this)
+    }
+}
+
+fun Context.sendEmailToContacts(contacts: ArrayList<Contact>) {
+    val emails = ArrayList<String>()
+    contacts.forEach {
+        it.emails.forEach {
+            if (it.value.isNotEmpty()) {
+                emails.add(it.value)
+            }
+        }
+    }
+
+    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+        type = "message/rfc822"
+        putExtra(Intent.EXTRA_EMAIL, emails.toTypedArray())
+        launchActivityIntent(this)
+    }
+}
+
+fun Context.addContactsToGroup(contacts: ArrayList<Contact>, groupId: Long) {
+    val publicContacts = contacts.filter { !it.isPrivate() }.toMutableList() as ArrayList<Contact>
+    val privateContacts = contacts.filter { it.isPrivate() }.toMutableList() as ArrayList<Contact>
+    if (publicContacts.isNotEmpty()) {
+        ContactsHelper(this).addContactsToGroup(publicContacts, groupId)
+    }
+
+    if (privateContacts.isNotEmpty()) {
+        LocalContactsHelper(this).addContactsToGroup(privateContacts, groupId)
+    }
+}
+
+fun Context.removeContactsFromGroup(contacts: ArrayList<Contact>, groupId: Long) {
+    val publicContacts = contacts.filter { !it.isPrivate() }.toMutableList() as ArrayList<Contact>
+    val privateContacts = contacts.filter { it.isPrivate() }.toMutableList() as ArrayList<Contact>
+    if (publicContacts.isNotEmpty() && hasContactPermissions()) {
+        ContactsHelper(this).removeContactsFromGroup(publicContacts, groupId)
+    }
+
+    if (privateContacts.isNotEmpty()) {
+        LocalContactsHelper(this).removeContactsFromGroup(privateContacts, groupId)
+    }
+}
+
 
 fun Context.getPermissionString(id: Int) = when (id) {
     PERMISSION_READ_STORAGE -> Manifest.permission.READ_EXTERNAL_STORAGE

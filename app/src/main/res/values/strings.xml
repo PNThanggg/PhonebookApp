@@ -991,4 +991,73 @@
 
     <string name="export_call_history">Export call history</string>
     <string name="import_call_history">Import call history</string>
+
+    <string name="app_launcher_name">Contacts</string>
+    <string name="address">Address</string>
+    <string name="inserting">Inserting…</string>
+    <string name="company">Company</string>
+    <string name="job_position">Job position</string>
+    <string name="send_sms_to_contacts">Send SMS to contacts</string>
+    <string name="send_email_to_contacts">Send email to contacts</string>
+    <string name="send_sms_to_group">Send SMS to group</string>
+    <string name="send_email_to_group">Send email to group</string>
+    <string name="fields_empty">At least 1 field has to be filled out</string>
+    <string name="must_be_at_edit">You must be at the Edit screen to modify a contact</string>
+
+    <string name="website">Website</string>
+
+    <!-- Placeholders -->
+    <string name="no_contacts_with_emails">No contacts with emails have been found</string>
+    <string name="no_contacts_with_phone_numbers">No contacts with phone numbers have been found</string>
+
+    <string name="new_contact">New contact</string>
+    <string name="edit_contact">Edit contact</string>
+    <string name="select_contact">Select contact</string>
+    <string name="nickname">Nickname</string>
+
+    <!-- Photo -->
+    <string name="remove_photo">Remove photo</string>
+    <string name="change_photo">Change photo</string>
+
+    <!-- Settings -->
+    <string name="show_phone_numbers">Show phone numbers</string>
+    <string name="show_contact_thumbnails">Show contact thumbnails</string>
+    <string name="show_dialpad_button">Show a dialpad button on the main screen</string>
+    <string name="on_contact_click">On contact click</string>
+    <string name="call_contact">Call contact</string>
+    <string name="view_contact">View contact details</string>
+    <string name="manage_shown_contact_fields">Manage shown contact fields</string>
+    <string name="contacts">Contacts</string>
+    <string name="show_only_contacts_with_numbers">Show only contacts with phone numbers</string>
+    <string name="show_private_contacts">Show private contacts to Simple Dialer, Simple SMS Messenger and Simple Calendar Pro</string>
+    <string name="merge_duplicate_contacts">Merge duplicate contacts</string>
+
+    <!-- Favorites -->
+    <string name="no_favorites">Seems like you haven\'t added any favorite contacts yet.</string>
+    <string name="toggle_favorite">Toggle favorite</string>
+
+    <!-- Export / Import -->
+    <string name="import_contacts">Import contacts</string>
+    <string name="export_contacts">Export contacts</string>
+    <string name="import_contacts_from_vcf">Import contacts from a .vcf file</string>
+    <string name="import_contacts_from_vcf_pro">Import contacts from a .vcf file (Pro)</string>
+    <string name="export_contacts_to_vcf">Export contacts to a .vcf file</string>
+    <string name="target_contact_source">Target contact source</string>
+    <string name="include_contact_sources">Include contact sources</string>
+    <string name="filename_without_vcf">Filename (without .vcf)</string>
+
+    <!-- Visible fields -->
+    <string name="prefix">Prefix</string>
+    <string name="suffix">Suffix</string>
+    <string name="phone_numbers">Phone numbers</string>
+    <string name="emails">Emails</string>
+    <string name="addresses">Addresses</string>
+    <string name="events">Events (birthdays, anniversaries)</string>
+    <string name="organization">Organization</string>
+    <string name="websites">Websites</string>
+    <string name="groups">Groups</string>
+    <string name="contact_source">Contact source</string>
+    <string name="instant_messaging">Instant messaging (IM)</string>
+    <string name="ringtone">Ringtone</string>
+
 </resources>

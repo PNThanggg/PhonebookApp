@@ -28,6 +28,7 @@ import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getProperBackgroundColor
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
+import com.app.phonebook.base.extension.hideKeyboard
 import com.app.phonebook.base.extension.isDefaultDialer
 import com.app.phonebook.base.extension.launchCreateNewContactIntent
 import com.app.phonebook.base.extension.onGlobalLayout
@@ -60,6 +61,7 @@ import com.app.phonebook.helpers.RecentHelper
 import com.app.phonebook.presentation.dialog.ChangeSortingDialog
 import com.app.phonebook.presentation.dialog.ChangeViewTypeDialog
 import com.app.phonebook.presentation.dialog.ConfirmationDialog
+import com.app.phonebook.presentation.dialog.CreateNewGroupDialog
 import com.app.phonebook.presentation.dialog.FilterContactSourcesDialog
 import com.app.phonebook.presentation.dialog.PermissionRequiredDialog
 import com.app.phonebook.presentation.dialog.RadioGroupDialog
@@ -131,6 +133,24 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         Contact.sorting = config.sorting
     }
 
+    override fun initListener() {
+        super.initListener()
+
+        binding.mainAddContact.setOnClickListener {
+            if (getCurrentFragment() == getContactsFragment()) {
+                hideKeyboard()
+                Intent(this@MainActivity, EditContactActivity::class.java).apply {
+                    startActivity(this)
+                }
+            } else if (getCurrentFragment() == getFavoritesFragment()) {
+
+            } else if (getCurrentFragment() == getGroupFragment()) {
+                getCurrentFragment()?.finishActMode()
+                showNewGroupsDialog()
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -143,9 +163,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         val properPrimaryColor = getProperPrimaryColor()
         val dialpadIcon = resources.getColoredDrawableWithColor(
-            drawableId = R.drawable.ic_dialpad_vector,
-            color = properPrimaryColor.getContrastColor(),
-            context = this@MainActivity
+            drawableId = R.drawable.ic_dialpad_vector, color = properPrimaryColor.getContrastColor(), context = this@MainActivity
         )
 
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
@@ -471,6 +489,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 it.customView, false, getDeselectedTabDrawableIds()[it.position]
             )
         }, tabSelectedAction = {
+            refreshFragments()
             binding.mainMenu.closeSearch()
             binding.viewPager.currentItem = it.position
             updateBottomTabItemColors(
@@ -562,6 +581,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun getGroupFragment(): GroupsFragment? = findViewById(R.id.groups_fragment)
 
     private fun getRecentsFragment(): RecentFragment? = findViewById(R.id.recents_fragment)
+
+    private fun showNewGroupsDialog() {
+        CreateNewGroupDialog(this@MainActivity) {
+            getGroupFragment()?.refreshItems()
+        }
+    }
 
     /**
      * Refreshes the items in the main activity, potentially opening the last used tab.

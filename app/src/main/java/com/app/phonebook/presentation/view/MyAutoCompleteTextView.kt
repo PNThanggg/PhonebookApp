@@ -1,15 +1,14 @@
 package com.app.phonebook.presentation.view
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.ColorStateList
 import android.util.AttributeSet
-import androidx.appcompat.widget.AppCompatCheckBox
+import androidx.appcompat.widget.AppCompatAutoCompleteTextView
 import androidx.core.content.res.ResourcesCompat
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.adjustAlpha
+import com.app.phonebook.base.extension.applyColorFilter
 
-class MyAppCompatCheckbox : AppCompatCheckBox {
+class MyAutoCompleteTextView : AppCompatAutoCompleteTextView {
     constructor(context: Context) : super(context)
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
@@ -21,16 +20,12 @@ class MyAppCompatCheckbox : AppCompatCheckBox {
         typeface = ResourcesCompat.getFont(context, fontRes)
     }
 
-    @SuppressLint("RestrictedApi")
-    fun setColors(textColor: Int, accentColor: Int) {
+    fun setColors(textColor: Int, accentColor: Int, backgroundColor: Int) {
+        background?.mutate()?.applyColorFilter(accentColor)
+
+        // requires android:textCursorDrawable="@null" in xml to color the cursor too
         setTextColor(textColor)
-        val colorStateList = ColorStateList(
-            arrayOf(
-                intArrayOf(-android.R.attr.state_checked),
-                intArrayOf(android.R.attr.state_checked)
-            ),
-            intArrayOf(textColor.adjustAlpha(0.6f), accentColor)
-        )
-        supportButtonTintList = colorStateList
+        setHintTextColor(textColor.adjustAlpha(0.5f))
+        setLinkTextColor(accentColor)
     }
 }

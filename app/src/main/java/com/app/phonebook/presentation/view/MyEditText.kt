@@ -3,6 +3,8 @@ package com.app.phonebook.presentation.view
 import android.content.Context
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatEditText
+import androidx.core.content.res.ResourcesCompat
+import com.app.phonebook.R
 import com.app.phonebook.base.extension.adjustAlpha
 import com.app.phonebook.base.extension.applyColorFilter
 import com.app.phonebook.base.utils.MEDIUM_ALPHA
@@ -17,6 +19,11 @@ class MyEditText : AppCompatEditText {
         attrs,
         defStyle
     )
+
+    init {
+        val fontRes = R.font.sofia_pro_regular
+        typeface = ResourcesCompat.getFont(context, fontRes)
+    }
 
     fun setColors(textColor: Int, accentColor: Int) {
         background?.mutate()?.applyColorFilter(accentColor)
