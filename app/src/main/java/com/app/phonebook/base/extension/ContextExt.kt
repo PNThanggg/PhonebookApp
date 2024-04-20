@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -17,13 +18,17 @@ import android.graphics.Point
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.net.Uri
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.ContactsContract
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -34,15 +39,21 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import androidx.loader.content.CursorLoader
 import com.app.phonebook.R
 import com.app.phonebook.base.helpers.BaseConfig
+import com.app.phonebook.base.helpers.ExternalStorageProviderHack
 import com.app.phonebook.base.helpers.MyContentProvider
 import com.app.phonebook.base.utils.APP_NAME
 import com.app.phonebook.base.utils.DARK_GREY
+import com.app.phonebook.base.utils.DEFAULT_FILE_NAME
+import com.app.phonebook.base.utils.EXTERNAL_STORAGE_PROVIDER_AUTHORITY
 import com.app.phonebook.base.utils.FONT_SIZE_LARGE
 import com.app.phonebook.base.utils.FONT_SIZE_MEDIUM
 import com.app.phonebook.base.utils.FONT_SIZE_SMALL
+import com.app.phonebook.base.utils.KEY_MAILTO
 import com.app.phonebook.base.utils.PERMISSION_ACCESS_COARSE_LOCATION
 import com.app.phonebook.base.utils.PERMISSION_ACCESS_FINE_LOCATION
 import com.app.phonebook.base.utils.PERMISSION_CALL_PHONE
@@ -67,6 +78,8 @@ import com.app.phonebook.base.utils.PERMISSION_WRITE_CALENDAR
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CALL_LOG
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CONTACTS
 import com.app.phonebook.base.utils.PERMISSION_WRITE_STORAGE
+import com.app.phonebook.base.utils.SD_OTG_PATTERN
+import com.app.phonebook.base.utils.SD_OTG_SHORT
 import com.app.phonebook.base.utils.SIGNAL_PACKAGE
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.TELEGRAM_PACKAGE
@@ -76,16 +89,19 @@ import com.app.phonebook.base.utils.VIBER_PACKAGE
 import com.app.phonebook.base.utils.WHATSAPP_PACKAGE
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isQPlus
+import com.app.phonebook.base.utils.isRPlus
 import com.app.phonebook.base.utils.isSPlus
 import com.app.phonebook.base.utils.isTiramisuPlus
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.ContactSource
+import com.app.phonebook.data.models.FileDirItem
 import com.app.phonebook.data.models.SIMAccount
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.LocalContactsHelper
 import com.app.phonebook.helpers.MyContactsContentProvider
+import com.app.phonebook.helpers.SimpleContactsHelper
 import com.app.phonebook.presentation.view.MyAppCompatCheckbox
 import com.app.phonebook.presentation.view.MyButton
 import com.app.phonebook.presentation.view.MyCompatRadioButton
@@ -93,9 +109,130 @@ import com.app.phonebook.presentation.view.MyEditText
 import com.app.phonebook.presentation.view.MyFloatingActionButton
 import com.app.phonebook.presentation.view.MyTextInputLayout
 import com.app.phonebook.presentation.view.MyTextView
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 import java.text.SimpleDateFormat
+import java.util.Collections
 import java.util.Date
 import java.util.Locale
+import java.util.regex.Pattern
+
+private const val ANDROID_DATA_DIR = "/Android/data/"
+private const val ANDROID_OBB_DIR = "/Android/obb/"
+val DIRS_ACCESSIBLE_ONLY_WITH_SAF = listOf(ANDROID_DATA_DIR, ANDROID_OBB_DIR)
+
+private const val DOWNLOAD_DIR = "Download"
+private const val ANDROID_DIR = "Android"
+private val DIRS_INACCESSIBLE_WITH_SAF_SDK_30 = listOf(DOWNLOAD_DIR, ANDROID_DIR)
+val Context.recycleBinPath: String get() = filesDir.absolutePath
+
+val Context.internalStoragePath: String get() = baseConfig.internalStoragePath
+
+fun Context.getStorageDirectories(): Array<String> {
+    val paths = HashSet<String>()
+    val rawExternalStorage = System.getenv("EXTERNAL_STORAGE")
+    val rawSecondaryStoragesStr = System.getenv("SECONDARY_STORAGE")
+    val rawEmulatedStorageTarget = System.getenv("EMULATED_STORAGE_TARGET")
+    if (TextUtils.isEmpty(rawEmulatedStorageTarget)) {
+        getExternalFilesDirs(null).filterNotNull().map { it.absolutePath }
+            .mapTo(paths) { it.substring(0, it.indexOf("Android/data")) }
+    } else {
+        val path = Environment.getExternalStorageDirectory().absolutePath
+        val folders = Pattern.compile("/").split(path)
+        val lastFolder = folders[folders.size - 1]
+        var isDigit = false
+        try {
+            Integer.valueOf(lastFolder)
+            isDigit = true
+        } catch (ignored: NumberFormatException) {
+        }
+
+        val rawUserId = if (isDigit) lastFolder else ""
+
+        if (rawEmulatedStorageTarget != null) {
+            if (TextUtils.isEmpty(rawUserId)) {
+                paths.add(rawEmulatedStorageTarget)
+            } else {
+                paths.add(rawEmulatedStorageTarget + File.separator + rawUserId)
+            }
+        }
+
+    }
+
+    if (!TextUtils.isEmpty(rawSecondaryStoragesStr)) {
+        val rawSecondaryStorages =
+            rawSecondaryStoragesStr!!.split(File.pathSeparator.toRegex()).dropLastWhile(String::isEmpty).toTypedArray()
+        Collections.addAll(paths, *rawSecondaryStorages)
+    }
+    return paths.map { it.trimEnd('/') }.toTypedArray()
+}
+
+fun Context.getInternalStoragePath() =
+    if (File("/storage/emulated/0").exists()) "/storage/emulated/0" else Environment.getExternalStorageDirectory().absolutePath.trimEnd(
+        '/'
+    )
+
+// avoid these being set as SD card paths
+private val physicalPaths = arrayListOf(
+    "/storage/sdcard1", // Motorola Xoom
+    "/storage/extsdcard", // Samsung SGS3
+    "/storage/sdcard0/external_sdcard", // User request
+    "/mnt/extsdcard", "/mnt/sdcard/external_sd", // Samsung galaxy family
+    "/mnt/external_sd", "/mnt/media_rw/sdcard1", // 4.4.2 on CyanogenMod S3
+    "/removable/microsd", // Asus transformer prime
+    "/mnt/emmc", "/storage/external_SD", // LG
+    "/storage/ext_sd", // HTC One Max
+    "/storage/removable/sdcard1", // Sony Xperia Z1
+    "/data/sdext", "/data/sdext2", "/data/sdext3", "/data/sdext4", "/sdcard1", // Sony Xperia Z
+    "/sdcard2", // HTC One M8s
+    "/storage/usbdisk0",
+    "/storage/usbdisk1",
+    "/storage/usbdisk2"
+)
+
+fun Context.getSDCardPath(): String {
+    val directories = getStorageDirectories().filter {
+        it != getInternalStoragePath() && !it.equals(
+            "/storage/emulated/0",
+            true
+        ) && (baseConfig.OTGPartition.isEmpty() || !it.endsWith(baseConfig.OTGPartition))
+    }
+
+    val fullSDPattern = Pattern.compile(SD_OTG_PATTERN)
+    var sdCardPath = directories.firstOrNull { fullSDPattern.matcher(it).matches() }
+        ?: directories.firstOrNull { !physicalPaths.contains(it.lowercase(Locale.ROOT)) } ?: ""
+
+    // on some devices no method retrieved any SD card path, so test if its not sdcard1 by any chance. It happened on an Android 5.1
+    if (sdCardPath.trimEnd('/').isEmpty()) {
+        val file = File("/storage/sdcard1")
+        if (file.exists()) {
+            return file.absolutePath
+        }
+
+        sdCardPath = directories.firstOrNull() ?: ""
+    }
+
+    if (sdCardPath.isEmpty()) {
+        val sdPattern = Pattern.compile(SD_OTG_SHORT)
+        try {
+            File("/storage").listFiles()?.forEach {
+                if (sdPattern.matcher(it.name).matches()) {
+                    sdCardPath = "/storage/${it.name}"
+                }
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    val finalPath = sdCardPath.trimEnd('/')
+    baseConfig.sdCardPath = finalPath
+    return finalPath
+}
+
+val Context.sdCardPath: String get() = baseConfig.sdCardPath
+
+fun Context.hasExternalSDCard() = sdCardPath.isNotEmpty()
 
 /**
  * Lazily accessed property that provides an instance of `Config`.
@@ -657,6 +794,239 @@ fun Context.addContactsToGroup(contacts: ArrayList<Contact>, groupId: Long) {
     }
 }
 
+fun Context.sendEmailIntent(recipient: String) {
+    Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.fromParts(KEY_MAILTO, recipient, null)
+        launchActivityIntent(this)
+    }
+}
+
+fun isEncodedContactUri(uri: Uri?): Boolean {
+    if (uri == null) {
+        return false
+    }
+    val lastPathSegment = uri.lastPathSegment ?: return false
+    return lastPathSegment == "encoded"
+}
+
+
+fun getLookupKeyFromUri(lookupUri: Uri): String? {
+    return if (!isEncodedContactUri(lookupUri)) {
+        val segments = lookupUri.pathSegments
+        if (segments.size < 3) null else Uri.encode(segments[2])
+    } else {
+        null
+    }
+}
+
+fun lookupContactUri(lookup: String, context: Context): Uri? {
+    val lookupUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookup)
+    return try {
+        ContactsContract.Contacts.lookupContact(context.contentResolver, lookupUri)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+fun Context.getLookupUriRawId(dataUri: Uri): Int {
+    val lookupKey = getLookupKeyFromUri(dataUri)
+    if (lookupKey != null) {
+        val uri = lookupContactUri(lookupKey, this)
+        if (uri != null) {
+            return getContactUriRawId(uri)
+        }
+    }
+    return -1
+}
+
+fun Context.getContactPublicUri(contact: Contact): Uri {
+    val lookupKey = if (contact.isPrivate()) {
+        "local_${contact.id}"
+    } else {
+        SimpleContactsHelper(this).getContactLookupKey(contact.id.toString())
+    }
+    return Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey)
+}
+
+fun Context.getPublicContactSource(source: String, callback: (String) -> Unit) {
+    when (source) {
+        SMT_PRIVATE -> callback(getString(R.string.phone_storage_hidden))
+        else -> {
+            ContactsHelper(this).getContactSources {
+                var newSource = source
+                for (contactSource in it) {
+                    if (contactSource.name == source && contactSource.type == TELEGRAM_PACKAGE) {
+                        newSource = getString(R.string.telegram)
+                        break
+                    } else if (contactSource.name == source && contactSource.type == VIBER_PACKAGE) {
+                        newSource = getString(R.string.viber)
+                        break
+                    }
+                }
+                Handler(Looper.getMainLooper()).post {
+                    callback(newSource)
+                }
+            }
+        }
+    }
+}
+
+
+fun Context.getContactUriRawId(uri: Uri): Int {
+    val projection = arrayOf(ContactsContract.Contacts.NAME_RAW_CONTACT_ID)
+    var cursor: Cursor? = null
+    try {
+        cursor = contentResolver.query(uri, projection, null, null, null)
+        if (cursor!!.moveToFirst()) {
+            return cursor.getIntValue(ContactsContract.Contacts.NAME_RAW_CONTACT_ID)
+        }
+    } catch (ignored: Exception) {
+    } finally {
+        cursor?.close()
+    }
+    return -1
+}
+
+fun Context.getSAFOnlyDirs(): List<String> {
+    return DIRS_ACCESSIBLE_ONLY_WITH_SAF.map { "$internalStoragePath$it" } +
+            DIRS_ACCESSIBLE_ONLY_WITH_SAF.map { "$sdCardPath$it" }
+}
+
+fun Context.isSAFOnlyRoot(path: String): Boolean {
+    return getSAFOnlyDirs().any { "${path.trimEnd('/')}/".startsWith(it) }
+}
+
+fun Context.isRestrictedSAFOnlyRoot(path: String): Boolean {
+    return isRPlus() && isSAFOnlyRoot(path)
+}
+
+val Context.otgPath: String get() = baseConfig.OTGPath
+
+fun Context.isPathOnSD(path: String) = sdCardPath.isNotEmpty() && path.startsWith(sdCardPath)
+
+fun Context.isPathOnOTG(path: String) = otgPath.isNotEmpty() && path.startsWith(otgPath)
+
+fun Context.getAndroidTreeUri(path: String): String {
+    return when {
+        isPathOnOTG(path) -> if (isAndroidDataDir(path)) baseConfig.otgAndroidDataTreeUri else baseConfig.otgAndroidObbTreeUri
+        isPathOnSD(path) -> if (isAndroidDataDir(path)) baseConfig.sdAndroidDataTreeUri else baseConfig.sdAndroidObbTreeUri
+        else -> if (isAndroidDataDir(path)) baseConfig.primaryAndroidDataTreeUri else baseConfig.primaryAndroidObbTreeUri
+    }
+}
+
+fun Context.getFileSize(treeUri: Uri, documentId: String): Long {
+    val projection = arrayOf(DocumentsContract.Document.COLUMN_SIZE)
+    val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+    return contentResolver.query(documentUri, projection, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            cursor.getLongValue(DocumentsContract.Document.COLUMN_SIZE)
+        } else {
+            0L
+        }
+    } ?: 0L
+}
+
+fun Context.getAndroidSAFFileSize(path: String): Long {
+    val treeUri = getAndroidTreeUri(path).toUri()
+    val documentId = createAndroidSAFDocumentId(path)
+    return getFileSize(treeUri, documentId)
+}
+
+fun Context.getAndroidSAFDirectChildrenCount(path: String, countHidden: Boolean): Int {
+    val treeUri = getAndroidTreeUri(path).toUri()
+    if (treeUri == Uri.EMPTY) {
+        return 0
+    }
+
+    val documentId = createAndroidSAFDocumentId(path)
+    val rootDocId = getStorageRootIdForAndroidDir(path)
+    return getDirectChildrenCount(rootDocId, treeUri, documentId, countHidden)
+}
+
+fun Context.getDirectChildrenCount(rootDocId: String, treeUri: Uri, documentId: String, shouldShowHidden: Boolean): Int {
+    return try {
+        val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
+        val rawCursor = contentResolver.query(childrenUri, projection, null, null, null)!!
+        val cursor = ExternalStorageProviderHack.transformQueryResult(rootDocId, childrenUri, rawCursor)
+        if (shouldShowHidden) {
+            cursor.count
+        } else {
+            var count = 0
+            cursor.use {
+                while (cursor.moveToNext()) {
+                    val docId = cursor.getStringValue(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                    if (docId != null) {
+                        if (!docId.getFilenameFromPath().startsWith('.') || shouldShowHidden) {
+                            count++
+                        }
+                    }
+                }
+            }
+            count
+        }
+    } catch (e: Exception) {
+        0
+    }
+}
+
+fun Context.getTempFile(filename: String = DEFAULT_FILE_NAME): File? {
+    val folder = File(cacheDir, "contacts")
+    if (!folder.exists()) {
+        if (!folder.mkdir()) {
+            toast(R.string.unknown_error_occurred)
+            return null
+        }
+    }
+
+    return File(folder, filename)
+}
+
+fun isAndroidDataDir(path: String): Boolean {
+    val resolvedPath = "${path.trimEnd('/')}/"
+    return resolvedPath.contains(ANDROID_DATA_DIR)
+}
+
+fun Context.getStorageRootIdForAndroidDir(path: String) =
+    getAndroidTreeUri(path).removeSuffix(if (isAndroidDataDir(path)) "%3AAndroid%2Fdata" else "%3AAndroid%2Fobb")
+        .substringAfterLast('/').trimEnd('/')
+
+
+fun Context.createAndroidSAFDocumentId(path: String): String {
+    val basePath = path.getBasePath(this)
+    val relativePath = path.substring(basePath.length).trim('/')
+    val storageId = getStorageRootIdForAndroidDir(path)
+    return "$storageId:$relativePath"
+}
+
+
+fun Context.getAndroidSAFUri(path: String): Uri {
+    val treeUri = getAndroidTreeUri(path).toUri()
+    val documentId = createAndroidSAFDocumentId(path)
+    return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+}
+
+
+fun Context.getDocumentFile(path: String): DocumentFile? {
+    val isOTG = isPathOnOTG(path)
+    var relativePath = path.substring(if (isOTG) otgPath.length else sdCardPath.length)
+    if (relativePath.startsWith(File.separator)) {
+        relativePath = relativePath.substring(1)
+    }
+
+    return try {
+        val treeUri = Uri.parse(if (isOTG) baseConfig.OTGTreeUri else baseConfig.sdTreeUri)
+        var document = DocumentFile.fromTreeUri(applicationContext, treeUri)
+        val parts = relativePath.split("/").filter { it.isNotEmpty() }
+        for (part in parts) {
+            document = document?.findFile(part)
+        }
+        document
+    } catch (ignored: Exception) {
+        null
+    }
+}
+
 fun Context.removeContactsFromGroup(contacts: ArrayList<Contact>, groupId: Long) {
     val publicContacts = contacts.filter { !it.isPrivate() }.toMutableList() as ArrayList<Contact>
     val privateContacts = contacts.filter { it.isPrivate() }.toMutableList() as ArrayList<Contact>
@@ -669,8 +1039,152 @@ fun Context.removeContactsFromGroup(contacts: ArrayList<Contact>, groupId: Long)
     }
 }
 
+fun Context.storeAndroidTreeUri(path: String, treeUri: String) {
+    return when {
+        isPathOnOTG(path) -> if (isAndroidDataDir(path)) baseConfig.otgAndroidDataTreeUri =
+            treeUri else baseConfig.otgAndroidObbTreeUri = treeUri
 
-fun Context.getPermissionString(id: Int) = when (id) {
+        isPathOnSD(path) -> if (isAndroidDataDir(path)) baseConfig.sdAndroidDataTreeUri =
+            treeUri else baseConfig.sdAndroidObbTreeUri = treeUri
+
+        else -> if (isAndroidDataDir(path)) baseConfig.primaryAndroidDataTreeUri =
+            treeUri else baseConfig.primaryAndroidObbTreeUri = treeUri
+    }
+}
+
+fun Context.hasProperStoredAndroidTreeUri(path: String): Boolean {
+    val uri = getAndroidTreeUri(path)
+    val hasProperUri = contentResolver.persistedUriPermissions.any { it.uri.toString() == uri }
+    if (!hasProperUri) {
+        storeAndroidTreeUri(path, "")
+    }
+    return hasProperUri
+}
+
+fun Context.createAndroidDataOrObbPath(fullPath: String): String {
+    return if (isAndroidDataDir(fullPath)) {
+        fullPath.getBasePath(this).trimEnd('/').plus(ANDROID_DATA_DIR)
+    } else {
+        fullPath.getBasePath(this).trimEnd('/').plus(ANDROID_OBB_DIR)
+    }
+}
+
+fun Context.updateOTGPathFromPartition() {
+    val otgPath = "/storage/${baseConfig.OTGPartition}"
+    baseConfig.OTGPath = if (getOTGFastDocumentFile(otgPath, otgPath)?.exists() == true) {
+        "/storage/${baseConfig.OTGPartition}"
+    } else {
+        "/mnt/media_rw/${baseConfig.OTGPartition}"
+    }
+}
+
+
+fun Context.getOTGFastDocumentFile(path: String, otgPathToUse: String? = null): DocumentFile? {
+    if (baseConfig.OTGTreeUri.isEmpty()) {
+        return null
+    }
+
+    val otgPath = otgPathToUse ?: baseConfig.OTGPath
+    if (baseConfig.OTGPartition.isEmpty()) {
+        baseConfig.OTGPartition = baseConfig.OTGTreeUri.removeSuffix("%3A").substringAfterLast('/').trimEnd('/')
+        updateOTGPathFromPartition()
+    }
+
+    val relativePath = Uri.encode(path.substring(otgPath.length).trim('/'))
+    val fullUri = "${baseConfig.OTGTreeUri}/document/${baseConfig.OTGPartition}%3A$relativePath"
+    return DocumentFile.fromSingleUri(this, Uri.parse(fullUri))
+}
+
+fun Context.getDoesFilePathExist(path: String, otgPathToUse: String? = null): Boolean {
+    val otgPath = otgPathToUse ?: baseConfig.OTGPath
+    return when {
+        isRestrictedSAFOnlyRoot(path) -> getFastAndroidSAFDocument(path)?.exists() ?: false
+        otgPath.isNotEmpty() && path.startsWith(otgPath) -> getOTGFastDocumentFile(path)?.exists() ?: false
+        else -> File(path).exists()
+    }
+}
+
+fun Context.getFastAndroidSAFDocument(path: String): DocumentFile? {
+    val treeUri = getAndroidTreeUri(path)
+    if (treeUri.isEmpty()) {
+        return null
+    }
+
+    val uri = getAndroidSAFUri(path)
+    return DocumentFile.fromSingleUri(this, uri)
+}
+
+
+fun Context.getSAFStorageId(fullPath: String): String {
+    return if (fullPath.startsWith('/')) {
+        when {
+            fullPath.startsWith(internalStoragePath) -> "primary"
+            else -> fullPath.substringAfter("/storage/", "").substringBefore('/')
+        }
+    } else {
+        fullPath.substringBefore(':', "").substringAfterLast('/')
+    }
+}
+
+fun Context.createDocumentUriFromRootTree(fullPath: String): Uri {
+    val storageId = getSAFStorageId(fullPath)
+
+    val relativePath = when {
+        fullPath.startsWith(internalStoragePath) -> fullPath.substring(internalStoragePath.length).trim('/')
+        else -> fullPath.substringAfter(storageId).trim('/')
+    }
+
+    val treeUri = DocumentsContract.buildTreeDocumentUri(EXTERNAL_STORAGE_PROVIDER_AUTHORITY, "$storageId:")
+    val documentId = "${storageId}:$relativePath"
+    return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+}
+
+
+fun Context.createAndroidDataOrObbUri(fullPath: String): Uri {
+    val path = createAndroidDataOrObbPath(fullPath)
+    return createDocumentUriFromRootTree(path)
+}
+
+fun Context.createAndroidSAFDirectory(path: String): Boolean {
+    return try {
+        val treeUri = getAndroidTreeUri(path).toUri()
+        val parentPath = path.getParentPath()
+        if (!getDoesFilePathExist(parentPath)) {
+            createAndroidSAFDirectory(parentPath)
+        }
+        val documentId = createAndroidSAFDocumentId(parentPath)
+        val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+        DocumentsContract.createDocument(
+            contentResolver,
+            parentUri,
+            DocumentsContract.Document.MIME_TYPE_DIR,
+            path.getFilenameFromPath()
+        ) != null
+    } catch (e: IllegalStateException) {
+        showErrorToast(e)
+        false
+    }
+}
+
+fun Context.createAndroidSAFFile(path: String): Boolean {
+    return try {
+        val treeUri = getAndroidTreeUri(path).toUri()
+        val parentPath = path.getParentPath()
+        if (!getDoesFilePathExist(parentPath)) {
+            createAndroidSAFDirectory(parentPath)
+        }
+
+        val documentId = createAndroidSAFDocumentId(path.getParentPath())
+        val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+        DocumentsContract.createDocument(contentResolver, parentUri, path.getMimeType(), path.getFilenameFromPath()) != null
+    } catch (e: IllegalStateException) {
+        showErrorToast(e)
+        false
+    }
+}
+
+
+fun getPermissionString(id: Int) = when (id) {
     PERMISSION_READ_STORAGE -> Manifest.permission.READ_EXTERNAL_STORAGE
     PERMISSION_WRITE_STORAGE -> Manifest.permission.WRITE_EXTERNAL_STORAGE
     PERMISSION_CAMERA -> Manifest.permission.CAMERA
@@ -696,4 +1210,270 @@ fun Context.getPermissionString(id: Int) = when (id) {
     PERMISSION_READ_MEDIA_VISUAL_USER_SELECTED -> if (isUpsideDownCakePlus()) Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED else ""
     PERMISSION_READ_SYNC_SETTINGS -> Manifest.permission.READ_SYNC_SETTINGS
     else -> ""
+}
+
+fun Context.isSDCardSetAsDefaultStorage() =
+    sdCardPath.isNotEmpty() && Environment.getExternalStorageDirectory().absolutePath.equals(sdCardPath, true)
+
+fun Context.needsStupidWritePermissions(path: String) =
+    (!isRPlus() && isPathOnSD(path) && !isSDCardSetAsDefaultStorage()) || isPathOnOTG(path)
+
+fun Context.hasProperStoredTreeUri(isOTG: Boolean): Boolean {
+    val uri = if (isOTG) baseConfig.OTGTreeUri else baseConfig.sdTreeUri
+    val hasProperUri = contentResolver.persistedUriPermissions.any { it.uri.toString() == uri }
+    if (!hasProperUri) {
+        if (isOTG) {
+            baseConfig.OTGTreeUri = ""
+        } else {
+            baseConfig.sdTreeUri = ""
+        }
+    }
+    return hasProperUri
+}
+
+fun Context.getHumanReadablePath(path: String): String {
+    return getString(
+        when (path) {
+            "/" -> R.string.root
+            internalStoragePath -> R.string.internal
+            otgPath -> R.string.usb
+            else -> R.string.sd_card
+        }
+    )
+}
+
+fun Context.humanizePath(path: String): String {
+    val trimmedPath = path.trimEnd('/')
+    val basePath = path.getBasePath(this)
+    return when (basePath) {
+        "/" -> "${getHumanReadablePath(basePath)}$trimmedPath"
+        else -> trimmedPath.replaceFirst(basePath, getHumanReadablePath(basePath))
+    }
+}
+
+fun Context.showFileCreateError(path: String) {
+    val error = String.format(getString(R.string.could_not_create_file), path)
+    baseConfig.sdTreeUri = ""
+    showErrorToast(error)
+}
+
+fun isExternalStorageManager(): Boolean {
+    return isRPlus() && Environment.isExternalStorageManager()
+}
+
+fun Context.isInAndroidDir(path: String): Boolean {
+    if (path.startsWith(recycleBinPath)) {
+        return false
+    }
+    val firstParentDir = path.getFirstParentDirName(this, 0)
+    return firstParentDir.equals(ANDROID_DIR, true)
+}
+
+fun Context.isInSubFolderInDownloadDir(path: String): Boolean {
+    if (path.startsWith(recycleBinPath)) {
+        return false
+    }
+    val firstParentDir = path.getFirstParentDirName(this, 1)
+    return if (firstParentDir == null) {
+        false
+    } else {
+        val startsWithDownloadDir = firstParentDir.startsWith(DOWNLOAD_DIR, true)
+        val hasAtLeast1PathSegment = firstParentDir.split("/").filter { it.isNotEmpty() }.size > 1
+        val firstParentPath = path.getFirstParentPath(this, 1)
+        startsWithDownloadDir && hasAtLeast1PathSegment && File(firstParentPath).isDirectory
+    }
+}
+
+fun Context.getFirstParentLevel(path: String): Int {
+    return when {
+        isRPlus() && (isInAndroidDir(path) || isInSubFolderInDownloadDir(path)) -> 1
+        else -> 0
+    }
+}
+
+
+fun Context.isAccessibleWithSAFSdk30(path: String): Boolean {
+    if (path.startsWith(recycleBinPath) || isExternalStorageManager()) {
+        return false
+    }
+
+    val level = getFirstParentLevel(path)
+    val firstParentDir = path.getFirstParentDirName(this, level)
+    val firstParentPath = path.getFirstParentPath(this, level)
+
+    val isValidName = firstParentDir != null
+    val isDirectory = File(firstParentPath).isDirectory
+    val isAnAccessibleDirectory = DIRS_INACCESSIBLE_WITH_SAF_SDK_30.all { !firstParentDir.equals(it, true) }
+    return isRPlus() && isValidName && isDirectory && isAnAccessibleDirectory
+}
+
+fun Context.isRestrictedWithSAFSdk30(path: String): Boolean {
+    if (path.startsWith(recycleBinPath) || isExternalStorageManager()) {
+        return false
+    }
+
+    val level = getFirstParentLevel(path)
+    val firstParentDir = path.getFirstParentDirName(this, level)
+    val firstParentPath = path.getFirstParentPath(this, level)
+
+    val isInvalidName = firstParentDir == null
+    val isDirectory = File(firstParentPath).isDirectory
+    val isARestrictedDirectory = DIRS_INACCESSIBLE_WITH_SAF_SDK_30.any { firstParentDir.equals(it, true) }
+    return isRPlus() && (isInvalidName || (isDirectory && isARestrictedDirectory))
+}
+
+fun getMediaStoreIds(context: Context): HashMap<String, Long> {
+    val ids = HashMap<String, Long>()
+    val projection = arrayOf(
+        MediaStore.Images.Media.DATA,
+        MediaStore.Images.Media._ID
+    )
+
+    val uri = MediaStore.Files.getContentUri("external")
+
+    try {
+        context.queryCursor(uri, projection) { cursor ->
+            try {
+                val id = cursor.getLongValue(MediaStore.Images.Media._ID)
+                if (id != 0L) {
+                    val path = cursor.getStringValue(MediaStore.Images.Media.DATA)
+                    ids[path] = id
+                }
+            } catch (_: Exception) {
+            }
+        }
+    } catch (_: Exception) {
+    }
+
+    return ids
+}
+
+fun getFileUri(path: String): Uri = when {
+    path.isImageSlow() -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    path.isVideoSlow() -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    path.isAudioSlow() -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+    else -> MediaStore.Files.getContentUri("external")
+}
+
+fun Context.getUrisPathsFromFileDirItems(fileDirItems: List<FileDirItem>): Pair<java.util.ArrayList<String>, java.util.ArrayList<Uri>> {
+    val fileUris = java.util.ArrayList<Uri>()
+    val successfulFilePaths = java.util.ArrayList<String>()
+    val allIds = getMediaStoreIds(this)
+    val filePaths = fileDirItems.map { it.path }
+    filePaths.forEach { path ->
+        for ((filePath, mediaStoreId) in allIds) {
+            if (filePath.lowercase() == path.lowercase()) {
+                val baseUri = getFileUri(filePath)
+                val uri = ContentUris.withAppendedId(baseUri, mediaStoreId)
+                fileUris.add(uri)
+                successfulFilePaths.add(path)
+            }
+        }
+    }
+
+    return Pair(successfulFilePaths, fileUris)
+}
+
+fun Context.getFileUrisFromFileDirItems(fileDirItems: List<FileDirItem>): List<Uri> {
+    val fileUris = getUrisPathsFromFileDirItems(fileDirItems).second
+    if (fileUris.isEmpty()) {
+        fileDirItems.map { fileDirItem ->
+            fileUris.add(fileDirItem.assembleContentUri())
+        }
+    }
+
+    return fileUris
+}
+
+private fun Context.createCasualFileOutputStream(targetFile: File): OutputStream? {
+    if (targetFile.parentFile?.exists() == false) {
+        targetFile.parentFile?.mkdirs()
+    }
+
+    return try {
+        FileOutputStream(targetFile)
+    } catch (e: Exception) {
+        showErrorToast(e)
+        null
+    }
+}
+
+fun Context.createFirstParentTreeUri(fullPath: String): Uri {
+    val storageId = getSAFStorageId(fullPath)
+    val level = getFirstParentLevel(fullPath)
+    val rootParentDirName = fullPath.getFirstParentDirName(this, level)
+    val firstParentId = "$storageId:$rootParentDirName"
+    return DocumentsContract.buildTreeDocumentUri(EXTERNAL_STORAGE_PROVIDER_AUTHORITY, firstParentId)
+}
+
+fun Context.createDocumentUriUsingFirstParentTreeUri(fullPath: String): Uri {
+    val storageId = getSAFStorageId(fullPath)
+    val relativePath = when {
+        fullPath.startsWith(internalStoragePath) -> fullPath.substring(internalStoragePath.length).trim('/')
+        else -> fullPath.substringAfter(storageId).trim('/')
+    }
+    val treeUri = createFirstParentTreeUri(fullPath)
+    val documentId = "${storageId}:$relativePath"
+    return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+}
+
+fun Context.createSAFFileSdk30(path: String): Boolean {
+    return try {
+        val treeUri = createFirstParentTreeUri(path)
+        val parentPath = path.getParentPath()
+        if (!getDoesFilePathExistSdk30(parentPath)) {
+            createSAFDirectorySdk30(parentPath)
+        }
+
+        val documentId = getSAFDocumentId(parentPath)
+        val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+        DocumentsContract.createDocument(contentResolver, parentUri, path.getMimeType(), path.getFilenameFromPath()) != null
+    } catch (e: IllegalStateException) {
+        showErrorToast(e)
+        false
+    }
+}
+
+fun Context.createSAFDirectorySdk30(path: String): Boolean {
+    return try {
+        val treeUri = createFirstParentTreeUri(path)
+        val parentPath = path.getParentPath()
+        if (!getDoesFilePathExistSdk30(parentPath)) {
+            createSAFDirectorySdk30(parentPath)
+        }
+
+        val documentId = getSAFDocumentId(parentPath)
+        val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+        DocumentsContract.createDocument(contentResolver, parentUri, DocumentsContract.Document.MIME_TYPE_DIR, path.getFilenameFromPath()) != null
+    } catch (e: IllegalStateException) {
+        showErrorToast(e)
+        false
+    }
+}
+
+fun Context.getFastDocumentSdk30(path: String): DocumentFile? {
+    val uri = createDocumentUriUsingFirstParentTreeUri(path)
+    return DocumentFile.fromSingleUri(this, uri)
+}
+
+fun Context.getDoesFilePathExistSdk30(path: String): Boolean {
+    return when {
+        isAccessibleWithSAFSdk30(path) -> getFastDocumentSdk30(path)?.exists() ?: false
+        else -> File(path).exists()
+    }
+}
+
+fun Context.getSAFDocumentId(path: String): String {
+    val basePath = path.getBasePath(this)
+    val relativePath = path.substring(basePath.length).trim('/')
+    val storageId = getSAFStorageId(path)
+    return "$storageId:$relativePath"
+}
+
+fun Context.getIsPathDirectory(path: String): Boolean {
+    return when {
+        isRestrictedSAFOnlyRoot(path) -> getFastAndroidSAFDocument(path)?.isDirectory ?: false
+        isPathOnOTG(path) -> getOTGFastDocumentFile(path)?.isDirectory ?: false
+        else -> File(path).isDirectory
+    }
 }

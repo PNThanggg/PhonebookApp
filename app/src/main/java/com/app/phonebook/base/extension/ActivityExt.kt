@@ -1,9 +1,11 @@
 package com.app.phonebook.base.extension
 
+import com.app.phonebook.presentation.dialog.WritePermissionDialog
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -11,6 +13,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
+import android.provider.DocumentsContract
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
@@ -20,27 +23,41 @@ import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowInsetsCompat
+import com.app.phonebook.BuildConfig
 import com.app.phonebook.R
 import com.app.phonebook.base.utils.CONTACT_ID
+import com.app.phonebook.base.utils.DEFAULT_FILE_NAME
+import com.app.phonebook.base.utils.EXTRA_SHOW_ADVANCED
 import com.app.phonebook.base.utils.IS_PRIVATE
 import com.app.phonebook.base.utils.ON_CLICK_CALL_CONTACT
 import com.app.phonebook.base.utils.ON_CLICK_EDIT_CONTACT
 import com.app.phonebook.base.utils.ON_CLICK_VIEW_CONTACT
+import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_FOR_ANDROID_DATA_OR_OBB
+import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_OTG
+import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_SD
 import com.app.phonebook.base.utils.PERMISSION_READ_PHONE_STATE
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isOnMainThread
+import com.app.phonebook.base.utils.isRPlus
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Contact
+import com.app.phonebook.data.models.FileDirItem
 import com.app.phonebook.databinding.DialogTitleBinding
 import com.app.phonebook.helpers.SimpleContactsHelper
 import com.app.phonebook.presentation.activities.EditContactActivity
 import com.app.phonebook.presentation.activities.ViewContactActivity
+import com.app.phonebook.presentation.dialog.ConfirmationAdvancedDialog
 import com.app.phonebook.presentation.dialog.SelectSIMDialog
 import com.app.phonebook.presentation.view.MyTextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.OutputStream
 
 fun Activity.finishWithSlide() {
     finish()
@@ -299,3 +316,237 @@ fun Activity.editContact(contact: Contact) {
         startActivity(this)
     }
 }
+
+fun BaseActivity<*>.isShowingOTGDialog(path: String): Boolean {
+    return if (!isRPlus() && isPathOnOTG(path) && (baseConfig.OTGTreeUri.isEmpty() || !hasProperStoredTreeUri(true))) {
+        showOTGPermissionDialog(path)
+        true
+    } else {
+        false
+    }
+}
+
+fun BaseActivity<*>.showOTGPermissionDialog(path: String) {
+    runOnUiThread {
+        if (!isDestroyed && !isFinishing) {
+            WritePermissionDialog(this, WritePermissionDialog.WritePermissionDialogMode.Otg) {
+                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    try {
+                        startActivityForResult(this, OPEN_DOCUMENT_TREE_OTG)
+                        checkedDocumentPath = path
+                        return@apply
+                    } catch (e: Exception) {
+                        type = "*/*"
+                    }
+
+                    try {
+                        startActivityForResult(this, OPEN_DOCUMENT_TREE_OTG)
+                        checkedDocumentPath = path
+                    } catch (e: ActivityNotFoundException) {
+                        toast(R.string.system_service_disabled, Toast.LENGTH_LONG)
+                    } catch (e: Exception) {
+                        toast(R.string.unknown_error_occurred)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun BaseActivity<*>.isShowingSAFDialog(path: String): Boolean {
+    return if ((!isRPlus() && isPathOnSD(path) && !isSDCardSetAsDefaultStorage() && (baseConfig.sdTreeUri.isEmpty() || !hasProperStoredTreeUri(false)))) {
+        runOnUiThread {
+            if (!isDestroyed && !isFinishing) {
+                WritePermissionDialog(this, WritePermissionDialog.WritePermissionDialogMode.SdCard) {
+                    Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                        putExtra(EXTRA_SHOW_ADVANCED, true)
+                        try {
+                            startActivityForResult(this, OPEN_DOCUMENT_TREE_SD)
+                            checkedDocumentPath = path
+                            return@apply
+                        } catch (e: Exception) {
+                            type = "*/*"
+                        }
+
+                        try {
+                            startActivityForResult(this, OPEN_DOCUMENT_TREE_SD)
+                            checkedDocumentPath = path
+                        } catch (e: ActivityNotFoundException) {
+                            toast(R.string.system_service_disabled, Toast.LENGTH_LONG)
+                        } catch (e: Exception) {
+                            toast(R.string.unknown_error_occurred)
+                        }
+                    }
+                }
+            }
+        }
+        true
+    } else {
+        false
+    }
+}
+
+fun BaseActivity<*>.getFileOutputStream(fileDirItem: FileDirItem, allowCreatingNewFile: Boolean = false, callback: (outputStream: OutputStream?) -> Unit) {
+    val targetFile = File(fileDirItem.path)
+    when {
+        isRestrictedSAFOnlyRoot(fileDirItem.path) -> {
+            handleAndroidSAFDialog(fileDirItem.path) {
+                if (!it) {
+                    return@handleAndroidSAFDialog
+                }
+
+                val uri = getAndroidSAFUri(fileDirItem.path)
+                if (!getDoesFilePathExist(fileDirItem.path)) {
+                    createAndroidSAFFile(fileDirItem.path)
+                }
+                callback.invoke(applicationContext.contentResolver.openOutputStream(uri, "wt"))
+            }
+        }
+
+        needsStupidWritePermissions(fileDirItem.path) -> {
+            handleSAFDialog(fileDirItem.path) {
+                if (!it) {
+                    return@handleSAFDialog
+                }
+
+                var document = getDocumentFile(fileDirItem.path)
+                if (document == null && allowCreatingNewFile) {
+                    document = getDocumentFile(fileDirItem.getParentPath())
+                }
+
+                if (document == null) {
+                    showFileCreateError(fileDirItem.path)
+                    callback(null)
+                    return@handleSAFDialog
+                }
+
+                if (!getDoesFilePathExist(fileDirItem.path)) {
+                    document = getDocumentFile(fileDirItem.path) ?: document.createFile("", fileDirItem.name)
+                }
+
+                if (document?.exists() == true) {
+                    try {
+                        callback(applicationContext.contentResolver.openOutputStream(document.uri, "wt"))
+                    } catch (e: FileNotFoundException) {
+                        showErrorToast(e)
+                        callback(null)
+                    }
+                } else {
+                    showFileCreateError(fileDirItem.path)
+                    callback(null)
+                }
+            }
+        }
+        isAccessibleWithSAFSdk30(fileDirItem.path) -> {
+            handleSAFDialogSdk30(fileDirItem.path) {
+                if (!it) {
+                    return@handleSAFDialogSdk30
+                }
+
+                callback.invoke(
+                    try {
+                        val uri = createDocumentUriUsingFirstParentTreeUri(fileDirItem.path)
+                        if (!getDoesFilePathExist(fileDirItem.path)) {
+                            createSAFFileSdk30(fileDirItem.path)
+                        }
+                        applicationContext.contentResolver.openOutputStream(uri, "wt")
+                    } catch (e: Exception) {
+                        null
+                    } ?: createCasualFileOutputStream(this, targetFile)
+                )
+            }
+        }
+
+        isRestrictedWithSAFSdk30(fileDirItem.path) -> {
+            callback.invoke(
+                try {
+                    val fileUri = getFileUrisFromFileDirItems(arrayListOf(fileDirItem))
+                    applicationContext.contentResolver.openOutputStream(fileUri.first(), "wt")
+                } catch (e: Exception) {
+                    null
+                } ?: createCasualFileOutputStream(this, targetFile)
+            )
+        }
+
+        else -> {
+            callback.invoke(createCasualFileOutputStream(this, targetFile))
+        }
+    }
+}
+
+private fun createCasualFileOutputStream(activity: BaseActivity<*>, targetFile: File): OutputStream? {
+    if (targetFile.parentFile?.exists() == false) {
+        targetFile.parentFile?.mkdirs()
+    }
+
+    return try {
+        FileOutputStream(targetFile)
+    } catch (e: Exception) {
+        activity.showErrorToast(e)
+        null
+    }
+}
+
+fun BaseActivity<*>.isShowingAndroidSAFDialog(path: String): Boolean {
+    return if (isRestrictedSAFOnlyRoot(path) && (getAndroidTreeUri(path).isEmpty() || !hasProperStoredAndroidTreeUri(path))) {
+        runOnUiThread {
+            if (!isDestroyed && !isFinishing) {
+                ConfirmationAdvancedDialog(this, "", R.string.confirm_storage_access_android_text, R.string.ok, R.string.cancel) { success ->
+                    if (success) {
+                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                            putExtra(EXTRA_SHOW_ADVANCED, true)
+                            putExtra(DocumentsContract.EXTRA_INITIAL_URI, createAndroidDataOrObbUri(path))
+                            try {
+                                startActivityForResult(this, OPEN_DOCUMENT_TREE_FOR_ANDROID_DATA_OR_OBB)
+                                checkedDocumentPath = path
+                                return@apply
+                            } catch (e: Exception) {
+                                type = "*/*"
+                            }
+
+                            try {
+                                startActivityForResult(this, OPEN_DOCUMENT_TREE_FOR_ANDROID_DATA_OR_OBB)
+                                checkedDocumentPath = path
+                            } catch (e: ActivityNotFoundException) {
+                                toast(R.string.system_service_disabled, Toast.LENGTH_LONG)
+                            } catch (e: Exception) {
+                                toast(R.string.unknown_error_occurred)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        true
+    } else {
+        false
+    }
+}
+
+@SuppressLint("RestrictedApi")
+fun Activity.shareContacts(contacts: ArrayList<Contact>) {
+    val filename = if (contacts.size == 1) {
+        "${contacts.first().getNameToDisplay()}.vcf"
+    } else {
+        DEFAULT_FILE_NAME
+    }
+
+    val file = getTempFile(filename)
+    if (file == null) {
+        toast(R.string.unknown_error_occurred)
+        return
+    }
+
+    getFileOutputStream(file.toFileDirItem(this), true) {
+
+        // whatsApp does not support vCard version 4.0 yet
+        VcfExporter().exportContacts(this, it, contacts, false, version = VCardVersion.V3_0) {
+            if (it == VcfExporter.ExportResult.EXPORT_OK) {
+                sharePathIntent(file.absolutePath, BuildConfig.APPLICATION_ID)
+            } else {
+                showErrorToast("$it")
+            }
+        }
+    }
+}
+

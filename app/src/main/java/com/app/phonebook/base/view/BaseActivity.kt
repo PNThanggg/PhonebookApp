@@ -53,6 +53,9 @@ import com.app.phonebook.base.extension.handleBackPressed
 import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.hideKeyboard
 import com.app.phonebook.base.extension.isDefaultDialer
+import com.app.phonebook.base.extension.isShowingAndroidSAFDialog
+import com.app.phonebook.base.extension.isShowingOTGDialog
+import com.app.phonebook.base.extension.isShowingSAFDialog
 import com.app.phonebook.base.extension.isUsingGestureNavigation
 import com.app.phonebook.base.extension.launchActivityIntent
 import com.app.phonebook.base.extension.navigationBarHeight
@@ -86,6 +89,8 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     companion object {
         private const val TIME_DELAY_CLICK = 200L
         private const val GENERIC_PERM_HANDLER = 100
+
+        var funAfterSAFPermission: ((success: Boolean) -> Unit)? = null
     }
 
     lateinit var binding: VB
@@ -625,6 +630,28 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
                     window.decorView.systemUiVisibility.removeBit(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
                 updateTopBottomInsets(0, 0)
             }
+        }
+    }
+
+    fun handleAndroidSAFDialog(path: String, callback: (success: Boolean) -> Unit): Boolean {
+        hideKeyboard()
+        return if (isShowingAndroidSAFDialog(path)) {
+            funAfterSAFPermission = callback
+            true
+        } else {
+            callback(true)
+            false
+        }
+    }
+
+    fun handleSAFDialog(path: String, callback: (success: Boolean) -> Unit): Boolean {
+        hideKeyboard()
+        return if (isShowingSAFDialog(path) || isShowingOTGDialog(path)) {
+            funAfterSAFPermission = callback
+            true
+        } else {
+            callback(true)
+            false
         }
     }
 }

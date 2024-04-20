@@ -80,12 +80,6 @@
     <string name="audio">Audio</string>
     <string name="scanning">Scanning…</string>
 
-    <string name="facebook">Facebook</string>
-    <string name="reddit">Reddit</string>
-    <string name="telegram">Telegram</string>
-    <string name="github">GitHub</string>
-    <string name="viber">Viber</string>
-
     <string name="allow_displaying_over_other_apps">Please allow displaying over other apps for reliable behaviour</string>
 
     <!-- Groups -->
@@ -871,7 +865,7 @@
     <string name="manage_automatic_backups">Manage automatic backups</string>
     <string name="date_time_pattern_info">You can use the following patterns to name your file automatically:\n\n%Y - year\n%M - month\n%D - day\n%h - hour\n%m - minute\n%s - second</string>
 
-    <!-- OTG devices -->
+    <!-- com.app.phonebook.presentation.dialog.OTG devices -->
     <string name="usb">USB</string>
     <string name="usb_detected">You seem to have an USB device attached to your device. To make sure its files appear properly, you need to grant additional permissions.</string>
     <string name="confirm_usb_storage_access_text">Please choose the top folder of the USB device on the next screen, to grant access</string>
@@ -988,6 +982,14 @@
     <string name="translation">Translation</string>
     <string name="development">Development</string>
     <string name="other_help">Other help</string>
+    <string name="contributors_label">
+        <![CDATA[
+            This list contains everyone that noticeably helped any app within the Simple Mobile Tools suite, not only this one. Translations are handled by volunteers,
+            let us know if you want to help too. The guide to translating is at <a href="https://github.com/SimpleMobileTools/General-Discussion#how-can-i-suggest-an-edit-to-a-file">this website</a>, or just contact us at <a href="mailto:hello@simplemobiletools.com">hello@simplemobiletools.com</a> if you have any questions.
+            Thanks to all contributors and other supporters!
+        ]]>
+    </string>
+
 
     <string name="export_call_history">Export call history</string>
     <string name="import_call_history">Import call history</string>

@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/contact_wrapper"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".presentation.activities.EditContactActivity">
@@ -73,7 +74,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_person_vector" />
+                android:src="@drawable/ic_person_vector"
+                tools:ignore="RtlSymmetry" />
 
             <com.app.phonebook.presentation.view.MyEditText
                 android:id="@+id/contact_prefix"
@@ -190,7 +192,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_phone_vector" />
+                android:src="@drawable/ic_phone_vector"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_numbers_holder"
@@ -213,6 +216,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginBottom="@dimen/medium_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
@@ -229,7 +233,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_mail_vector" />
+                android:src="@drawable/ic_mail_vector"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_emails_holder"
@@ -251,6 +256,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="@dimen/small_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
@@ -267,7 +273,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_place_vector" />
+                android:src="@drawable/ic_place_vector"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_addresses_holder"
@@ -290,6 +297,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="@dimen/small_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
@@ -306,7 +314,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_im" />
+                android:src="@drawable/ic_im"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_ims_holder"
@@ -329,6 +338,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="@dimen/small_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
@@ -345,7 +355,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_cake_vector" />
+                android:src="@drawable/ic_cake_vector"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_events_holder"
@@ -368,6 +379,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="@dimen/small_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
@@ -384,7 +396,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_label_vector" />
+                android:src="@drawable/ic_label_vector"
+                tools:ignore="RtlSymmetry" />
 
             <com.app.phonebook.presentation.view.MyEditText
                 android:id="@+id/contact_notes"
@@ -410,9 +423,10 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/medium_margin"
-                android:src="@drawable/ic_bell_vector" />
+                android:src="@drawable/ic_bell_vector"
+                tools:ignore="RtlSymmetry" />
 
-            <com.simplemobiletools.commons.views.MyTextView
+            <com.app.phonebook.presentation.view.MyTextView
                 android:id="@+id/contact_ringtone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -436,7 +450,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_business_vector" />
+                android:src="@drawable/ic_business_vector"
+                tools:ignore="RtlSymmetry" />
 
             <com.app.phonebook.presentation.view.MyEditText
                 android:id="@+id/contact_organization_company"
@@ -480,7 +495,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_link_vector" />
+                android:src="@drawable/ic_link_vector"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_websites_holder"
@@ -503,6 +519,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="@dimen/small_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
@@ -519,7 +536,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_people_vector" />
+                android:src="@drawable/ic_people_vector"
+                tools:ignore="RtlSymmetry" />
 
             <LinearLayout
                 android:id="@+id/contact_groups_holder"
@@ -542,12 +560,12 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="@dimen/small_margin"
                 android:background="@drawable/button_background"
+                android:importantForAccessibility="no"
                 android:paddingStart="@dimen/activity_margin"
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/activity_margin"
                 android:paddingBottom="@dimen/medium_margin"
-                android:src="@drawable/ic_plus_vector"
-                android:importantForAccessibility="no" />
+                android:src="@drawable/ic_plus_vector" />
 
             <ImageView
                 android:id="@+id/contact_source_image"
@@ -559,7 +577,8 @@
                 android:paddingTop="@dimen/medium_margin"
                 android:paddingEnd="@dimen/small_margin"
                 android:paddingBottom="@dimen/small_margin"
-                android:src="@drawable/ic_account_box_vector" />
+                android:src="@drawable/ic_account_box_vector"
+                tools:ignore="RtlSymmetry" />
 
             <com.app.phonebook.presentation.view.MyTextView
                 android:id="@+id/contact_source"
@@ -578,7 +597,7 @@
                 android:paddingBottom="@dimen/normal_margin"
                 android:singleLine="true"
                 android:textSize="@dimen/bigger_text_size"
-                tools:text="hello@simplemobiletools.com" />
+                tools:text="hello@gmail.com" />
         </RelativeLayout>
     </ScrollView>
 

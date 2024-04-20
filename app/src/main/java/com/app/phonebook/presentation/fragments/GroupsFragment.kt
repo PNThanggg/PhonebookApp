@@ -143,9 +143,10 @@ class GroupsFragment(
             if (currentHash != lastHashCode || skipHashComparing || contacts.isEmpty()) {
                 skipHashComparing = false
                 lastHashCode = currentHash
+            }
 
-                activity?.runOnUiThread {
-                    setupContacts(contacts)
+            activity?.runOnUiThread {
+                setupContacts(contacts)
 
 //                    if (placeholderText != null) {
 //                        binding.fragmentPlaceholder.text = placeholderText
@@ -153,7 +154,6 @@ class GroupsFragment(
 //                        binding.fragmentPlaceholder2.beGone()
 //                        binding.fragmentPlaceholder2.tag = AVOID_CHANGING_VISIBILITY_TAG
 //                    }
-                }
             }
         }
     }

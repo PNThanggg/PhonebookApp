@@ -5,6 +5,8 @@ import android.content.res.Configuration
 import android.text.format.DateFormat
 import androidx.core.content.ContextCompat
 import com.app.phonebook.R
+import com.app.phonebook.base.extension.getInternalStoragePath
+import com.app.phonebook.base.extension.getSDCardPath
 import com.app.phonebook.base.extension.getSharedPrefs
 import com.app.phonebook.base.utils.ACCENT_COLOR
 import com.app.phonebook.base.utils.BACKGROUND_COLOR
@@ -23,6 +25,7 @@ import com.app.phonebook.base.utils.FAVORITES_CONTACTS_ORDER
 import com.app.phonebook.base.utils.FAVORITES_CUSTOM_ORDER_SELECTED
 import com.app.phonebook.base.utils.FONT_SIZE
 import com.app.phonebook.base.utils.IGNORED_CONTACT_SOURCES
+import com.app.phonebook.base.utils.INTERNAL_STORAGE_PATH
 import com.app.phonebook.base.utils.IS_USING_AUTO_THEME
 import com.app.phonebook.base.utils.IS_USING_SHARED_THEME
 import com.app.phonebook.base.utils.IS_USING_SYSTEM_THEME
@@ -31,12 +34,33 @@ import com.app.phonebook.base.utils.LAST_USED_VIEW_PAGER_PAGE
 import com.app.phonebook.base.utils.MERGE_DUPLICATE_CONTACTS
 import com.app.phonebook.base.utils.ON_CLICK_VIEW_CONTACT
 import com.app.phonebook.base.utils.ON_CONTACT_CLICK
+import com.app.phonebook.base.utils.OTG_ANDROID_DATA_TREE_URI
+import com.app.phonebook.base.utils.OTG_ANDROID_OBB_TREE_URI
+import com.app.phonebook.base.utils.OTG_PARTITION
+import com.app.phonebook.base.utils.OTG_REAL_PATH
+import com.app.phonebook.base.utils.OTG_TREE_URI
+import com.app.phonebook.base.utils.PRIMARY_ANDROID_DATA_TREE_URI
+import com.app.phonebook.base.utils.PRIMARY_ANDROID_OBB_TREE_URI
 import com.app.phonebook.base.utils.PRIMARY_COLOR
+import com.app.phonebook.base.utils.SD_ANDROID_DATA_TREE_URI
+import com.app.phonebook.base.utils.SD_ANDROID_OBB_TREE_URI
+import com.app.phonebook.base.utils.SD_CARD_PATH
+import com.app.phonebook.base.utils.SD_TREE_URI
+import com.app.phonebook.base.utils.SHOW_ADDRESSES_FIELD
 import com.app.phonebook.base.utils.SHOW_CALL_CONFIRMATION
+import com.app.phonebook.base.utils.SHOW_CONTACT_FIELDS
+import com.app.phonebook.base.utils.SHOW_CONTACT_SOURCE_FIELD
 import com.app.phonebook.base.utils.SHOW_CONTACT_THUMBNAILS
+import com.app.phonebook.base.utils.SHOW_EMAILS_FIELD
+import com.app.phonebook.base.utils.SHOW_EVENTS_FIELD
+import com.app.phonebook.base.utils.SHOW_FIRST_NAME_FIELD
+import com.app.phonebook.base.utils.SHOW_GROUPS_FIELD
+import com.app.phonebook.base.utils.SHOW_NOTES_FIELD
 import com.app.phonebook.base.utils.SHOW_ONLY_CONTACTS_WITH_NUMBERS
 import com.app.phonebook.base.utils.SHOW_PHONE_NUMBERS
+import com.app.phonebook.base.utils.SHOW_PHONE_NUMBERS_FIELD
 import com.app.phonebook.base.utils.SHOW_PRIVATE_CONTACTS
+import com.app.phonebook.base.utils.SHOW_SURNAME_FIELD
 import com.app.phonebook.base.utils.SORT_ORDER
 import com.app.phonebook.base.utils.SPEED_DIAL
 import com.app.phonebook.base.utils.START_NAME_WITH_SURNAME
@@ -48,7 +72,6 @@ import com.app.phonebook.base.utils.VIEW_TYPE_LIST
 import com.app.phonebook.base.utils.WAS_LOCAL_ACCOUNT_INITIALIZED
 import com.app.phonebook.base.utils.WAS_SHARED_THEME_EVER_ACTIVATED
 import com.app.phonebook.base.utils.WAS_SHARED_THEME_FORCED
-import com.app.phonebook.base.utils.isSPlus
 import java.text.SimpleDateFormat
 
 open class BaseConfig(private val context: Context) {
@@ -223,4 +246,62 @@ open class BaseConfig(private val context: Context) {
             context.resources.getInteger(R.integer.contacts_grid_columns_count_landscape)
         }
     }
+
+    var showContactFields: Int = 0
+        get() = prefs.getInt(
+            SHOW_CONTACT_FIELDS,
+            SHOW_FIRST_NAME_FIELD or SHOW_SURNAME_FIELD or SHOW_PHONE_NUMBERS_FIELD or SHOW_EMAILS_FIELD or
+                    SHOW_ADDRESSES_FIELD or SHOW_EVENTS_FIELD or SHOW_NOTES_FIELD or SHOW_GROUPS_FIELD or SHOW_CONTACT_SOURCE_FIELD)
+
+    var OTGPartition: String
+        get() = prefs.getString(OTG_PARTITION, "")!!
+        set(OTGPartition) = prefs.edit().putString(OTG_PARTITION, OTGPartition).apply()
+
+    var sdCardPath: String
+        get() = prefs.getString(SD_CARD_PATH, getDefaultSDCardPath())!!
+        set(sdCardPath) = prefs.edit().putString(SD_CARD_PATH, sdCardPath).apply()
+
+    private fun getDefaultSDCardPath() = if (prefs.contains(SD_CARD_PATH)) "" else context.getSDCardPath()
+
+    var internalStoragePath: String
+        get() = prefs.getString(INTERNAL_STORAGE_PATH, getDefaultInternalPath())!!
+        set(internalStoragePath) = prefs.edit().putString(INTERNAL_STORAGE_PATH, internalStoragePath).apply()
+
+    private fun getDefaultInternalPath() = if (prefs.contains(INTERNAL_STORAGE_PATH)) "" else context.getInternalStoragePath()
+
+    var OTGPath: String
+        get() = prefs.getString(OTG_REAL_PATH, "")!!
+        set(OTGPath) = prefs.edit().putString(OTG_REAL_PATH, OTGPath).apply()
+
+    var sdTreeUri: String
+        get() = prefs.getString(SD_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(SD_TREE_URI, uri).apply()
+
+    var OTGTreeUri: String
+        get() = prefs.getString(OTG_TREE_URI, "")!!
+        set(OTGTreeUri) = prefs.edit().putString(OTG_TREE_URI, OTGTreeUri).apply()
+
+    var otgAndroidDataTreeUri: String
+        get() = prefs.getString(OTG_ANDROID_DATA_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(OTG_ANDROID_DATA_TREE_URI, uri).apply()
+
+    var sdAndroidDataTreeUri: String
+        get() = prefs.getString(SD_ANDROID_DATA_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(SD_ANDROID_DATA_TREE_URI, uri).apply()
+
+    var sdAndroidObbTreeUri: String
+        get() = prefs.getString(SD_ANDROID_OBB_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(SD_ANDROID_OBB_TREE_URI, uri).apply()
+
+    var otgAndroidObbTreeUri: String
+        get() = prefs.getString(OTG_ANDROID_OBB_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(OTG_ANDROID_OBB_TREE_URI, uri).apply()
+
+    var primaryAndroidDataTreeUri: String
+        get() = prefs.getString(PRIMARY_ANDROID_DATA_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(PRIMARY_ANDROID_DATA_TREE_URI, uri).apply()
+
+    var primaryAndroidObbTreeUri: String
+        get() = prefs.getString(PRIMARY_ANDROID_OBB_TREE_URI, "")!!
+        set(uri) = prefs.edit().putString(PRIMARY_ANDROID_OBB_TREE_URI, uri).apply()
 }
