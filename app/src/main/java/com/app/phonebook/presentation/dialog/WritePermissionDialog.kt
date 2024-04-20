@@ -46,9 +46,12 @@ import com.app.phonebook.base.extension.fromHtml
 import com.app.phonebook.base.extension.getAlertDialogBuilder
 import com.app.phonebook.base.extension.humanizePath
 import com.app.phonebook.base.extension.setupDialogStuff
+import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.databinding.DialogWritePermissionBinding
 import com.app.phonebook.databinding.DialogWritePermissionOtgBinding
 import com.bumptech.glide.Glide
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 
@@ -124,8 +127,8 @@ class WritePermissionDialog(
         activity.getAlertDialogBuilder()
             .setPositiveButton(R.string.ok) { _, _ -> dialogConfirmed() }
             .setOnCancelListener {
-                BaseSimpleActivity.funAfterSAFPermission?.invoke(false)
-                BaseSimpleActivity.funAfterSAFPermission = null
+                BaseActivity.funAfterSAFPermission?.invoke(false)
+                BaseActivity.funAfterSAFPermission = null
             }
             .apply {
                 activity.setupDialogStuff(
@@ -262,6 +265,7 @@ private fun OTG(
     WritePermissionImage(crossFadeTransition = crossFadeTransition, drawable = R.drawable.img_write_storage_otg)
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun WritePermissionImage(
     modifier: Modifier = Modifier,
