@@ -150,7 +150,7 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
     }
 
     override fun onBack() {
-        if (binding.dialpadWrapper.isVisible()) {
+        if (binding.dialpadWrapper.isVisible) {
             hideDialpad()
             return
         } else {
@@ -867,7 +867,7 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
     }
 
     private fun findVisibleViewsUnderDialpad(): Sequence<Pair<View, Float>> {
-        return binding.ongoingCallHolder.children.filter { it.isVisible() }.map { view -> Pair(view, view.alpha) }
+        return binding.ongoingCallHolder.children.filter { it.isVisible }.map { view -> Pair(view, view.alpha) }
     }
 
     private fun showDialpad() {
@@ -916,7 +916,7 @@ class CallActivity : BaseActivity<ActivityCallBinding>() {
     }
 
     private fun toggleDialpadVisibility() {
-        if (binding.dialpadWrapper.isVisible()) hideDialpad() else showDialpad()
+        if (binding.dialpadWrapper.isVisible) hideDialpad() else showDialpad()
     }
 
     private fun dialpadPressed(char: Char) {

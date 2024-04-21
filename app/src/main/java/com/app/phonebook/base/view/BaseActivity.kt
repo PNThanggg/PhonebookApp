@@ -104,7 +104,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     private var isAskingPermissions = false
 
     var isMaterialActivity = false
-    private var showTransparentTop = false
+    var showTransparentTop = false
 
     private var mainCoordinatorLayout: CoordinatorLayout? = null
     private var nestedView: View? = null

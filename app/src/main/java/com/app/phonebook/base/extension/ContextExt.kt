@@ -89,6 +89,9 @@ import com.app.phonebook.base.utils.SD_OTG_PATTERN
 import com.app.phonebook.base.utils.SD_OTG_SHORT
 import com.app.phonebook.base.utils.SIGNAL_PACKAGE
 import com.app.phonebook.base.utils.SMT_PRIVATE
+import com.app.phonebook.base.utils.SOCIAL_MESSAGE
+import com.app.phonebook.base.utils.SOCIAL_VIDEO_CALL
+import com.app.phonebook.base.utils.SOCIAL_VOICE_CALL
 import com.app.phonebook.base.utils.TELEGRAM_PACKAGE
 import com.app.phonebook.base.utils.TIME_FORMAT_12
 import com.app.phonebook.base.utils.TIME_FORMAT_24
@@ -105,6 +108,7 @@ import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.FileDirItem
 import com.app.phonebook.data.models.SIMAccount
+import com.app.phonebook.data.models.SocialAction
 import com.app.phonebook.helpers.Config
 import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.LocalContactsHelper
@@ -1904,3 +1908,98 @@ fun Context.getDefaultAlarmTitle(type: Int): String {
 
 fun Context.getDefaultAlarmSound(type: Int) =
     AlarmSound(0, getDefaultAlarmTitle(type), RingtoneManager.getDefaultUri(type).toString())
+
+fun Context.getSocialActions(id: Int): ArrayList<SocialAction> {
+    val uri = ContactsContract.Data.CONTENT_URI
+    val projection = arrayOf(
+        ContactsContract.Data._ID,
+        ContactsContract.Data.DATA3,
+        ContactsContract.Data.MIMETYPE,
+        ContactsContract.Data.ACCOUNT_TYPE_AND_DATA_SET
+    )
+
+    val socialActions = ArrayList<SocialAction>()
+    var curActionId = 0
+    val selection = "${ContactsContract.Data.RAW_CONTACT_ID} = ?"
+    val selectionArgs = arrayOf(id.toString())
+    queryCursor(uri, projection, selection, selectionArgs, null, true) { cursor ->
+        val mimetype = cursor.getStringValue(ContactsContract.Data.MIMETYPE)
+        val type = when (mimetype) {
+            // WhatsApp
+            "vnd.android.cursor.item/vnd.com.whatsapp.profile" -> SOCIAL_MESSAGE
+            "vnd.android.cursor.item/vnd.com.whatsapp.voip.call" -> SOCIAL_VOICE_CALL
+            "vnd.android.cursor.item/vnd.com.whatsapp.video.call" -> SOCIAL_VIDEO_CALL
+
+            // Viber
+            "vnd.android.cursor.item/vnd.com.viber.voip.viber_number_call" -> SOCIAL_VOICE_CALL
+            "vnd.android.cursor.item/vnd.com.viber.voip.viber_out_call_viber" -> SOCIAL_VOICE_CALL
+            "vnd.android.cursor.item/vnd.com.viber.voip.viber_out_call_none_viber" -> SOCIAL_VOICE_CALL
+            "vnd.android.cursor.item/vnd.com.viber.voip.viber_number_message" -> SOCIAL_MESSAGE
+
+            // Signal
+            "vnd.android.cursor.item/vnd.org.thoughtcrime.securesms.contact" -> SOCIAL_MESSAGE
+            "vnd.android.cursor.item/vnd.org.thoughtcrime.securesms.call" -> SOCIAL_VOICE_CALL
+
+            // Telegram
+            "vnd.android.cursor.item/vnd.org.telegram.messenger.android.call" -> SOCIAL_VOICE_CALL
+            "vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video" -> SOCIAL_VIDEO_CALL
+            "vnd.android.cursor.item/vnd.org.telegram.messenger.android.profile" -> SOCIAL_MESSAGE
+
+            // Threema
+            "vnd.android.cursor.item/vnd.ch.threema.app.profile" -> SOCIAL_MESSAGE
+            "vnd.android.cursor.item/vnd.ch.threema.app.call" -> SOCIAL_VOICE_CALL
+            else -> return@queryCursor
+        }
+
+        val label = cursor.getStringValue(ContactsContract.Data.DATA3)
+        val realID = cursor.getLongValue(ContactsContract.Data._ID)
+        val packageName = cursor.getStringValue(ContactsContract.Data.ACCOUNT_TYPE_AND_DATA_SET)
+        if (label != null && packageName != null) {
+            val socialAction = SocialAction(curActionId++, type, label, mimetype, realID, packageName)
+            socialActions.add(socialAction)
+        }
+    }
+    return socialActions
+}
+
+fun Context.getPublicContactSourceSync(source: String, contactSources: ArrayList<ContactSource>): String {
+    return when (source) {
+        SMT_PRIVATE -> getString(R.string.phone_storage_hidden)
+        else -> {
+            var newSource = source
+            for (contactSource in contactSources) {
+                if (contactSource.name == source && contactSource.type == TELEGRAM_PACKAGE) {
+                    newSource = getString(R.string.telegram)
+                    break
+                } else if (contactSource.name == source && contactSource.type == VIBER_PACKAGE) {
+                    newSource = getString(R.string.viber)
+                    break
+                }
+            }
+
+            return newSource
+        }
+    }
+}
+
+fun Context.openWebsiteIntent(url: String) {
+    val website = if (url.startsWith("http")) {
+        url
+    } else {
+        "https://$url"
+    }
+
+    Intent(Intent.ACTION_VIEW).apply {
+        data = Uri.parse(website)
+        launchActivityIntent(this)
+    }
+}
+
+fun Context.sendAddressIntent(address: String) {
+    val location = Uri.encode(address)
+    val uri = Uri.parse("geo:0,0?q=$location")
+
+    Intent(Intent.ACTION_VIEW, uri).apply {
+        launchActivityIntent(this)
+    }
+}

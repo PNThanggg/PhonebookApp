@@ -453,10 +453,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             if (phoneNumber != null) {
                 contact!!.phoneNumbers.add(
                     PhoneNumber(
-                        phoneNumber,
-                        DEFAULT_PHONE_NUMBER_TYPE,
-                        "",
-                        phoneNumber.normalizePhoneNumber()
+                        phoneNumber, DEFAULT_PHONE_NUMBER_TYPE, "", phoneNumber.normalizePhoneNumber()
                     )
                 )
                 if (phoneNumber.isNotEmpty() && action == ADD_NEW_CONTACT_NUMBER) {
@@ -559,7 +556,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
 
         val nameTextViews =
-            arrayOf(binding.contactFirstName, binding.contactMiddleName, binding.contactSurname).filter { it.isVisible() }
+            arrayOf(binding.contactFirstName, binding.contactMiddleName, binding.contactSurname).filter { it.isVisible }
         if (nameTextViews.isNotEmpty()) {
             setupAutoComplete(nameTextViews)
         }
@@ -679,14 +676,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         )
 
         if (contactFields.all { it.value.isEmpty() }) {
-            if (currentContactPhotoPath.isEmpty() &&
-                getFilledPhoneNumbers().isEmpty() &&
-                getFilledEmails().isEmpty() &&
-                getFilledAddresses().isEmpty() &&
-                getFilledIMs().isEmpty() &&
-                getFilledEvents().isEmpty() &&
-                getFilledWebsites().isEmpty()
-            ) {
+            if (currentContactPhotoPath.isEmpty() && getFilledPhoneNumbers().isEmpty() && getFilledEmails().isEmpty() && getFilledAddresses().isEmpty() && getFilledIMs().isEmpty() && getFilledEvents().isEmpty() && getFilledWebsites().isEmpty()) {
                 toast(R.string.fields_empty)
                 return
             }
@@ -759,15 +749,15 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
                 view.setOnItemClickListener { _, _, position, _ ->
                     val selectedContact = adapter.resultList[position]
 
-                    if (binding.contactFirstName.isVisible()) {
+                    if (binding.contactFirstName.isVisible) {
                         binding.contactFirstName.setText(selectedContact.firstName)
                     }
 
-                    if (binding.contactMiddleName.isVisible()) {
+                    if (binding.contactMiddleName.isVisible) {
                         binding.contactMiddleName.setText(selectedContact.middleName)
                     }
 
-                    if (binding.contactSurname.isVisible()) {
+                    if (binding.contactSurname.isVisible) {
                         binding.contactSurname.setText(selectedContact.surname)
                     }
                 }
@@ -954,9 +944,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     }
 
     private fun updateDefaultNumberForDuplicateContacts(
-        toggleState: Pair<PhoneNumber?, PhoneNumber?>,
-        primaryStatus: PrimaryNumberStatus,
-        callback: () -> Unit
+        toggleState: Pair<PhoneNumber?, PhoneNumber?>, primaryStatus: PrimaryNumberStatus, callback: () -> Unit
     ) {
         val contactsHelper = ContactsHelper(this)
 
@@ -1027,8 +1015,10 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
 
     private fun parseAddress(contentValues: ContentValues) {
         val type = contentValues.getAsInteger(ContactsContract.CommonDataKinds.StructuredPostal.DATA2) ?: DEFAULT_ADDRESS_TYPE
-        val addressValue = contentValues.getAsString(ContactsContract.CommonDataKinds.StructuredPostal.DATA4)
-            ?: contentValues.getAsString(ContactsContract.CommonDataKinds.StructuredPostal.DATA1) ?: return
+        val addressValue =
+            contentValues.getAsString(ContactsContract.CommonDataKinds.StructuredPostal.DATA4) ?: contentValues.getAsString(
+                ContactsContract.CommonDataKinds.StructuredPostal.DATA1
+            ) ?: return
         val address = Address(addressValue, type, "")
         contact!!.addresses.add(address)
     }
@@ -1099,11 +1089,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         if (System.currentTimeMillis() - mLastSavePromptTS > SAVE_DISCARD_PROMPT_INTERVAL && hasContactChanged()) {
             mLastSavePromptTS = System.currentTimeMillis()
             ConfirmationAdvancedDialog(
-                this,
-                "",
-                R.string.save_before_closing,
-                R.string.save,
-                R.string.discard
+                this, "", R.string.save_before_closing, R.string.save, R.string.discard
             ) {
                 if (it) {
                     saveContact()
@@ -1318,8 +1304,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
                         contact!!.ringtone = it?.uri
                         binding.contactRingtone.text = it?.title
                     },
-                    onAlarmSoundDeleted = {}
-                )
+                    onAlarmSoundDeleted = {})
             }
         }
 
@@ -1585,28 +1570,23 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     private fun showNumberTypePicker(numberTypeField: TextView) {
         val items = arrayListOf(
             RadioItem(
-                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
-                getString(R.string.mobile)
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE, getString(R.string.mobile)
             ),
             RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_HOME, getString(R.string.home)),
             RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_WORK, getString(R.string.work)),
             RadioItem(
-                ContactsContract.CommonDataKinds.Phone.TYPE_MAIN,
-                getString(R.string.main_number)
+                ContactsContract.CommonDataKinds.Phone.TYPE_MAIN, getString(R.string.main_number)
             ),
             RadioItem(
-                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK,
-                getString(R.string.work_fax)
+                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK, getString(R.string.work_fax)
             ),
             RadioItem(
-                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME,
-                getString(R.string.home_fax)
+                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME, getString(R.string.home_fax)
             ),
             RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_PAGER, getString(R.string.pager)),
             RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_OTHER, getString(R.string.other)),
             RadioItem(
-                ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM,
-                getString(R.string.custom)
+                ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM, getString(R.string.custom)
             )
         )
 
@@ -1627,13 +1607,11 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             RadioItem(ContactsContract.CommonDataKinds.Email.TYPE_HOME, getString(R.string.home)),
             RadioItem(ContactsContract.CommonDataKinds.Email.TYPE_WORK, getString(R.string.work)),
             RadioItem(
-                ContactsContract.CommonDataKinds.Email.TYPE_MOBILE,
-                getString(R.string.mobile)
+                ContactsContract.CommonDataKinds.Email.TYPE_MOBILE, getString(R.string.mobile)
             ),
             RadioItem(ContactsContract.CommonDataKinds.Email.TYPE_OTHER, getString(R.string.other)),
             RadioItem(
-                ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM,
-                getString(R.string.custom)
+                ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM, getString(R.string.custom)
             )
         )
 
@@ -1667,20 +1645,13 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     private fun showAddressTypePicker(addressTypeField: TextView) {
         val items = arrayListOf(
             RadioItem(
-                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME,
-                getString(R.string.home)
-            ),
-            RadioItem(
-                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK,
-                getString(R.string.work)
-            ),
-            RadioItem(
-                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
-                getString(R.string.other)
-            ),
-            RadioItem(
-                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM,
-                getString(R.string.custom)
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME, getString(R.string.home)
+            ), RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK, getString(R.string.work)
+            ), RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER, getString(R.string.other)
+            ), RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM, getString(R.string.custom)
             )
         )
 
@@ -1721,8 +1692,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_ICQ, getString(R.string.icq)),
             RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_JABBER, getString(R.string.jabber)),
             RadioItem(
-                ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM,
-                getString(R.string.custom)
+                ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM, getString(R.string.custom)
             )
         )
 
@@ -1760,14 +1730,10 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     private fun showEventTypePicker(eventTypeField: TextView) {
         val items = arrayListOf(
             RadioItem(
-                ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY,
-                getString(R.string.anniversary)
-            ),
-            RadioItem(
-                ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY,
-                getString(R.string.birthday)
-            ),
-            RadioItem(ContactsContract.CommonDataKinds.Event.TYPE_OTHER, getString(R.string.other))
+                ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY, getString(R.string.anniversary)
+            ), RadioItem(
+                ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY, getString(R.string.birthday)
+            ), RadioItem(ContactsContract.CommonDataKinds.Event.TYPE_OTHER, getString(R.string.other))
         )
 
         val currentEventTypeId = getEventTypeId(eventTypeField.value)
@@ -1877,8 +1843,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
 
     private fun trySetPhoto() {
         val items = arrayListOf(
-            RadioItem(TAKE_PHOTO, getString(R.string.take_photo)),
-            RadioItem(CHOOSE_PHOTO, getString(R.string.choose_photo))
+            RadioItem(TAKE_PHOTO, getString(R.string.take_photo)), RadioItem(CHOOSE_PHOTO, getString(R.string.choose_photo))
         )
 
         if (currentContactPhotoPath.isNotEmpty() || contact!!.photo != null) {
@@ -1943,25 +1908,15 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             return
         }
 
-        val options = RequestOptions()
-            .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
-            .centerCrop()
+        val options = RequestOptions().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
 
         val wantedWidth = realScreenSize.x
         val wantedHeight = resources.getDimension(R.dimen.top_contact_image_height).toInt()
 
-        Glide.with(this)
-            .load(bitmap ?: path)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .apply(options)
-            .override(wantedWidth, wantedHeight)
-            .listener(object : RequestListener<Drawable> {
+        Glide.with(this).load(bitmap ?: path).transition(DrawableTransitionOptions.withCrossFade()).apply(options)
+            .override(wantedWidth, wantedHeight).listener(object : RequestListener<Drawable> {
                 override fun onResourceReady(
-                    resource: Drawable,
-                    model: Any,
-                    target: Target<Drawable>,
-                    dataSource: DataSource,
-                    isFirstResource: Boolean
+                    resource: Drawable, model: Any, target: Target<Drawable>, dataSource: DataSource, isFirstResource: Boolean
                 ): Boolean {
                     photoView.background = ColorDrawable(0)
                     bottomShadow.beVisible()
@@ -1969,10 +1924,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
                 }
 
                 override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any?,
-                    target: Target<Drawable>,
-                    isFirstResource: Boolean
+                    e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean
                 ): Boolean {
                     showPhotoPlaceholder(photoView)
                     bottomShadow.beGone()

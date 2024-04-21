@@ -339,3 +339,13 @@ const val REQUEST_CODE_SET_DEFAULT_CALLER_ID = 1010
 const val VIBRATE_ON_BUTTON_PRESS = "vibrate_on_button_press"
 const val YOUR_ALARM_SOUNDS = "your_alarm_sounds"
 const val SILENT = "silent"
+
+const val SOCIAL_VOICE_CALL = 0
+const val SOCIAL_VIDEO_CALL = 1
+const val SOCIAL_MESSAGE = 2
+
+const val WHATSAPP = "whatsapp"
+const val SIGNAL = "signal"
+const val VIBER = "viber"
+const val TELEGRAM = "telegram"
+const val THREEMA = "threema"

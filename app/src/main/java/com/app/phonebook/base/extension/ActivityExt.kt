@@ -59,6 +59,7 @@ import com.app.phonebook.helpers.SimpleContactsHelper
 import com.app.phonebook.helpers.VcfExporter
 import com.app.phonebook.presentation.activities.EditContactActivity
 import com.app.phonebook.presentation.activities.ViewContactActivity
+import com.app.phonebook.presentation.dialog.CallConfirmationDialog
 import com.app.phonebook.presentation.dialog.ConfirmationAdvancedDialog
 import com.app.phonebook.presentation.dialog.RadioGroupDialog
 import com.app.phonebook.presentation.dialog.SelectSIMDialog
@@ -339,6 +340,7 @@ fun BaseActivity<*>.isShowingOTGDialog(path: String): Boolean {
     }
 }
 
+@Suppress("DEPRECATION")
 fun BaseActivity<*>.showOTGPermissionDialog(path: String) {
     runOnUiThread {
         if (!isDestroyed && !isFinishing) {
@@ -366,6 +368,7 @@ fun BaseActivity<*>.showOTGPermissionDialog(path: String) {
     }
 }
 
+@Suppress("DEPRECATION")
 fun BaseActivity<*>.isShowingSAFDialog(path: String): Boolean {
     return if ((!isRPlus() && isPathOnSD(path) && !isSDCardSetAsDefaultStorage() && (baseConfig.sdTreeUri.isEmpty() || !hasProperStoredTreeUri(
             false
@@ -506,6 +509,7 @@ private fun createCasualFileOutputStream(activity: BaseActivity<*>, targetFile: 
     }
 }
 
+@Suppress("DEPRECATION")
 fun BaseActivity<*>.isShowingAndroidSAFDialog(path: String): Boolean {
     return if (isRestrictedSAFOnlyRoot(path) && (getAndroidTreeUri(path).isEmpty() || !hasProperStoredAndroidTreeUri(path))) {
         runOnUiThread {
@@ -614,6 +618,7 @@ fun Activity.sharePathIntent(path: String, applicationId: String) {
 }
 
 @SuppressLint("InlinedApi")
+@Suppress("DEPRECATION")
 fun BaseActivity<*>.isShowingSAFDialogSdk30(path: String): Boolean {
     return if (isAccessibleWithSAFSdk30(path) && !hasProperStoredFirstParentUri(path)) {
         runOnUiThread {
@@ -712,5 +717,15 @@ fun BaseActivity<*>.getAlarmSounds(type: Int, callback: (java.util.ArrayList<Ala
             showErrorToast(e)
             callback(ArrayList())
         }
+    }
+}
+
+fun BaseActivity<*>.tryInitiateCall(contact: Contact, onStartCallIntent: (phoneNumber: String) -> Unit) {
+    if (baseConfig.showCallConfirmation) {
+        CallConfirmationDialog(this, contact.getNameToDisplay()) {
+            initiateCall(contact, onStartCallIntent)
+        }
+    } else {
+        initiateCall(contact, onStartCallIntent)
     }
 }

@@ -39,7 +39,11 @@ fun View.onGlobalLayout(callback: () -> Unit) {
     })
 }
 
-fun View.isVisible() = visibility == View.VISIBLE
+public inline var View.isVisible: Boolean
+    get() = visibility == View.VISIBLE
+    set(value) {
+        visibility = if (value) View.VISIBLE else View.GONE
+    }
 
 fun View.isInvisible() = visibility == View.INVISIBLE
 
