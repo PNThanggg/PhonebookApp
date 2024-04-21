@@ -40,6 +40,7 @@ import com.app.phonebook.base.extension.normalizeString
 import com.app.phonebook.base.extension.onTextChangeListener
 import com.app.phonebook.base.extension.performHapticFeedback
 import com.app.phonebook.base.extension.telephonyManager
+import com.app.phonebook.base.extension.tryInitiateCall
 import com.app.phonebook.base.extension.updateTextColors
 import com.app.phonebook.base.extension.value
 import com.app.phonebook.base.utils.DIALPAD_TONE_LENGTH_MS
@@ -333,10 +334,14 @@ class DialpadActivity : BaseActivity<ActivityDialpadBinding>() {
             val contact = it as Contact
             if (config.showCallConfirmation) {
                 CallConfirmationDialog(this@DialpadActivity, contact.getNameToDisplay()) {
-                    startCallIntent(contact.getPrimaryNumber() ?: return@CallConfirmationDialog)
+                    tryInitiateCall(contact) { str ->
+                        startCallIntent(str)
+                    }
                 }
             } else {
-                startCallIntent(contact.getPrimaryNumber() ?: return@ContactsAdapter)
+                tryInitiateCall(contact) { str ->
+                    startCallIntent(str)
+                }
             }
         }.apply {
             binding.dialpadList.adapter = this

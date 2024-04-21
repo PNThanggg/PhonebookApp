@@ -133,7 +133,7 @@ fun Activity.launchViewContactIntent(uri: Uri) {
 }
 
 
-fun Activity.startContactDetailsIntent(contact: Contact) {
+fun BaseActivity<*>.startContactDetailsIntent(contact: Contact) {
 //    if (contact.rawId > 1000000 && contact.contactId > 1000000 && contact.rawId == contact.contactId) {
 //        Intent().apply {
 //            action = Intent.ACTION_VIEW
@@ -282,6 +282,7 @@ fun BaseActivity<*>.getHandleToUse(intent: Intent?, phoneNumber: String, callbac
                 }
 
                 defaultHandle != null -> callback(defaultHandle)
+
                 else -> {
                     SelectSIMDialog(this, phoneNumber, onDismiss = {
 //                        if (this is DialerActivity) {
@@ -296,7 +297,7 @@ fun BaseActivity<*>.getHandleToUse(intent: Intent?, phoneNumber: String, callbac
     }
 }
 
-fun Activity.handleGenericContactClick(contact: Contact) {
+fun BaseActivity<*>.handleGenericContactClick(contact: Contact) {
     when (config.onContactClick) {
         ON_CLICK_CALL_CONTACT -> callContact(contact)
         ON_CLICK_VIEW_CONTACT -> viewContact(contact)
@@ -304,16 +305,16 @@ fun Activity.handleGenericContactClick(contact: Contact) {
     }
 }
 
-fun Activity.callContact(contact: Contact) {
+fun BaseActivity<*>.callContact(contact: Contact) {
     hideKeyboard()
-//    if (contact.phoneNumbers.isNotEmpty()) {
-//        tryInitiateCall(contact) { startCallIntent(it) }
-//    } else {
-//        toast(R.string.no_phone_number_found)
-//    }
+    if (contact.phoneNumbers.isNotEmpty()) {
+        tryInitiateCall(contact) { startCallIntent(it) }
+    } else {
+        toast(R.string.no_phone_number_found)
+    }
 }
 
-fun Activity.viewContact(contact: Contact) {
+fun BaseActivity<*>.viewContact(contact: Contact) {
     hideKeyboard()
     Intent(applicationContext, ViewContactActivity::class.java).apply {
         putExtra(CONTACT_ID, contact.id)
@@ -322,7 +323,7 @@ fun Activity.viewContact(contact: Contact) {
     }
 }
 
-fun Activity.editContact(contact: Contact) {
+fun BaseActivity<*>.editContact(contact: Contact) {
     hideKeyboard()
     Intent(applicationContext, EditContactActivity::class.java).apply {
         putExtra(CONTACT_ID, contact.id)

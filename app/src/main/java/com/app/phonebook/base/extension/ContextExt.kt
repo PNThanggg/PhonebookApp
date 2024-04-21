@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.NotificationManager
+import android.app.role.RoleManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -721,7 +722,12 @@ fun Context.hasPermission(permId: Int) = ContextCompat.checkSelfPermission(
 ) == PackageManager.PERMISSION_GRANTED
 
 fun Context.isDefaultDialer(): Boolean {
-    return telecomManager.defaultDialerPackage == packageName
+    return if (isQPlus()) {
+        val roleManager = getSystemService(RoleManager::class.java)
+        roleManager.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+    } else {
+        telecomManager.defaultDialerPackage == packageName
+    }
 }
 
 fun Context.openNotificationSettings() {

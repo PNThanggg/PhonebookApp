@@ -997,11 +997,6 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         }
     }
 
-    private fun customRingtoneSelected(ringtonePath: String) {
-        binding.contactRingtone.text = ringtonePath.getFilenameFromPath()
-        ringtoneUpdated(ringtonePath)
-    }
-
     private fun systemRingtoneSelected(uri: Uri?) {
         val contactRingtone = RingtoneManager.getRingtone(this, uri)
         binding.contactRingtone.text = contactRingtone.getTitle(this)

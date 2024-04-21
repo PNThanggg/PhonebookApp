@@ -34,6 +34,7 @@ import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.app.phonebook.BuildConfig
 import com.app.phonebook.R
 import com.app.phonebook.base.extension.addBit
 import com.app.phonebook.base.extension.adjustAlpha
@@ -366,6 +367,12 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
                     putExtra(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)
                 }
 
+//                if (isDefaultDialer()) {
+//                    val packageName = BuildConfig.APPLICATION_ID
+//                    val className = "${BuildConfig.APPLICATION_ID}.activities.DialerActivity"
+//                    setClassName(packageName, className)
+//                }
+
                 launchActivityIntent(this)
             }
         }
@@ -381,11 +388,8 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     }
 
     fun startCallIntent(recipient: String) {
-        launchCallIntent(recipient, null)
-
         if (isDefaultDialer()) {
             getHandleToUse(null, recipient) { handle ->
-
                 launchCallIntent(recipient, handle)
             }
         } else {

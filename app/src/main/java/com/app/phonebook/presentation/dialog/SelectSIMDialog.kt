@@ -14,7 +14,7 @@ import com.app.phonebook.base.extension.setupDialogStuff
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.databinding.DialogSelectSimBinding
 
-@SuppressLint("MissingPermission", "SetTextI18n", "InflateParams")
+@SuppressLint("SetTextI18n", "InflateParams")
 class SelectSIMDialog(
     val activity: BaseActivity<*>,
     val phoneNumber: String,

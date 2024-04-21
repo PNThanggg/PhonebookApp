@@ -11,6 +11,7 @@ import com.app.phonebook.base.extension.beGoneIf
 import com.app.phonebook.base.extension.beVisible
 import com.app.phonebook.base.extension.beVisibleIf
 import com.app.phonebook.base.extension.config
+import com.app.phonebook.base.extension.getHandleToUse
 import com.app.phonebook.base.extension.getMyContactsCursor
 import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.telephonyManager
@@ -20,7 +21,6 @@ import com.app.phonebook.base.utils.MIN_RECENTS_THRESHOLD
 import com.app.phonebook.base.utils.PERMISSION_READ_CALL_LOG
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.view.BaseActivity
-import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RecentCall
 import com.app.phonebook.databinding.FragmentRecentBinding
 import com.app.phonebook.helpers.ContactsHelper
@@ -111,10 +111,14 @@ class RecentFragment(
                         val recentCall = it as RecentCall
                         if (context.config.showCallConfirmation) {
                             CallConfirmationDialog(activity as BaseActivity<*>, recentCall.name) {
-                                activity?.launchCallIntent(recentCall.phoneNumber)
+                                activity?.getHandleToUse(activity?.intent, recentCall.phoneNumber) {handle ->
+                                    activity?.launchCallIntent(recentCall.phoneNumber, handle)
+                                }
                             }
                         } else {
-                            activity?.launchCallIntent(recentCall.phoneNumber)
+                            activity?.getHandleToUse(activity?.intent, recentCall.phoneNumber) {handle ->
+                                activity?.launchCallIntent(recentCall.phoneNumber, handle)
+                            }
                         }
                     }
 
