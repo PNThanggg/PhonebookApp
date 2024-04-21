@@ -1,6 +1,5 @@
 package com.app.phonebook.base.extension
 
-import com.app.phonebook.presentation.dialog.WritePermissionDialog
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Activity.OVERRIDE_TRANSITION_CLOSE
@@ -9,9 +8,11 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.TransactionTooLargeException
 import android.provider.ContactsContract
 import android.provider.DocumentsContract
 import android.telecom.PhoneAccount
@@ -36,24 +37,35 @@ import com.app.phonebook.base.utils.ON_CLICK_CALL_CONTACT
 import com.app.phonebook.base.utils.ON_CLICK_EDIT_CONTACT
 import com.app.phonebook.base.utils.ON_CLICK_VIEW_CONTACT
 import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_FOR_ANDROID_DATA_OR_OBB
+import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_FOR_SDK_30
 import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_OTG
 import com.app.phonebook.base.utils.OPEN_DOCUMENT_TREE_SD
 import com.app.phonebook.base.utils.PERMISSION_READ_PHONE_STATE
+import com.app.phonebook.base.utils.PERMISSION_READ_STORAGE
+import com.app.phonebook.base.utils.SILENT
+import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.ensureBackgroundThread
 import com.app.phonebook.base.utils.isOnMainThread
 import com.app.phonebook.base.utils.isRPlus
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
 import com.app.phonebook.base.view.BaseActivity
+import com.app.phonebook.data.models.AlarmSound
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.FileDirItem
+import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.DialogTitleBinding
+import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.SimpleContactsHelper
+import com.app.phonebook.helpers.VcfExporter
 import com.app.phonebook.presentation.activities.EditContactActivity
 import com.app.phonebook.presentation.activities.ViewContactActivity
 import com.app.phonebook.presentation.dialog.ConfirmationAdvancedDialog
+import com.app.phonebook.presentation.dialog.RadioGroupDialog
 import com.app.phonebook.presentation.dialog.SelectSIMDialog
+import com.app.phonebook.presentation.dialog.WritePermissionDialog
 import com.app.phonebook.presentation.view.MyTextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import ezvcard.VCardVersion
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -66,8 +78,7 @@ fun Activity.finishWithSlide() {
             OVERRIDE_TRANSITION_CLOSE, R.anim.slide_in_left, R.anim.slide_out_right, Color.TRANSPARENT
         )
     } else {
-        @Suppress("DEPRECATION")
-        overridePendingTransition(
+        @Suppress("DEPRECATION") overridePendingTransition(
             R.anim.slide_in_left, R.anim.slide_out_right
         )
     }
@@ -122,25 +133,27 @@ fun Activity.launchViewContactIntent(uri: Uri) {
 
 
 fun Activity.startContactDetailsIntent(contact: Contact) {
-    if (contact.rawId > 1000000 && contact.contactId > 1000000 && contact.rawId == contact.contactId) {
-        Intent().apply {
-            action = Intent.ACTION_VIEW
-            putExtra(CONTACT_ID, contact.rawId)
-            putExtra(IS_PRIVATE, true)
-            setDataAndType(
-                ContactsContract.Contacts.CONTENT_LOOKUP_URI, "vnd.android.cursor.dir/person"
-            )
-            launchActivityIntent(this)
-        }
-    } else {
-        ensureBackgroundThread {
-            val lookupKey = SimpleContactsHelper(this).getContactLookupKey((contact).rawId.toString())
-            val publicUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey)
-            runOnUiThread {
-                launchViewContactIntent(publicUri)
-            }
-        }
-    }
+//    if (contact.rawId > 1000000 && contact.contactId > 1000000 && contact.rawId == contact.contactId) {
+//        Intent().apply {
+//            action = Intent.ACTION_VIEW
+//            putExtra(CONTACT_ID, contact.rawId)
+//            putExtra(IS_PRIVATE, true)
+//            setDataAndType(
+//                ContactsContract.Contacts.CONTENT_LOOKUP_URI, "vnd.android.cursor.dir/person"
+//            )
+//            launchActivityIntent(this)
+//        }
+//    } else {
+//        ensureBackgroundThread {
+//            val lookupKey = SimpleContactsHelper(this).getContactLookupKey((contact).rawId.toString())
+//            val publicUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey)
+//            runOnUiThread {
+//                launchViewContactIntent(publicUri)
+//            }
+//        }
+//    }
+
+    handleGenericContactClick(contact)
 }
 
 @SuppressLint("UseCompatLoadingForDrawables")
@@ -354,7 +367,10 @@ fun BaseActivity<*>.showOTGPermissionDialog(path: String) {
 }
 
 fun BaseActivity<*>.isShowingSAFDialog(path: String): Boolean {
-    return if ((!isRPlus() && isPathOnSD(path) && !isSDCardSetAsDefaultStorage() && (baseConfig.sdTreeUri.isEmpty() || !hasProperStoredTreeUri(false)))) {
+    return if ((!isRPlus() && isPathOnSD(path) && !isSDCardSetAsDefaultStorage() && (baseConfig.sdTreeUri.isEmpty() || !hasProperStoredTreeUri(
+            false
+        )))
+    ) {
         runOnUiThread {
             if (!isDestroyed && !isFinishing) {
                 WritePermissionDialog(this, WritePermissionDialog.WritePermissionDialogMode.SdCard) {
@@ -386,7 +402,9 @@ fun BaseActivity<*>.isShowingSAFDialog(path: String): Boolean {
     }
 }
 
-fun BaseActivity<*>.getFileOutputStream(fileDirItem: FileDirItem, allowCreatingNewFile: Boolean = false, callback: (outputStream: OutputStream?) -> Unit) {
+fun BaseActivity<*>.getFileOutputStream(
+    fileDirItem: FileDirItem, allowCreatingNewFile: Boolean = false, callback: (outputStream: OutputStream?) -> Unit
+) {
     val targetFile = File(fileDirItem.path)
     when {
         isRestrictedSAFOnlyRoot(fileDirItem.path) -> {
@@ -437,6 +455,7 @@ fun BaseActivity<*>.getFileOutputStream(fileDirItem: FileDirItem, allowCreatingN
                 }
             }
         }
+
         isAccessibleWithSAFSdk30(fileDirItem.path) -> {
             handleSAFDialogSdk30(fileDirItem.path) {
                 if (!it) {
@@ -491,7 +510,9 @@ fun BaseActivity<*>.isShowingAndroidSAFDialog(path: String): Boolean {
     return if (isRestrictedSAFOnlyRoot(path) && (getAndroidTreeUri(path).isEmpty() || !hasProperStoredAndroidTreeUri(path))) {
         runOnUiThread {
             if (!isDestroyed && !isFinishing) {
-                ConfirmationAdvancedDialog(this, "", R.string.confirm_storage_access_android_text, R.string.ok, R.string.cancel) { success ->
+                ConfirmationAdvancedDialog(
+                    this, "", R.string.confirm_storage_access_android_text, R.string.ok, R.string.cancel
+                ) { success ->
                     if (success) {
                         Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                             putExtra(EXTRA_SHOW_ADVANCED, true)
@@ -524,7 +545,7 @@ fun BaseActivity<*>.isShowingAndroidSAFDialog(path: String): Boolean {
 }
 
 @SuppressLint("RestrictedApi")
-fun Activity.shareContacts(contacts: ArrayList<Contact>) {
+fun BaseActivity<*>.shareContacts(contacts: ArrayList<Contact>) {
     val filename = if (contacts.size == 1) {
         "${contacts.first().getNameToDisplay()}.vcf"
     } else {
@@ -538,15 +559,158 @@ fun Activity.shareContacts(contacts: ArrayList<Contact>) {
     }
 
     getFileOutputStream(file.toFileDirItem(this), true) {
-
         // whatsApp does not support vCard version 4.0 yet
-        VcfExporter().exportContacts(this, it, contacts, false, version = VCardVersion.V3_0) {
-            if (it == VcfExporter.ExportResult.EXPORT_OK) {
+        VcfExporter().exportContacts(this, it, contacts, false, version = VCardVersion.V3_0) { result ->
+            if (result == VcfExporter.ExportResult.EXPORT_OK) {
                 sharePathIntent(file.absolutePath, BuildConfig.APPLICATION_ID)
             } else {
-                showErrorToast("$it")
+                showErrorToast("$result")
             }
         }
     }
 }
 
+fun Activity.getFinalUriFromPath(path: String, applicationId: String): Uri? {
+    val uri = try {
+        ensurePublicUri(path, applicationId)
+    } catch (e: Exception) {
+        showErrorToast(e)
+        return null
+    }
+
+    if (uri == null) {
+        toast(R.string.unknown_error_occurred)
+        return null
+    }
+
+    return uri
+}
+
+fun Activity.sharePathIntent(path: String, applicationId: String) {
+    ensureBackgroundThread {
+        val newUri = getFinalUriFromPath(path, applicationId) ?: return@ensureBackgroundThread
+        Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_STREAM, newUri)
+            type = getUriMimeType(path, newUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            grantUriPermission("android", newUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+            try {
+                startActivity(Intent.createChooser(this, getString(R.string.share_via)))
+            } catch (e: ActivityNotFoundException) {
+                toast(R.string.no_app_found)
+            } catch (e: RuntimeException) {
+                if (e.cause is TransactionTooLargeException) {
+                    toast(R.string.maximum_share_reached)
+                } else {
+                    showErrorToast(e)
+                }
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+}
+
+@SuppressLint("InlinedApi")
+fun BaseActivity<*>.isShowingSAFDialogSdk30(path: String): Boolean {
+    return if (isAccessibleWithSAFSdk30(path) && !hasProperStoredFirstParentUri(path)) {
+        runOnUiThread {
+            if (!isDestroyed && !isFinishing) {
+                val level = getFirstParentLevel(path)
+                WritePermissionDialog(
+                    this,
+                    WritePermissionDialog.WritePermissionDialogMode.OpenDocumentTreeSDK30(path.getFirstParentPath(this, level))
+                ) {
+                    Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                        putExtra(EXTRA_SHOW_ADVANCED, true)
+                        putExtra(DocumentsContract.EXTRA_INITIAL_URI, createFirstParentTreeUriUsingRootTree(path))
+                        try {
+                            startActivityForResult(this, OPEN_DOCUMENT_TREE_FOR_SDK_30)
+                            checkedDocumentPath = path
+                            return@apply
+                        } catch (e: Exception) {
+                            type = "*/*"
+                        }
+
+                        try {
+                            startActivityForResult(this, OPEN_DOCUMENT_TREE_FOR_SDK_30)
+                            checkedDocumentPath = path
+                        } catch (e: ActivityNotFoundException) {
+                            toast(R.string.system_service_disabled, Toast.LENGTH_LONG)
+                        } catch (e: Exception) {
+                            toast(R.string.unknown_error_occurred)
+                        }
+                    }
+                }
+            }
+        }
+        true
+    } else {
+        false
+    }
+}
+
+
+fun BaseActivity<*>.showContactSourcePicker(currentSource: String, callback: (newSource: String) -> Unit) {
+    ContactsHelper(this).getSaveableContactSources { sources ->
+        val items = ArrayList<RadioItem>()
+        var sourceNames = sources.map { it.name }
+        var currentSourceIndex = sourceNames.indexOfFirst { it == currentSource }
+        sourceNames = sources.map { it.publicName }
+
+        sourceNames.forEachIndexed { index, account ->
+            items.add(RadioItem(index, account))
+            if (currentSource == SMT_PRIVATE && account == getString(R.string.phone_storage_hidden)) {
+                currentSourceIndex = index
+            }
+        }
+
+        runOnUiThread {
+            RadioGroupDialog(this, items, currentSourceIndex) {
+                callback(sources[it as Int].name)
+            }
+        }
+    }
+}
+
+fun BaseActivity<*>.getAlarmSounds(type: Int, callback: (java.util.ArrayList<AlarmSound>) -> Unit) {
+    val alarms = ArrayList<AlarmSound>()
+    val manager = RingtoneManager(this)
+    manager.setType(type)
+
+    try {
+        val cursor = manager.cursor
+        var curId = 1
+        val silentAlarm = AlarmSound(curId++, getString(R.string.no_sound), SILENT)
+        alarms.add(silentAlarm)
+
+        while (cursor.moveToNext()) {
+            val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX)
+            var uri = cursor.getString(RingtoneManager.URI_COLUMN_INDEX)
+            val id = cursor.getString(RingtoneManager.ID_COLUMN_INDEX)
+            if (!uri.endsWith(id)) {
+                uri += "/$id"
+            }
+
+            val alarmSound = AlarmSound(curId++, title, uri)
+            alarms.add(alarmSound)
+        }
+        callback(alarms)
+    } catch (e: Exception) {
+        if (e is SecurityException) {
+            handlePermission(PERMISSION_READ_STORAGE) {
+                if (it) {
+                    getAlarmSounds(type, callback)
+                } else {
+                    showErrorToast(e)
+                    callback(ArrayList())
+                }
+            }
+        } else {
+            showErrorToast(e)
+            callback(ArrayList())
+        }
+    }
+}

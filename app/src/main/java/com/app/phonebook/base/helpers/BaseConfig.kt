@@ -72,6 +72,7 @@ import com.app.phonebook.base.utils.VIEW_TYPE_LIST
 import com.app.phonebook.base.utils.WAS_LOCAL_ACCOUNT_INITIALIZED
 import com.app.phonebook.base.utils.WAS_SHARED_THEME_EVER_ACTIVATED
 import com.app.phonebook.base.utils.WAS_SHARED_THEME_FORCED
+import com.app.phonebook.base.utils.YOUR_ALARM_SOUNDS
 import java.text.SimpleDateFormat
 
 open class BaseConfig(private val context: Context) {
@@ -267,7 +268,7 @@ open class BaseConfig(private val context: Context) {
         get() = prefs.getString(INTERNAL_STORAGE_PATH, getDefaultInternalPath())!!
         set(internalStoragePath) = prefs.edit().putString(INTERNAL_STORAGE_PATH, internalStoragePath).apply()
 
-    private fun getDefaultInternalPath() = if (prefs.contains(INTERNAL_STORAGE_PATH)) "" else context.getInternalStoragePath()
+    private fun getDefaultInternalPath() = if (prefs.contains(INTERNAL_STORAGE_PATH)) "" else getInternalStoragePath()
 
     var OTGPath: String
         get() = prefs.getString(OTG_REAL_PATH, "")!!
@@ -304,4 +305,8 @@ open class BaseConfig(private val context: Context) {
     var primaryAndroidObbTreeUri: String
         get() = prefs.getString(PRIMARY_ANDROID_OBB_TREE_URI, "")!!
         set(uri) = prefs.edit().putString(PRIMARY_ANDROID_OBB_TREE_URI, uri).apply()
+
+    var yourAlarmSounds: String
+        get() = prefs.getString(YOUR_ALARM_SOUNDS, "")!!
+        set(yourAlarmSounds) = prefs.edit().putString(YOUR_ALARM_SOUNDS, yourAlarmSounds).apply()
 }

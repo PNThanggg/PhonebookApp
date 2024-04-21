@@ -19,6 +19,31 @@ const val EXTRA_SHOW_ADVANCED = "android.content.extra.SHOW_ADVANCED"
 
 const val KEY_PHONE = "phone"
 const val KEY_MAILTO = "mailto"
+const val KEY_NAME = "name"
+const val KEY_EMAIL = "email"
+
+// phone number/email types
+const val CELL = "CELL"
+const val WORK = "WORK"
+const val HOME = "HOME"
+const val OTHER = "OTHER"
+const val PREF = "PREF"
+const val MAIN = "MAIN"
+const val FAX = "FAX"
+const val WORK_FAX = "WORK;FAX"
+const val HOME_FAX = "HOME;FAX"
+const val PAGER = "PAGER"
+const val MOBILE = "MOBILE"
+
+// IMs not supported by Ez-vcard
+const val HANGOUTS = "Hangouts"
+const val QQ = "QQ"
+const val JABBER = "Jabber"
+
+const val CHOPPED_LIST_DEFAULT_SIZE = 50
+const val SAVE_DISCARD_PROMPT_INTERVAL = 1000L
+
+// extras used at third party intents
 const val CONTACT_ID = "contact_id"
 const val IS_PRIVATE = "is_private"
 const val SMT_PRIVATE = "smt_private"
@@ -309,3 +334,8 @@ const val SELECT_EXPORT_SETTINGS_FILE_INTENT = 1006
 const val REQUEST_CODE_SET_DEFAULT_DIALER = 1007
 const val CREATE_DOCUMENT_SDK_30 = 1008
 const val REQUEST_CODE_SET_DEFAULT_CALLER_ID = 1010
+
+
+const val VIBRATE_ON_BUTTON_PRESS = "vibrate_on_button_press"
+const val YOUR_ALARM_SOUNDS = "your_alarm_sounds"
+const val SILENT = "silent"

@@ -10,14 +10,20 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils
 import android.text.style.ForegroundColorSpan
+import android.widget.TextView
 import com.app.phonebook.base.utils.audioExtensions
 import com.app.phonebook.base.utils.extensionsSupportingEXIF
 import com.app.phonebook.base.utils.normalizeRegex
 import com.app.phonebook.base.utils.photoExtensions
 import com.app.phonebook.base.utils.rawExtensions
 import com.app.phonebook.base.utils.videoExtensions
+import org.joda.time.DateTime
+import org.joda.time.Years
+import org.joda.time.format.DateTimeFormat
 import java.io.File
+import java.text.DateFormat
 import java.text.Normalizer
+import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.regex.Pattern
 
@@ -807,4 +813,49 @@ fun String.getFirstParentPath(context: Context, level: Int): String {
     } else {
         basePath
     }
+}
+
+fun getDateFormats() = arrayListOf(
+    "--MM-dd",
+    "yyyy-MM-dd",
+    "yyyyMMdd",
+    "yyyy.MM.dd",
+    "yy-MM-dd",
+    "yyMMdd",
+    "yy.MM.dd",
+    "yy/MM/dd",
+    "MM-dd",
+    "MMdd",
+    "MM/dd",
+    "MM.dd"
+)
+
+
+fun String.getDateTimeFromDateString(showYearsSince: Boolean, viewToUpdate: TextView? = null): DateTime {
+    val dateFormats = getDateFormats()
+    var date = DateTime()
+    for (format in dateFormats) {
+        try {
+            date = DateTime.parse(this, DateTimeFormat.forPattern(format))
+
+            val formatter = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
+            var localPattern = (formatter as SimpleDateFormat).toLocalizedPattern()
+
+            val hasYear = format.contains("y")
+            if (!hasYear) {
+                localPattern = localPattern.replace("y", "").replace(",", "").trim()
+                date = date.withYear(DateTime().year)
+            }
+
+            var formattedString = date.toString(localPattern)
+            if (showYearsSince && hasYear) {
+                formattedString += " (${Years.yearsBetween(date, DateTime.now()).years})"
+            }
+
+            viewToUpdate?.text = formattedString
+            break
+        } catch (ignored: Exception) {
+        }
+    }
+    return date
 }

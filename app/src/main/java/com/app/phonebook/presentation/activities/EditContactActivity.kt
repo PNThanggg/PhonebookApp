@@ -2,19 +2,32 @@ package com.app.phonebook.presentation.activities
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.media.AudioManager
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.provider.ContactsContract
+import android.provider.MediaStore
 import android.telephony.PhoneNumberUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.RelativeLayout
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.doAfterTextChanged
 import com.app.phonebook.R
@@ -25,11 +38,18 @@ import com.app.phonebook.base.extension.beInvisible
 import com.app.phonebook.base.extension.beVisible
 import com.app.phonebook.base.extension.beVisibleIf
 import com.app.phonebook.base.extension.config
+import com.app.phonebook.base.extension.getCachePhoto
+import com.app.phonebook.base.extension.getCachePhotoUri
 import com.app.phonebook.base.extension.getContactPublicUri
 import com.app.phonebook.base.extension.getContactUriRawId
+import com.app.phonebook.base.extension.getContrastColor
+import com.app.phonebook.base.extension.getDateTimeFromDateString
+import com.app.phonebook.base.extension.getDefaultAlarmSound
 import com.app.phonebook.base.extension.getEmptyContact
 import com.app.phonebook.base.extension.getFilenameFromPath
 import com.app.phonebook.base.extension.getLookupUriRawId
+import com.app.phonebook.base.extension.getNameLetter
+import com.app.phonebook.base.extension.getPhoneNumberTypeText
 import com.app.phonebook.base.extension.getProperPrimaryColor
 import com.app.phonebook.base.extension.getProperTextColor
 import com.app.phonebook.base.extension.getPublicContactSource
@@ -39,23 +59,35 @@ import com.app.phonebook.base.extension.hideKeyboard
 import com.app.phonebook.base.extension.isVisible
 import com.app.phonebook.base.extension.launchActivityIntent
 import com.app.phonebook.base.extension.normalizePhoneNumber
+import com.app.phonebook.base.extension.onGlobalLayout
+import com.app.phonebook.base.extension.realScreenSize
+import com.app.phonebook.base.extension.shareContacts
+import com.app.phonebook.base.extension.showContactSourcePicker
 import com.app.phonebook.base.extension.showErrorToast
+import com.app.phonebook.base.extension.showKeyboard
 import com.app.phonebook.base.extension.statusBarHeight
 import com.app.phonebook.base.extension.toast
 import com.app.phonebook.base.extension.updateTextColors
 import com.app.phonebook.base.extension.value
 import com.app.phonebook.base.utils.ADD_NEW_CONTACT_NUMBER
 import com.app.phonebook.base.utils.CONTACT_ID
+import com.app.phonebook.base.utils.DEFAULT_ADDRESS_TYPE
 import com.app.phonebook.base.utils.DEFAULT_EMAIL_TYPE
+import com.app.phonebook.base.utils.DEFAULT_EVENT_TYPE
+import com.app.phonebook.base.utils.DEFAULT_IM_TYPE
 import com.app.phonebook.base.utils.DEFAULT_PHONE_NUMBER_TYPE
 import com.app.phonebook.base.utils.IS_FROM_SIMPLE_CONTACTS
 import com.app.phonebook.base.utils.IS_PRIVATE
+import com.app.phonebook.base.utils.KEY_EMAIL
+import com.app.phonebook.base.utils.KEY_NAME
+import com.app.phonebook.base.utils.KEY_PHONE
 import com.app.phonebook.base.utils.PERMISSION_READ_CONTACTS
 import com.app.phonebook.base.utils.PERMISSION_WRITE_CONTACTS
 import com.app.phonebook.base.utils.PHOTO_ADDED
 import com.app.phonebook.base.utils.PHOTO_CHANGED
 import com.app.phonebook.base.utils.PHOTO_REMOVED
 import com.app.phonebook.base.utils.PHOTO_UNCHANGED
+import com.app.phonebook.base.utils.SAVE_DISCARD_PROMPT_INTERVAL
 import com.app.phonebook.base.utils.SHOW_ADDRESSES_FIELD
 import com.app.phonebook.base.utils.SHOW_CONTACT_SOURCE_FIELD
 import com.app.phonebook.base.utils.SHOW_EMAILS_FIELD
@@ -73,27 +105,46 @@ import com.app.phonebook.base.utils.SHOW_RINGTONE_FIELD
 import com.app.phonebook.base.utils.SHOW_SUFFIX_FIELD
 import com.app.phonebook.base.utils.SHOW_SURNAME_FIELD
 import com.app.phonebook.base.utils.SHOW_WEBSITES_FIELD
+import com.app.phonebook.base.utils.SILENT
 import com.app.phonebook.base.utils.SMT_PRIVATE
 import com.app.phonebook.base.utils.ensureBackgroundThread
+import com.app.phonebook.base.utils.letterBackgroundColors
 import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Address
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.Email
 import com.app.phonebook.data.models.Event
+import com.app.phonebook.data.models.Group
 import com.app.phonebook.data.models.IM
 import com.app.phonebook.data.models.Organization
 import com.app.phonebook.data.models.PhoneNumber
+import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.ActivityEditContactBinding
 import com.app.phonebook.databinding.ItemEditAddressBinding
 import com.app.phonebook.databinding.ItemEditEmailBinding
+import com.app.phonebook.databinding.ItemEditGroupBinding
 import com.app.phonebook.databinding.ItemEditImBinding
 import com.app.phonebook.databinding.ItemEditPhoneNumberBinding
 import com.app.phonebook.databinding.ItemEditWebsiteBinding
 import com.app.phonebook.databinding.ItemEventBinding
 import com.app.phonebook.helpers.ContactsHelper
+import com.app.phonebook.presentation.dialog.ConfirmationAdvancedDialog
 import com.app.phonebook.presentation.dialog.ConfirmationDialog
+import com.app.phonebook.presentation.dialog.CustomLabelDialog
 import com.app.phonebook.presentation.dialog.ManageVisibleFieldsDialog
+import com.app.phonebook.presentation.dialog.MyDatePickerDialog
+import com.app.phonebook.presentation.dialog.RadioGroupDialog
+import com.app.phonebook.presentation.dialog.SelectAlarmSoundDialog
+import com.app.phonebook.presentation.dialog.SelectGroupsDialog
 import com.app.phonebook.presentation.view.MyAutoCompleteTextView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
 
 class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     override fun inflateViewBinding(inflater: LayoutInflater): ActivityEditContactBinding {
@@ -358,6 +409,35 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         setupContactSource()
     }
 
+    private fun setupNames() {
+        contact!!.apply {
+            binding.contactPrefix.setText(prefix)
+            binding.contactFirstName.setText(firstName)
+            binding.contactMiddleName.setText(middleName)
+            binding.contactSurname.setText(surname)
+            binding.contactSuffix.setText(suffix)
+            binding.contactNickname.setText(nickname)
+        }
+    }
+
+    private fun getPhoneNumberFromIntent(intent: Intent): String? {
+        if (intent.extras?.containsKey(KEY_PHONE) == true) {
+            return intent.getStringExtra(KEY_PHONE)
+        } else if (intent.extras?.containsKey("data") == true) {
+            // sample contact number from Google Contacts:
+            // data: [data1=+123 456 789 mimetype=vnd.android.cursor.item/phone_v2 _id=-1 data2=0]
+            val data = intent.extras!!.get("data")
+            if (data != null) {
+                val contentValues = (data as? ArrayList<Any>)?.firstOrNull() as? ContentValues
+                if (contentValues != null && contentValues.containsKey("data1")) {
+                    return contentValues.getAsString("data1")
+                }
+            }
+        }
+        return null
+    }
+
+
     private fun gotContact() {
         binding.contactScrollview.beVisible()
         if (contact == null) {
@@ -494,12 +574,6 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             findItem(R.id.share).isVisible = contact?.id != 0
             findItem(R.id.open_with).isVisible = contact?.id != 0 && contact?.isPrivate() == false
         }
-    }
-
-    @SuppressLint("UseCompatLoadingForDrawables")
-    private fun getStarDrawable(on: Boolean) {
-        val id = if (on) R.drawable.ic_star_vector else R.drawable.ic_star_outline_vector
-        resources.getDrawable(id, theme)
     }
 
     private fun setupFieldVisibility() {
@@ -742,7 +816,8 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             val emailHolder = ItemEditEmailBinding.bind(binding.contactEmailsHolder.getChildAt(i))
             val email = emailHolder.contactEmail.value
             val emailType = getEmailTypeId(emailHolder.contactEmailType.value)
-            val emailLabel = if (emailType == ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM) emailHolder.contactEmailType.value else ""
+            val emailLabel =
+                if (emailType == ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM) emailHolder.contactEmailType.value else ""
 
             if (email.isNotEmpty()) {
                 emails.add(Email(email, emailType, emailLabel))
@@ -892,10 +967,12 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
                     val duplicate = contactsHelper.getContactWithId(contact.id, contact.isPrivate())
                     if (duplicate != null) {
                         if (primaryStatus == PrimaryNumberStatus.UNSTARRED) {
-                            val number = duplicate.phoneNumbers.find { it.normalizedNumber == toggleState.first!!.normalizedNumber }
+                            val number =
+                                duplicate.phoneNumbers.find { it.normalizedNumber == toggleState.first!!.normalizedNumber }
                             number?.isPrimary = false
                         } else if (primaryStatus == PrimaryNumberStatus.STARRED) {
-                            val number = duplicate.phoneNumbers.find { it.normalizedNumber == toggleState.second!!.normalizedNumber }
+                            val number =
+                                duplicate.phoneNumbers.find { it.normalizedNumber == toggleState.second!!.normalizedNumber }
                             if (number != null) {
                                 duplicate.phoneNumbers.forEach {
                                     it.isPrimary = false
@@ -924,6 +1001,1004 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             PrimaryNumberStatus.UNSTARRED
         } else {
             PrimaryNumberStatus.UNCHANGED
+        }
+    }
+
+    private fun parseIntentData(data: ArrayList<ContentValues>) {
+        data.forEach {
+            when (it.get(ContactsContract.CommonDataKinds.StructuredName.MIMETYPE)) {
+                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE -> parseEmail(it)
+                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> parseAddress(it)
+                ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE -> parseOrganization(it)
+                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE -> parseEvent(it)
+                ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE -> parseWebsite(it)
+                ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE -> parseNote(it)
+            }
+        }
+    }
+
+
+    private fun parseEmail(contentValues: ContentValues) {
+        val type = contentValues.getAsInteger(ContactsContract.CommonDataKinds.Email.DATA2) ?: DEFAULT_EMAIL_TYPE
+        val emailValue = contentValues.getAsString(ContactsContract.CommonDataKinds.Email.DATA1) ?: return
+        val email = Email(emailValue, type, "")
+        contact!!.emails.add(email)
+    }
+
+    private fun parseAddress(contentValues: ContentValues) {
+        val type = contentValues.getAsInteger(ContactsContract.CommonDataKinds.StructuredPostal.DATA2) ?: DEFAULT_ADDRESS_TYPE
+        val addressValue = contentValues.getAsString(ContactsContract.CommonDataKinds.StructuredPostal.DATA4)
+            ?: contentValues.getAsString(ContactsContract.CommonDataKinds.StructuredPostal.DATA1) ?: return
+        val address = Address(addressValue, type, "")
+        contact!!.addresses.add(address)
+    }
+
+    private fun parseOrganization(contentValues: ContentValues) {
+        val company = contentValues.getAsString(ContactsContract.CommonDataKinds.Organization.DATA1) ?: ""
+        val jobPosition = contentValues.getAsString(ContactsContract.CommonDataKinds.Organization.DATA4) ?: ""
+        contact!!.organization = Organization(company, jobPosition)
+    }
+
+    private fun parseEvent(contentValues: ContentValues) {
+        val type = contentValues.getAsInteger(ContactsContract.CommonDataKinds.Event.DATA2) ?: DEFAULT_EVENT_TYPE
+        val eventValue = contentValues.getAsString(ContactsContract.CommonDataKinds.Event.DATA1) ?: return
+        val event = Event(eventValue, type)
+        contact!!.events.add(event)
+    }
+
+    private fun parseWebsite(contentValues: ContentValues) {
+        val website = contentValues.getAsString(ContactsContract.CommonDataKinds.Website.DATA1) ?: return
+        contact!!.websites.add(website)
+    }
+
+    private fun parseNote(contentValues: ContentValues) {
+        val note = contentValues.getAsString(ContactsContract.CommonDataKinds.Note.DATA1) ?: return
+        contact!!.notes = note
+    }
+
+    private fun startTakePhotoIntent() {
+        hideKeyboard()
+        val uri = getCachePhotoUri()
+        lastPhotoIntentUri = uri
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, uri)
+
+            try {
+                startActivityForResult(this, INTENT_TAKE_PHOTO)
+            } catch (e: ActivityNotFoundException) {
+                toast(R.string.no_app_found)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+
+    private fun startChoosePhotoIntent() {
+        hideKeyboard()
+        val uri = getCachePhotoUri()
+        lastPhotoIntentUri = uri
+        Intent(Intent.ACTION_PICK).apply {
+            type = "image/*"
+            clipData = ClipData("Attachment", arrayOf("text/uri-list"), ClipData.Item(uri))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            putExtra(MediaStore.EXTRA_OUTPUT, uri)
+
+            try {
+                startActivityForResult(this, INTENT_CHOOSE_PHOTO)
+            } catch (e: ActivityNotFoundException) {
+                toast(R.string.no_app_found)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (System.currentTimeMillis() - mLastSavePromptTS > SAVE_DISCARD_PROMPT_INTERVAL && hasContactChanged()) {
+            mLastSavePromptTS = System.currentTimeMillis()
+            ConfirmationAdvancedDialog(
+                this,
+                "",
+                R.string.save_before_closing,
+                R.string.save,
+                R.string.discard
+            ) {
+                if (it) {
+                    saveContact()
+                } else {
+                    super.onBackPressed()
+                }
+            }
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun startCropPhotoIntent(primaryUri: Uri?, backupUri: Uri?) {
+        if (primaryUri == null) {
+            toast(R.string.unknown_error_occurred)
+            return
+        }
+
+        var imageUri = primaryUri
+        var bitmap = MediaStore.Images.Media.getBitmap(contentResolver, primaryUri)
+        if (bitmap == null) {
+            imageUri = backupUri
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(contentResolver, backupUri) ?: return
+            } catch (e: Exception) {
+                showErrorToast(e)
+                return
+            }
+
+            // we might have received an URI which we have no permission to send further, so just copy the received image in a new uri (for example from Google Photos)
+            val newFile = getCachePhoto()
+            val fos = newFile.outputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+            imageUri = getCachePhotoUri(newFile)
+        }
+
+        hideKeyboard()
+        lastPhotoIntentUri = getCachePhotoUri()
+        Intent("com.android.camera.action.CROP").apply {
+            setDataAndType(imageUri, "image/*")
+            putExtra(MediaStore.EXTRA_OUTPUT, lastPhotoIntentUri)
+            putExtra("outputX", 512)
+            putExtra("outputY", 512)
+            putExtra("aspectX", 1)
+            putExtra("aspectY", 1)
+            putExtra("crop", "true")
+            putExtra("scale", "true")
+            putExtra("scaleUpIfNeeded", "true")
+            clipData = ClipData("Attachment", arrayOf("text/primaryUri-list"), ClipData.Item(lastPhotoIntentUri))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+            try {
+                startActivityForResult(this, INTENT_CROP_PHOTO)
+            } catch (e: ActivityNotFoundException) {
+                toast(R.string.no_app_found)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+
+    private fun setupPhoneNumbers() {
+        val phoneNumbers = contact!!.phoneNumbers
+
+        phoneNumbers.forEachIndexed { index, number ->
+            val numberHolderView = binding.contactNumbersHolder.getChildAt(index)
+            val numberHolder = if (numberHolderView == null) {
+                ItemEditPhoneNumberBinding.inflate(layoutInflater, binding.contactNumbersHolder, false).apply {
+                    binding.contactNumbersHolder.addView(root)
+                }
+            } else {
+                ItemEditPhoneNumberBinding.bind(numberHolderView)
+            }
+
+            numberHolder.apply {
+                contactNumber.setText(number.value)
+                contactNumber.tag = number.normalizedNumber
+                setupPhoneNumberTypePicker(contactNumberType, number.type, number.label)
+                if (highlightLastPhoneNumber && index == phoneNumbers.size - 1) {
+                    numberViewToColor = contactNumber
+                }
+
+                defaultToggleIcon.tag = if (number.isPrimary) 1 else 0
+            }
+        }
+
+        initNumberHolders()
+    }
+
+    private fun setDefaultNumber(selected: ImageView) {
+        val numbersCount = binding.contactNumbersHolder.childCount
+        for (i in 0 until numbersCount) {
+            val toggleIcon = ItemEditPhoneNumberBinding.bind(binding.contactNumbersHolder.getChildAt(i)).defaultToggleIcon
+            if (toggleIcon != selected) {
+                toggleIcon.tag = 0
+            }
+        }
+
+        selected.tag = if (selected.tag == 1) 0 else 1
+
+        initNumberHolders()
+    }
+
+    private fun initNumberHolders() {
+        val numbersCount = binding.contactNumbersHolder.childCount
+
+        if (numbersCount == 1) {
+            ItemEditPhoneNumberBinding.bind(binding.contactNumbersHolder.getChildAt(0)).defaultToggleIcon.beGone()
+            return
+        }
+
+        for (i in 0 until numbersCount) {
+            val toggleIcon = ItemEditPhoneNumberBinding.bind(binding.contactNumbersHolder.getChildAt(i)).defaultToggleIcon
+            val isPrimary = toggleIcon.tag == 1
+
+            val drawableId = if (isPrimary) {
+                R.drawable.ic_star_vector
+            } else {
+                R.drawable.ic_star_outline_vector
+            }
+
+            val drawable = ContextCompat.getDrawable(this@EditContactActivity, drawableId)
+            drawable?.apply {
+                mutate()
+                setTint(getProperTextColor())
+            }
+
+            toggleIcon.setImageDrawable(drawable)
+            toggleIcon.beVisible()
+            toggleIcon.setOnClickListener {
+                setDefaultNumber(toggleIcon)
+            }
+        }
+    }
+
+    private fun setupEmails() {
+        contact!!.emails.forEachIndexed { index, email ->
+            val emailHolderView = binding.contactEmailsHolder.getChildAt(index)
+            val emailHolder = if (emailHolderView == null) {
+                ItemEditEmailBinding.inflate(layoutInflater, binding.contactEmailsHolder, false).apply {
+                    binding.contactEmailsHolder.addView(root)
+                }
+            } else {
+                ItemEditEmailBinding.bind(emailHolderView)
+            }
+
+            emailHolder.apply {
+                contactEmail.setText(email.value)
+                setupEmailTypePicker(contactEmailType, email.type, email.label)
+                if (highlightLastEmail && index == contact!!.emails.size - 1) {
+                    emailViewToColor = contactEmail
+                }
+            }
+        }
+    }
+
+    private fun setupAddresses() {
+        contact?.addresses?.forEachIndexed { index, address ->
+            val addressHolderView = binding.contactAddressesHolder.getChildAt(index)
+            val addressHolder = if (addressHolderView == null) {
+                ItemEditAddressBinding.inflate(layoutInflater, binding.contactAddressesHolder, false).apply {
+                    binding.contactAddressesHolder.addView(root)
+                }
+            } else {
+                ItemEditAddressBinding.bind(addressHolderView)
+            }
+
+            addressHolder.apply {
+                contactAddress.setText(address.value)
+                setupAddressTypePicker(contactAddressType, address.type, address.label)
+            }
+        }
+    }
+
+    private fun setupIMs() {
+        contact!!.listIM.forEachIndexed { index, IM ->
+            val imHolderView = binding.contactImsHolder.getChildAt(index)
+            val imHolder = if (imHolderView == null) {
+                ItemEditImBinding.inflate(layoutInflater, binding.contactImsHolder, false).apply {
+                    binding.contactImsHolder.addView(root)
+                }
+            } else {
+                ItemEditImBinding.bind(imHolderView)
+            }
+
+            imHolder.apply {
+                contactIm.setText(IM.value)
+                setupIMTypePicker(contactImType, IM.type, IM.label)
+            }
+        }
+    }
+
+    private fun setupNotes() {
+        binding.contactNotes.setText(contact!!.notes)
+    }
+
+    private fun setupRingtone() {
+        binding.contactRingtone.setOnClickListener {
+            hideKeyboard()
+            val ringtonePickerIntent = getRingtonePickerIntent()
+            try {
+                startActivityForResult(ringtonePickerIntent, INTENT_SELECT_RINGTONE)
+            } catch (e: Exception) {
+                val currentRingtone = contact!!.ringtone ?: getDefaultAlarmSound(RingtoneManager.TYPE_RINGTONE).uri
+                SelectAlarmSoundDialog(this,
+                    currentRingtone,
+                    AudioManager.STREAM_RING,
+                    PICK_RINGTONE_INTENT_ID,
+                    RingtoneManager.TYPE_RINGTONE,
+                    true,
+                    onAlarmPicked = {
+                        contact!!.ringtone = it?.uri
+                        binding.contactRingtone.text = it?.title
+                    },
+                    onAlarmSoundDeleted = {}
+                )
+            }
+        }
+
+        val ringtone = contact!!.ringtone
+        if (ringtone?.isEmpty() == true) {
+            binding.contactRingtone.text = getString(R.string.no_sound)
+        } else if (ringtone?.isNotEmpty() == true) {
+            if (ringtone == SILENT) {
+                binding.contactRingtone.text = getString(R.string.no_sound)
+            } else {
+                systemRingtoneSelected(Uri.parse(ringtone))
+            }
+        } else {
+            val default = getDefaultAlarmSound(RingtoneManager.TYPE_RINGTONE)
+            binding.contactRingtone.text = default.title
+        }
+    }
+
+    private fun setupOrganization() {
+        binding.contactOrganizationCompany.setText(contact!!.organization.company)
+        binding.contactOrganizationJobPosition.setText(contact!!.organization.jobPosition)
+    }
+
+    private fun setupWebsites() {
+        contact!!.websites.forEachIndexed { index, website ->
+            val websitesHolderView = binding.contactWebsitesHolder.getChildAt(index)
+            val websitesHolder = if (websitesHolderView == null) {
+                ItemEditWebsiteBinding.inflate(layoutInflater, binding.contactWebsitesHolder, false).apply {
+                    binding.contactWebsitesHolder.addView(root)
+                }
+            } else {
+                ItemEditWebsiteBinding.bind(websitesHolderView)
+            }
+
+            websitesHolder.contactWebsite.setText(website)
+        }
+    }
+
+    private fun setupEvents() {
+        contact!!.events.forEachIndexed { index, event ->
+            val eventHolderView = binding.contactEventsHolder.getChildAt(index)
+            val eventHolder = if (eventHolderView == null) {
+                ItemEventBinding.inflate(layoutInflater, binding.contactEventsHolder, false).apply {
+                    binding.contactEventsHolder.addView(root)
+                }
+            } else {
+                ItemEventBinding.bind(eventHolderView)
+            }
+
+            eventHolder.apply {
+                val contactEvent = contactEvent.apply {
+                    event.value.getDateTimeFromDateString(true, this)
+                    tag = event.value
+                    alpha = 1f
+                }
+
+                setupEventTypePicker(this, event.type)
+
+                contactEventRemove.apply {
+                    beVisible()
+                    applyColorFilter(getProperPrimaryColor())
+                    background.applyColorFilter(getProperTextColor())
+                    setOnClickListener {
+                        resetContactEvent(contactEvent, this)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupGroups() {
+        binding.contactGroupsHolder.removeAllViews()
+        val groups = contact!!.groups
+        groups.forEachIndexed { index, group ->
+            val groupHolderView = binding.contactGroupsHolder.getChildAt(index)
+            val groupHolder = if (groupHolderView == null) {
+                ItemEditGroupBinding.inflate(layoutInflater, binding.contactGroupsHolder, false).apply {
+                    binding.contactGroupsHolder.addView(root)
+                }
+            } else {
+                ItemEditGroupBinding.bind(groupHolderView)
+            }
+
+            groupHolder.apply {
+                contactGroup.apply {
+                    text = group.title
+                    setTextColor(getProperTextColor())
+                    tag = group.id
+                    alpha = 1f
+                }
+
+                root.setOnClickListener {
+                    showSelectGroupsDialog()
+                }
+
+                contactGroupRemove.apply {
+                    beVisible()
+                    applyColorFilter(getProperPrimaryColor())
+                    background.applyColorFilter(getProperTextColor())
+                    setOnClickListener {
+                        removeGroup(group.id!!)
+                    }
+                }
+            }
+        }
+
+        if (groups.isEmpty()) {
+            ItemEditGroupBinding.inflate(layoutInflater, binding.contactGroupsHolder, false).apply {
+                contactGroup.apply {
+                    alpha = 0.5f
+                    text = getString(R.string.no_groups)
+                    setTextColor(getProperTextColor())
+                }
+
+                binding.contactGroupsHolder.addView(root)
+                contactGroupRemove.beGone()
+                root.setOnClickListener {
+                    showSelectGroupsDialog()
+                }
+            }
+        }
+    }
+
+    private fun setupContactSource() {
+        originalContactSource = contact!!.source
+        getPublicContactSource(contact!!.source) {
+            binding.contactSource.text = if (it == "") getString(R.string.phone_storage) else it
+        }
+    }
+
+    private fun setupTypePickers() {
+        if (contact!!.phoneNumbers.isEmpty()) {
+            val numberHolder = ItemEditPhoneNumberBinding.bind(binding.contactNumbersHolder.getChildAt(0))
+            numberHolder.contactNumberType.apply {
+                setupPhoneNumberTypePicker(this, DEFAULT_PHONE_NUMBER_TYPE, "")
+            }
+        }
+
+        if (contact!!.emails.isEmpty()) {
+            val emailHolder = ItemEditEmailBinding.bind(binding.contactEmailsHolder.getChildAt(0))
+            emailHolder.contactEmailType.apply {
+                setupEmailTypePicker(this, DEFAULT_EMAIL_TYPE, "")
+            }
+        }
+
+        if (contact!!.addresses.isEmpty()) {
+            val addressHolder = ItemEditAddressBinding.bind(binding.contactAddressesHolder.getChildAt(0))
+            addressHolder.contactAddressType.apply {
+                setupAddressTypePicker(this, DEFAULT_ADDRESS_TYPE, "")
+            }
+        }
+
+        if (contact!!.listIM.isEmpty()) {
+            val imHolder = ItemEditImBinding.bind(binding.contactImsHolder.getChildAt(0))
+            imHolder.contactImType.apply {
+                setupIMTypePicker(this, DEFAULT_IM_TYPE, "")
+            }
+        }
+
+        if (contact!!.events.isEmpty()) {
+            val eventHolder = ItemEventBinding.bind(binding.contactEventsHolder.getChildAt(0))
+            eventHolder.apply {
+                setupEventTypePicker(this)
+            }
+        }
+
+        if (contact!!.groups.isEmpty()) {
+            val groupsHolder = ItemEditGroupBinding.bind(binding.contactGroupsHolder.getChildAt(0))
+            groupsHolder.contactGroup.apply {
+                setupGroupsPicker(this)
+            }
+        }
+    }
+
+    private fun setupPhoneNumberTypePicker(numberTypeField: TextView, type: Int, label: String) {
+        numberTypeField.apply {
+            text = getPhoneNumberTypeText(type, label)
+            setOnClickListener {
+                showNumberTypePicker(it as TextView)
+            }
+        }
+    }
+
+    private fun setupEmailTypePicker(emailTypeField: TextView, type: Int, label: String) {
+        emailTypeField.apply {
+            text = getEmailTypeText(type, label)
+            setOnClickListener {
+                showEmailTypePicker(it as TextView)
+            }
+        }
+    }
+
+    private fun setupAddressTypePicker(addressTypeField: TextView, type: Int, label: String) {
+        addressTypeField.apply {
+            text = getAddressTypeText(type, label)
+            setOnClickListener {
+                showAddressTypePicker(it as TextView)
+            }
+        }
+    }
+
+    private fun setupIMTypePicker(imTypeField: TextView, type: Int, label: String) {
+        imTypeField.apply {
+            text = getIMTypeText(type, label)
+            setOnClickListener {
+                showIMTypePicker(it as TextView)
+            }
+        }
+    }
+
+    private fun setupEventTypePicker(eventHolder: ItemEventBinding, type: Int = DEFAULT_EVENT_TYPE) {
+        eventHolder.contactEventType.apply {
+            setText(getEventTextId(type))
+            setOnClickListener {
+                showEventTypePicker(it as TextView)
+            }
+        }
+
+        val eventField = eventHolder.contactEvent
+        eventField.setOnClickListener {
+            MyDatePickerDialog(this, eventField.tag?.toString() ?: "") { dateTag ->
+                eventField.apply {
+                    dateTag.getDateTimeFromDateString(true, this)
+                    tag = dateTag
+                    alpha = 1f
+                }
+            }
+        }
+
+        eventHolder.contactEventRemove.apply {
+            applyColorFilter(getProperPrimaryColor())
+            background.applyColorFilter(getProperTextColor())
+            setOnClickListener {
+                resetContactEvent(eventField, this@apply)
+            }
+        }
+    }
+
+    private fun setupGroupsPicker(groupTitleField: TextView, group: Group? = null) {
+        groupTitleField.apply {
+            text = group?.title ?: getString(R.string.no_groups)
+            alpha = if (group == null) 0.5f else 1f
+            setOnClickListener {
+                showSelectGroupsDialog()
+            }
+        }
+    }
+
+    private fun resetContactEvent(contactEvent: TextView, removeContactEventButton: ImageView) {
+        contactEvent.apply {
+            text = getString(R.string.unknown)
+            tag = ""
+            alpha = 0.5f
+        }
+        removeContactEventButton.beGone()
+    }
+
+    private fun removeGroup(id: Long) {
+        contact?.groups = contact?.groups?.filter { it.id != id } as ArrayList<Group>
+        setupGroups()
+    }
+
+    private fun showNumberTypePicker(numberTypeField: TextView) {
+        val items = arrayListOf(
+            RadioItem(
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                getString(R.string.mobile)
+            ),
+            RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_HOME, getString(R.string.home)),
+            RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_WORK, getString(R.string.work)),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Phone.TYPE_MAIN,
+                getString(R.string.main_number)
+            ),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK,
+                getString(R.string.work_fax)
+            ),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME,
+                getString(R.string.home_fax)
+            ),
+            RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_PAGER, getString(R.string.pager)),
+            RadioItem(ContactsContract.CommonDataKinds.Phone.TYPE_OTHER, getString(R.string.other)),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM,
+                getString(R.string.custom)
+            )
+        )
+
+        val currentNumberTypeId = getPhoneNumberTypeId(numberTypeField.value)
+        RadioGroupDialog(this, items, currentNumberTypeId) {
+            if (it as Int == ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM) {
+                CustomLabelDialog(this) {
+                    numberTypeField.text = it
+                }
+            } else {
+                numberTypeField.text = getPhoneNumberTypeText(it, "")
+            }
+        }
+    }
+
+    private fun showEmailTypePicker(emailTypeField: TextView) {
+        val items = arrayListOf(
+            RadioItem(ContactsContract.CommonDataKinds.Email.TYPE_HOME, getString(R.string.home)),
+            RadioItem(ContactsContract.CommonDataKinds.Email.TYPE_WORK, getString(R.string.work)),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Email.TYPE_MOBILE,
+                getString(R.string.mobile)
+            ),
+            RadioItem(ContactsContract.CommonDataKinds.Email.TYPE_OTHER, getString(R.string.other)),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM,
+                getString(R.string.custom)
+            )
+        )
+
+        val currentEmailTypeId = getEmailTypeId(emailTypeField.value)
+        RadioGroupDialog(this, items, currentEmailTypeId) {
+            if (it as Int == ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM) {
+                CustomLabelDialog(this) { str ->
+                    emailTypeField.text = str
+                }
+            } else {
+                emailTypeField.text = getEmailTypeText(it, "")
+            }
+        }
+    }
+
+    private fun getEmailTypeText(type: Int, label: String): String {
+        return if (type == ContactsContract.CommonDataKinds.BaseTypes.TYPE_CUSTOM) {
+            label
+        } else {
+            getString(
+                when (type) {
+                    ContactsContract.CommonDataKinds.Email.TYPE_HOME -> R.string.home
+                    ContactsContract.CommonDataKinds.Email.TYPE_WORK -> R.string.work
+                    ContactsContract.CommonDataKinds.Email.TYPE_MOBILE -> R.string.mobile
+                    else -> R.string.other
+                }
+            )
+        }
+    }
+
+    private fun showAddressTypePicker(addressTypeField: TextView) {
+        val items = arrayListOf(
+            RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME,
+                getString(R.string.home)
+            ),
+            RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK,
+                getString(R.string.work)
+            ),
+            RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
+                getString(R.string.other)
+            ),
+            RadioItem(
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM,
+                getString(R.string.custom)
+            )
+        )
+
+        val currentAddressTypeId = getAddressTypeId(addressTypeField.value)
+        RadioGroupDialog(this, items, currentAddressTypeId) {
+            if (it as Int == ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM) {
+                CustomLabelDialog(this) { str ->
+                    addressTypeField.text = str
+                }
+            } else {
+                addressTypeField.text = getAddressTypeText(it, "")
+            }
+        }
+    }
+
+    private fun getAddressTypeText(type: Int, label: String): String {
+        return if (type == ContactsContract.CommonDataKinds.BaseTypes.TYPE_CUSTOM) {
+            label
+        } else {
+            getString(
+                when (type) {
+                    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME -> R.string.home
+                    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK -> R.string.work
+                    else -> R.string.other
+                }
+            )
+        }
+    }
+
+    private fun showIMTypePicker(imTypeField: TextView) {
+        val items = arrayListOf(
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_AIM, getString(R.string.aim)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_MSN, getString(R.string.windows_live)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_YAHOO, getString(R.string.yahoo)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_SKYPE, getString(R.string.skype)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_QQ, getString(R.string.qq)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_GOOGLE_TALK, getString(R.string.hangouts)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_ICQ, getString(R.string.icq)),
+            RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_JABBER, getString(R.string.jabber)),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM,
+                getString(R.string.custom)
+            )
+        )
+
+        val currentIMTypeId = getIMTypeId(imTypeField.value)
+        RadioGroupDialog(this, items, currentIMTypeId) {
+            if (it as Int == ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM) {
+                CustomLabelDialog(this) {
+                    imTypeField.text = it
+                }
+            } else {
+                imTypeField.text = getIMTypeText(it, "")
+            }
+        }
+    }
+
+    fun getIMTypeText(type: Int, label: String): String {
+        return if (type == ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM) {
+            label
+        } else {
+            getString(
+                when (type) {
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_AIM -> R.string.aim
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_MSN -> R.string.windows_live
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_YAHOO -> R.string.yahoo
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_SKYPE -> R.string.skype
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_QQ -> R.string.qq
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_GOOGLE_TALK -> R.string.hangouts
+                    ContactsContract.CommonDataKinds.Im.PROTOCOL_ICQ -> R.string.icq
+                    else -> R.string.jabber
+                }
+            )
+        }
+    }
+
+    private fun showEventTypePicker(eventTypeField: TextView) {
+        val items = arrayListOf(
+            RadioItem(
+                ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY,
+                getString(R.string.anniversary)
+            ),
+            RadioItem(
+                ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY,
+                getString(R.string.birthday)
+            ),
+            RadioItem(ContactsContract.CommonDataKinds.Event.TYPE_OTHER, getString(R.string.other))
+        )
+
+        val currentEventTypeId = getEventTypeId(eventTypeField.value)
+        RadioGroupDialog(this, items, currentEventTypeId) {
+            eventTypeField.setText(getEventTextId(it as Int))
+        }
+    }
+
+    fun getEventTextId(type: Int) = when (type) {
+        ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY -> R.string.anniversary
+        ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY -> R.string.birthday
+        else -> R.string.other
+    }
+
+    private fun showSelectGroupsDialog() {
+        SelectGroupsDialog(this@EditContactActivity, contact!!.groups) {
+            contact!!.groups = it
+            setupGroups()
+        }
+    }
+
+    private fun showSelectContactSourceDialog() {
+        showContactSourcePicker(contact!!.source) {
+            contact!!.source = if (it == getString(R.string.phone_storage_hidden)) SMT_PRIVATE else it
+            getPublicContactSource(it) { str ->
+                binding.contactSource.text = if (str == "") getString(R.string.phone_storage) else str
+            }
+        }
+    }
+
+    private fun addNewPhoneNumberField() {
+        val numberHolder = ItemEditPhoneNumberBinding.inflate(layoutInflater, binding.contactNumbersHolder, false)
+        updateTextColors(numberHolder.root)
+        setupPhoneNumberTypePicker(numberHolder.contactNumberType, DEFAULT_PHONE_NUMBER_TYPE, "")
+        binding.contactNumbersHolder.addView(numberHolder.root)
+        binding.contactNumbersHolder.onGlobalLayout {
+            numberHolder.contactNumber.requestFocus()
+            showKeyboard(numberHolder.contactNumber)
+        }
+        numberHolder.defaultToggleIcon.tag = 0
+        initNumberHolders()
+    }
+
+    private fun addNewEmailField() {
+        val emailHolder = ItemEditEmailBinding.inflate(layoutInflater, binding.contactEmailsHolder, false)
+        updateTextColors(emailHolder.root)
+        setupEmailTypePicker(emailHolder.contactEmailType, DEFAULT_EMAIL_TYPE, "")
+        binding.contactEmailsHolder.addView(emailHolder.root)
+        binding.contactEmailsHolder.onGlobalLayout {
+            emailHolder.contactEmail.requestFocus()
+            showKeyboard(emailHolder.contactEmail)
+        }
+    }
+
+    private fun addNewAddressField() {
+        val addressHolder = ItemEditAddressBinding.inflate(layoutInflater, binding.contactAddressesHolder, false)
+        updateTextColors(addressHolder.root)
+        setupAddressTypePicker(addressHolder.contactAddressType, DEFAULT_ADDRESS_TYPE, "")
+        binding.contactAddressesHolder.addView(addressHolder.root)
+        binding.contactAddressesHolder.onGlobalLayout {
+            addressHolder.contactAddress.requestFocus()
+            showKeyboard(addressHolder.contactAddress)
+        }
+    }
+
+    private fun addNewIMField() {
+        val IMHolder = ItemEditImBinding.inflate(layoutInflater, binding.contactImsHolder, false)
+        updateTextColors(IMHolder.root)
+        setupIMTypePicker(IMHolder.contactImType, DEFAULT_IM_TYPE, "")
+        binding.contactImsHolder.addView(IMHolder.root)
+        binding.contactImsHolder.onGlobalLayout {
+            IMHolder.contactIm.requestFocus()
+            showKeyboard(IMHolder.contactIm)
+        }
+    }
+
+    private fun addNewEventField() {
+        val eventHolder = ItemEventBinding.inflate(layoutInflater, binding.contactEventsHolder, false)
+        updateTextColors(eventHolder.root)
+        setupEventTypePicker(eventHolder)
+        binding.contactEventsHolder.addView(eventHolder.root)
+    }
+
+    private fun toggleFavorite() {
+        val isStarred = isContactStarred()
+        binding.contactToggleFavorite.apply {
+            setImageDrawable(getStarDrawable(!isStarred))
+            tag = if (isStarred) 0 else 1
+
+            setOnLongClickListener { toast(R.string.toggle_favorite); true; }
+        }
+    }
+
+    private fun addNewWebsiteField() {
+        val websitesHolder = ItemEditWebsiteBinding.inflate(layoutInflater, binding.contactWebsitesHolder, false)
+        updateTextColors(websitesHolder.root)
+        binding.contactWebsitesHolder.addView(websitesHolder.root)
+        binding.contactWebsitesHolder.onGlobalLayout {
+            websitesHolder.contactWebsite.requestFocus()
+            showKeyboard(websitesHolder.contactWebsite)
+        }
+    }
+
+    @SuppressLint("UseCompatLoadingForDrawables")
+    private fun getStarDrawable(on: Boolean) =
+        resources.getDrawable(if (on) R.drawable.ic_star_vector else R.drawable.ic_star_outline_vector)
+
+    private fun trySetPhoto() {
+        val items = arrayListOf(
+            RadioItem(TAKE_PHOTO, getString(R.string.take_photo)),
+            RadioItem(CHOOSE_PHOTO, getString(R.string.choose_photo))
+        )
+
+        if (currentContactPhotoPath.isNotEmpty() || contact!!.photo != null) {
+            items.add(RadioItem(REMOVE_PHOTO, getString(R.string.remove_photo)))
+        }
+
+        RadioGroupDialog(this, items) {
+            when (it as Int) {
+                TAKE_PHOTO -> startTakePhotoIntent()
+                CHOOSE_PHOTO -> startChoosePhotoIntent()
+                else -> {
+                    showPhotoPlaceholder(binding.contactPhoto)
+                    binding.contactPhotoBottomShadow.beGone()
+                }
+            }
+        }
+    }
+
+    private fun showPhotoPlaceholder(photoView: ImageView) {
+        val placeholder = BitmapDrawable(resources, getBigLetterPlaceholder(contact?.getNameToDisplay() ?: "A"))
+        photoView.setImageDrawable(placeholder)
+        currentContactPhotoPath = ""
+        contact?.photo = null
+    }
+
+    private fun getBigLetterPlaceholder(name: String): Bitmap {
+        val letter = name.getNameLetter()
+        val height = resources.getDimension(R.dimen.top_contact_image_height).toInt()
+        val bitmap = Bitmap.createBitmap(realScreenSize.x, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val view = TextView(this)
+        view.layout(0, 0, bitmap.width, bitmap.height)
+
+        val circlePaint = Paint().apply {
+            color = letterBackgroundColors[Math.abs(name.hashCode()) % letterBackgroundColors.size].toInt()
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+
+        val wantedTextSize = bitmap.height / 2f
+        val textPaint = Paint().apply {
+            color = circlePaint.color.getContrastColor()
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            textSize = wantedTextSize
+            style = Paint.Style.FILL
+        }
+
+        canvas.drawPaint(circlePaint)
+
+        val xPos = canvas.width / 2f
+        val yPos = canvas.height / 2 - (textPaint.descent() + textPaint.ascent()) / 2
+        canvas.drawText(letter, xPos, yPos, textPaint)
+        view.draw(canvas)
+        return bitmap
+    }
+
+    private fun updateContactPhoto(path: String, photoView: ImageView, bottomShadow: ImageView, bitmap: Bitmap? = null) {
+        currentContactPhotoPath = path
+
+        if (isDestroyed || isFinishing) {
+            return
+        }
+
+        val options = RequestOptions()
+            .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+            .centerCrop()
+
+        val wantedWidth = realScreenSize.x
+        val wantedHeight = resources.getDimension(R.dimen.top_contact_image_height).toInt()
+
+        Glide.with(this)
+            .load(bitmap ?: path)
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .apply(options)
+            .override(wantedWidth, wantedHeight)
+            .listener(object : RequestListener<Drawable> {
+                override fun onResourceReady(
+                    resource: Drawable,
+                    model: Any,
+                    target: Target<Drawable>,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    photoView.background = ColorDrawable(0)
+                    bottomShadow.beVisible()
+                    return false
+                }
+
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    showPhotoPlaceholder(photoView)
+                    bottomShadow.beGone()
+                    return true
+                }
+            }).into(photoView)
+    }
+
+    private fun getDefaultRingtoneUri() = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+
+    private fun getRingtonePickerIntent(): Intent {
+        val defaultRingtoneUri = getDefaultRingtoneUri()
+        val currentRingtoneUri = if (contact!!.ringtone != null && contact!!.ringtone!!.isNotEmpty()) {
+            Uri.parse(contact!!.ringtone)
+        } else if (contact!!.ringtone?.isNotEmpty() == false) {
+            null
+        } else {
+            defaultRingtoneUri
+        }
+
+        return Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, defaultRingtoneUri)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentRingtoneUri)
         }
     }
 }

@@ -4,12 +4,33 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.compose.runtime.Immutable
+import com.app.phonebook.base.extension.formatDate
+import com.app.phonebook.base.extension.formatSize
+import com.app.phonebook.base.extension.getAlbum
+import com.app.phonebook.base.extension.getAndroidSAFDirectChildrenCount
+import com.app.phonebook.base.extension.getAndroidSAFFileCount
 import com.app.phonebook.base.extension.getAndroidSAFFileSize
+import com.app.phonebook.base.extension.getAndroidSAFLastModified
+import com.app.phonebook.base.extension.getArtist
+import com.app.phonebook.base.extension.getDirectChildrenCount
 import com.app.phonebook.base.extension.getDocumentFile
+import com.app.phonebook.base.extension.getDuration
+import com.app.phonebook.base.extension.getFastDocumentFile
 import com.app.phonebook.base.extension.getFileCount
+import com.app.phonebook.base.extension.getFormattedDuration
+import com.app.phonebook.base.extension.getImageResolution
 import com.app.phonebook.base.extension.getItemSize
+import com.app.phonebook.base.extension.getMediaStoreLastModified
+import com.app.phonebook.base.extension.getParentPath
+import com.app.phonebook.base.extension.getProperSize
+import com.app.phonebook.base.extension.getResolution
+import com.app.phonebook.base.extension.getSizeFromContentUri
+import com.app.phonebook.base.extension.getTitle
+import com.app.phonebook.base.extension.getVideoResolution
+import com.app.phonebook.base.extension.isImageFast
 import com.app.phonebook.base.extension.isPathOnOTG
 import com.app.phonebook.base.extension.isRestrictedSAFOnlyRoot
+import com.app.phonebook.base.extension.isVideoFast
 import com.app.phonebook.base.extension.normalizeString
 import com.app.phonebook.base.utils.SORT_BY_DATE_MODIFIED
 import com.app.phonebook.base.utils.SORT_BY_EXTENSION
@@ -131,7 +152,7 @@ open class FileDirItem(
         return when {
             context.isRestrictedSAFOnlyRoot(path) -> context.getAndroidSAFLastModified(path)
             context.isPathOnOTG(path) -> context.getFastDocumentFile(path)?.lastModified() ?: 0L
-            isNougatPlus() && path.startsWith("content://") -> context.getMediaStoreLastModified(path)
+            path.startsWith("content://") -> context.getMediaStoreLastModified(path)
             else -> File(path).lastModified()
         }
     }

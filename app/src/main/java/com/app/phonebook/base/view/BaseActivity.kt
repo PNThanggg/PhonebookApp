@@ -56,6 +56,7 @@ import com.app.phonebook.base.extension.isDefaultDialer
 import com.app.phonebook.base.extension.isShowingAndroidSAFDialog
 import com.app.phonebook.base.extension.isShowingOTGDialog
 import com.app.phonebook.base.extension.isShowingSAFDialog
+import com.app.phonebook.base.extension.isShowingSAFDialogSdk30
 import com.app.phonebook.base.extension.isUsingGestureNavigation
 import com.app.phonebook.base.extension.launchActivityIntent
 import com.app.phonebook.base.extension.navigationBarHeight
@@ -91,6 +92,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         private const val GENERIC_PERM_HANDLER = 100
 
         var funAfterSAFPermission: ((success: Boolean) -> Unit)? = null
+        var funAfterSdk30Action: ((success: Boolean) -> Unit)? = null
     }
 
     lateinit var binding: VB
@@ -648,6 +650,17 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
         hideKeyboard()
         return if (isShowingSAFDialog(path) || isShowingOTGDialog(path)) {
             funAfterSAFPermission = callback
+            true
+        } else {
+            callback(true)
+            false
+        }
+    }
+
+    fun handleSAFDialogSdk30(path: String, callback: (success: Boolean) -> Unit): Boolean {
+        hideKeyboard()
+        return if (isShowingSAFDialogSdk30(path)) {
+            funAfterSdk30Action = callback
             true
         } else {
             callback(true)

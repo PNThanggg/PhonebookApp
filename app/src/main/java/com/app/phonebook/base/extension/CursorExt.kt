@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.database.Cursor
 
 @SuppressLint("Range")
-fun Cursor.getStringValue(key: String): String = getString(getColumnIndex(key))
+fun Cursor.getStringValue(key: String): String? = getString(getColumnIndex(key))
 
 @SuppressLint("Range")
 fun Cursor.getStringValueOrNull(key: String): String =

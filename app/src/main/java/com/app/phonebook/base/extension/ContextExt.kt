@@ -13,18 +13,23 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutManager
 import android.database.Cursor
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Point
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
+import android.media.MediaMetadataRetriever
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.BaseColumns
 import android.provider.ContactsContract
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
@@ -38,10 +43,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.loader.content.CursorLoader
+import com.app.phonebook.BuildConfig
 import com.app.phonebook.R
 import com.app.phonebook.base.helpers.BaseConfig
 import com.app.phonebook.base.helpers.ExternalStorageProviderHack
@@ -93,6 +100,7 @@ import com.app.phonebook.base.utils.isRPlus
 import com.app.phonebook.base.utils.isSPlus
 import com.app.phonebook.base.utils.isTiramisuPlus
 import com.app.phonebook.base.utils.isUpsideDownCakePlus
+import com.app.phonebook.data.models.AlarmSound
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.ContactSource
 import com.app.phonebook.data.models.FileDirItem
@@ -117,6 +125,7 @@ import java.util.Collections
 import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
+import kotlin.math.roundToInt
 
 private const val ANDROID_DATA_DIR = "/Android/data/"
 private const val ANDROID_OBB_DIR = "/Android/obb/"
@@ -128,6 +137,20 @@ private val DIRS_INACCESSIBLE_WITH_SAF_SDK_30 = listOf(DOWNLOAD_DIR, ANDROID_DIR
 val Context.recycleBinPath: String get() = filesDir.absolutePath
 
 val Context.internalStoragePath: String get() = baseConfig.internalStoragePath
+
+fun Context.getCachePhotoUri(file: File = getCachePhoto()): Uri? =
+    FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.provider", file)
+
+fun Context.getCachePhoto(): File {
+    val imagesFolder = File(cacheDir, "my_cache")
+    if (!imagesFolder.exists()) {
+        imagesFolder.mkdirs()
+    }
+
+    val file = File(imagesFolder, "Photo_${System.currentTimeMillis()}.jpg")
+    file.createNewFile()
+    return file
+}
 
 fun Context.getStorageDirectories(): Array<String> {
     val paths = HashSet<String>()
@@ -168,7 +191,7 @@ fun Context.getStorageDirectories(): Array<String> {
     return paths.map { it.trimEnd('/') }.toTypedArray()
 }
 
-fun Context.getInternalStoragePath() =
+fun getInternalStoragePath() =
     if (File("/storage/emulated/0").exists()) "/storage/emulated/0" else Environment.getExternalStorageDirectory().absolutePath.trimEnd(
         '/'
     )
@@ -186,16 +209,13 @@ private val physicalPaths = arrayListOf(
     "/storage/removable/sdcard1", // Sony Xperia Z1
     "/data/sdext", "/data/sdext2", "/data/sdext3", "/data/sdext4", "/sdcard1", // Sony Xperia Z
     "/sdcard2", // HTC One M8s
-    "/storage/usbdisk0",
-    "/storage/usbdisk1",
-    "/storage/usbdisk2"
+    "/storage/usbdisk0", "/storage/usbdisk1", "/storage/usbdisk2"
 )
 
 fun Context.getSDCardPath(): String {
     val directories = getStorageDirectories().filter {
         it != getInternalStoragePath() && !it.equals(
-            "/storage/emulated/0",
-            true
+            "/storage/emulated/0", true
         ) && (baseConfig.OTGPartition.isEmpty() || !it.endsWith(baseConfig.OTGPartition))
     }
 
@@ -750,9 +770,9 @@ fun Context.getPackageDrawable(packageName: String): Drawable {
 
 fun Context.sendSMSToContacts(contacts: ArrayList<Contact>) {
     val numbers = StringBuilder()
-    contacts.forEach {
-        val number = it.phoneNumbers.firstOrNull { it.type == ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE }
-            ?: it.phoneNumbers.firstOrNull()
+    contacts.forEach { contact ->
+        val number = contact.phoneNumbers.firstOrNull { it.type == ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE }
+            ?: contact.phoneNumbers.firstOrNull()
 
         if (number != null) {
             numbers.append("${Uri.encode(number.value)};")
@@ -767,8 +787,8 @@ fun Context.sendSMSToContacts(contacts: ArrayList<Contact>) {
 
 fun Context.sendEmailToContacts(contacts: ArrayList<Contact>) {
     val emails = ArrayList<String>()
-    contacts.forEach {
-        it.emails.forEach {
+    contacts.forEach { contact ->
+        contact.emails.forEach {
             if (it.value.isNotEmpty()) {
                 emails.add(it.value)
             }
@@ -888,8 +908,7 @@ fun Context.getContactUriRawId(uri: Uri): Int {
 }
 
 fun Context.getSAFOnlyDirs(): List<String> {
-    return DIRS_ACCESSIBLE_ONLY_WITH_SAF.map { "$internalStoragePath$it" } +
-            DIRS_ACCESSIBLE_ONLY_WITH_SAF.map { "$sdCardPath$it" }
+    return DIRS_ACCESSIBLE_ONLY_WITH_SAF.map { "$internalStoragePath$it" } + DIRS_ACCESSIBLE_ONLY_WITH_SAF.map { "$sdCardPath$it" }
 }
 
 fun Context.isSAFOnlyRoot(path: String): Boolean {
@@ -957,7 +976,7 @@ fun Context.getDirectChildrenCount(rootDocId: String, treeUri: Uri, documentId: 
                 while (cursor.moveToNext()) {
                     val docId = cursor.getStringValue(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
                     if (docId != null) {
-                        if (!docId.getFilenameFromPath().startsWith('.') || shouldShowHidden) {
+                        if (!docId.getFilenameFromPath().startsWith('.')) {
                             count++
                         }
                     }
@@ -1155,10 +1174,7 @@ fun Context.createAndroidSAFDirectory(path: String): Boolean {
         val documentId = createAndroidSAFDocumentId(parentPath)
         val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
         DocumentsContract.createDocument(
-            contentResolver,
-            parentUri,
-            DocumentsContract.Document.MIME_TYPE_DIR,
-            path.getFilenameFromPath()
+            contentResolver, parentUri, DocumentsContract.Document.MIME_TYPE_DIR, path.getFilenameFromPath()
         ) != null
     } catch (e: IllegalStateException) {
         showErrorToast(e)
@@ -1244,8 +1260,7 @@ fun Context.getHumanReadablePath(path: String): String {
 
 fun Context.humanizePath(path: String): String {
     val trimmedPath = path.trimEnd('/')
-    val basePath = path.getBasePath(this)
-    return when (basePath) {
+    return when (val basePath = path.getBasePath(this)) {
         "/" -> "${getHumanReadablePath(basePath)}$trimmedPath"
         else -> trimmedPath.replaceFirst(basePath, getHumanReadablePath(basePath))
     }
@@ -1325,8 +1340,7 @@ fun Context.isRestrictedWithSAFSdk30(path: String): Boolean {
 fun getMediaStoreIds(context: Context): HashMap<String, Long> {
     val ids = HashMap<String, Long>()
     val projection = arrayOf(
-        MediaStore.Images.Media.DATA,
-        MediaStore.Images.Media._ID
+        MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID
     )
 
     val uri = MediaStore.Files.getContentUri("external")
@@ -1337,7 +1351,9 @@ fun getMediaStoreIds(context: Context): HashMap<String, Long> {
                 val id = cursor.getLongValue(MediaStore.Images.Media._ID)
                 if (id != 0L) {
                     val path = cursor.getStringValue(MediaStore.Images.Media.DATA)
-                    ids[path] = id
+                    if (path != null) {
+                        ids[path] = id
+                    }
                 }
             } catch (_: Exception) {
             }
@@ -1444,7 +1460,9 @@ fun Context.createSAFDirectorySdk30(path: String): Boolean {
 
         val documentId = getSAFDocumentId(parentPath)
         val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
-        DocumentsContract.createDocument(contentResolver, parentUri, DocumentsContract.Document.MIME_TYPE_DIR, path.getFilenameFromPath()) != null
+        DocumentsContract.createDocument(
+            contentResolver, parentUri, DocumentsContract.Document.MIME_TYPE_DIR, path.getFilenameFromPath()
+        ) != null
     } catch (e: IllegalStateException) {
         showErrorToast(e)
         false
@@ -1477,3 +1495,412 @@ fun Context.getIsPathDirectory(path: String): Boolean {
         else -> File(path).isDirectory
     }
 }
+
+fun Context.getSizeFromContentUri(uri: Uri): Long {
+    val projection = arrayOf(OpenableColumns.SIZE)
+    try {
+        val cursor = contentResolver.query(uri, projection, null, null, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                return cursor.getLongValue(OpenableColumns.SIZE)
+            }
+        }
+    } catch (_: Exception) {
+    }
+    return 0L
+}
+
+fun Context.getAndroidSAFFileCount(path: String, countHidden: Boolean): Int {
+    val treeUri = getAndroidTreeUri(path).toUri()
+    if (treeUri == Uri.EMPTY) {
+        return 0
+    }
+
+    val documentId = createAndroidSAFDocumentId(path)
+    val rootDocId = getStorageRootIdForAndroidDir(path)
+    return getProperChildrenCount(rootDocId, treeUri, documentId, countHidden)
+}
+
+fun Context.getProperChildrenCount(rootDocId: String, treeUri: Uri, documentId: String, shouldShowHidden: Boolean): Int {
+    val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_MIME_TYPE)
+    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
+    val rawCursor = contentResolver.query(childrenUri, projection, null, null, null)!!
+    val cursor = ExternalStorageProviderHack.transformQueryResult(rootDocId, childrenUri, rawCursor)
+    return if (cursor.count > 0) {
+        var count = 0
+        cursor.use {
+            while (cursor.moveToNext()) {
+                val docId = cursor.getStringValue(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                val mimeType = cursor.getStringValue(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                if (docId != null) {
+                    if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        count++
+                        count += getProperChildrenCount(rootDocId, treeUri, docId, shouldShowHidden)
+                    } else if (!docId.getFilenameFromPath().startsWith('.') || shouldShowHidden) {
+                        count++
+                    }
+                }
+            }
+        }
+        count
+    } else {
+        1
+    }
+}
+
+
+fun Context.getDuration(path: String): Int? {
+    val projection = arrayOf(
+        MediaStore.MediaColumns.DURATION
+    )
+
+    val uri = getFileUri(path)
+    val selection = if (path.startsWith("content://")) "${BaseColumns._ID} = ?" else "${MediaStore.MediaColumns.DATA} = ?"
+    val selectionArgs = if (path.startsWith("content://")) arrayOf(path.substringAfterLast("/")) else arrayOf(path)
+
+    try {
+        val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                return (cursor.getIntValue(MediaStore.MediaColumns.DURATION) / 1000.toDouble()).roundToInt()
+            }
+        }
+    } catch (ignored: Exception) {
+    }
+
+    return try {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(path)
+        (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!.toInt() / 1000f).roundToInt()
+    } catch (ignored: Exception) {
+        null
+    }
+}
+
+fun Context.getAndroidSAFLastModified(path: String): Long {
+    val treeUri = getAndroidTreeUri(path).toUri()
+    if (treeUri == Uri.EMPTY) {
+        return 0L
+    }
+
+    val documentId = createAndroidSAFDocumentId(path)
+    val projection = arrayOf(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+    val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+    return contentResolver.query(documentUri, projection, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            cursor.getLongValue(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+        } else {
+            0L
+        }
+    } ?: 0L
+}
+
+fun Context.getAlbum(path: String): String? {
+    val projection = arrayOf(
+        MediaStore.Audio.Media.ALBUM
+    )
+
+    val uri = getFileUri(path)
+    val selection = if (path.startsWith("content://")) "${BaseColumns._ID} = ?" else "${MediaStore.MediaColumns.DATA} = ?"
+    val selectionArgs = if (path.startsWith("content://")) arrayOf(path.substringAfterLast("/")) else arrayOf(path)
+
+    try {
+        val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                return cursor.getStringValue(MediaStore.Audio.Media.ALBUM)
+            }
+        }
+    } catch (ignored: Exception) {
+    }
+
+    return try {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(path)
+        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+    } catch (ignored: Exception) {
+        null
+    }
+}
+
+fun Context.getTitle(path: String): String? {
+    val projection = arrayOf(
+        MediaStore.MediaColumns.TITLE
+    )
+
+    val uri = getFileUri(path)
+    val selection = if (path.startsWith("content://")) "${BaseColumns._ID} = ?" else "${MediaStore.MediaColumns.DATA} = ?"
+    val selectionArgs = if (path.startsWith("content://")) arrayOf(path.substringAfterLast("/")) else arrayOf(path)
+
+    try {
+        val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                return cursor.getStringValue(MediaStore.MediaColumns.TITLE)
+            }
+        }
+    } catch (ignored: Exception) {
+    }
+
+    return try {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(path)
+        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+    } catch (ignored: Exception) {
+        null
+    }
+}
+
+fun Context.getArtist(path: String): String? {
+    val projection = arrayOf(
+        MediaStore.Audio.Media.ARTIST
+    )
+
+    val uri = getFileUri(path)
+    val selection = if (path.startsWith("content://")) "${BaseColumns._ID} = ?" else "${MediaStore.MediaColumns.DATA} = ?"
+    val selectionArgs = if (path.startsWith("content://")) arrayOf(path.substringAfterLast("/")) else arrayOf(path)
+
+    try {
+        val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                return cursor.getStringValue(MediaStore.Audio.Media.ARTIST)
+            }
+        }
+    } catch (ignored: Exception) {
+    }
+
+    return try {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(path)
+        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+    } catch (ignored: Exception) {
+        null
+    }
+}
+
+fun Context.getImageResolution(path: String): Point? {
+    val options = BitmapFactory.Options()
+    options.inJustDecodeBounds = true
+    if (isRestrictedSAFOnlyRoot(path)) {
+        BitmapFactory.decodeStream(contentResolver.openInputStream(getAndroidSAFUri(path)), null, options)
+    } else {
+        BitmapFactory.decodeFile(path, options)
+    }
+
+    val width = options.outWidth
+    val height = options.outHeight
+    return if (width > 0 && height > 0) {
+        Point(options.outWidth, options.outHeight)
+    } else {
+        null
+    }
+}
+
+fun Context.getVideoResolution(path: String): Point? {
+    var point = try {
+        val retriever = MediaMetadataRetriever()
+        if (isRestrictedSAFOnlyRoot(path)) {
+            retriever.setDataSource(this, getAndroidSAFUri(path))
+        } else {
+            retriever.setDataSource(path)
+        }
+
+        val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)!!.toInt()
+        val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)!!.toInt()
+        Point(width, height)
+    } catch (ignored: Exception) {
+        null
+    }
+
+    if (point == null && path.startsWith("content://", true)) {
+        try {
+            val fd = contentResolver.openFileDescriptor(Uri.parse(path), "r")?.fileDescriptor
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(fd)
+            val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)!!.toInt()
+            val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)!!.toInt()
+            point = Point(width, height)
+        } catch (ignored: Exception) {
+        }
+    }
+
+    return point
+}
+
+fun Context.getResolution(path: String): Point? {
+    return if (path.isImageFast() || path.isImageSlow()) {
+        getImageResolution(path)
+    } else if (path.isVideoFast() || path.isVideoSlow()) {
+        getVideoResolution(path)
+    } else {
+        null
+    }
+}
+
+fun Context.getFastDocumentFile(path: String): DocumentFile? {
+    if (isPathOnOTG(path)) {
+        return getOTGFastDocumentFile(path)
+    }
+
+    if (baseConfig.sdCardPath.isEmpty()) {
+        return null
+    }
+
+    val relativePath = Uri.encode(path.substring(baseConfig.sdCardPath.length).trim('/'))
+    val externalPathPart = baseConfig.sdCardPath.split("/").lastOrNull(String::isNotEmpty)?.trim('/') ?: return null
+    val fullUri = "${baseConfig.sdTreeUri}/document/$externalPathPart%3A$relativePath"
+    return DocumentFile.fromSingleUri(this, Uri.parse(fullUri))
+}
+
+fun Context.getMediaStoreLastModified(path: String): Long {
+    val projection = arrayOf(
+        MediaStore.MediaColumns.DATE_MODIFIED
+    )
+
+    val uri = getFileUri(path)
+    val selection = "${BaseColumns._ID} = ?"
+    val selectionArgs = arrayOf(path.substringAfterLast("/"))
+
+    try {
+        val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                return cursor.getLongValue(MediaStore.MediaColumns.DATE_MODIFIED) * 1000
+            }
+        }
+    } catch (ignored: Exception) {
+    }
+    return 0
+}
+
+fun Context.createFirstParentTreeUriUsingRootTree(fullPath: String): Uri {
+    val storageId = getSAFStorageId(fullPath)
+    val level = getFirstParentLevel(fullPath)
+    val rootParentDirName = fullPath.getFirstParentDirName(this, level)
+    val treeUri = DocumentsContract.buildTreeDocumentUri(EXTERNAL_STORAGE_PROVIDER_AUTHORITY, "$storageId:")
+    val documentId = "${storageId}:$rootParentDirName"
+    return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+}
+
+fun Context.hasProperStoredFirstParentUri(path: String): Boolean {
+    val firstParentUri = createFirstParentTreeUri(path)
+    return contentResolver.persistedUriPermissions.any { it.uri.toString() == firstParentUri.toString() }
+}
+
+fun Context.ensurePublicUri(path: String, applicationId: String): Uri? {
+    return when {
+        hasProperStoredAndroidTreeUri(path) && isRestrictedSAFOnlyRoot(path) -> {
+            getAndroidSAFUri(path)
+        }
+
+        hasProperStoredDocumentUriSdk30(path) && isAccessibleWithSAFSdk30(path) -> {
+            createDocumentUriUsingFirstParentTreeUri(path)
+        }
+
+        isPathOnOTG(path) -> {
+            getDocumentFile(path)?.uri
+        }
+
+        else -> {
+            val uri = Uri.parse(path)
+            if (uri.scheme == "content") {
+                uri
+            } else {
+                val newPath = if (uri.toString().startsWith("/")) uri.toString() else uri.path
+                val file = File(newPath)
+                getFilePublicUri(file, applicationId)
+            }
+        }
+    }
+}
+
+fun Context.getFilePublicUri(file: File, applicationId: String): Uri {
+    var uri = if (file.isMediaFile()) {
+        getMediaContentUri(file.absolutePath)
+    } else {
+        getMediaContent(file.absolutePath, MediaStore.Files.getContentUri("external"))
+    }
+
+    if (uri == null) {
+        uri = FileProvider.getUriForFile(this, "$applicationId.provider", file)
+    }
+
+    return uri!!
+}
+
+fun Context.getMediaContentUri(path: String): Uri? {
+    val uri = when {
+        path.isImageFast() -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        path.isVideoFast() -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        else -> MediaStore.Files.getContentUri("external")
+    }
+
+    return getMediaContent(path, uri)
+}
+
+fun Context.getMediaContent(path: String, uri: Uri): Uri? {
+    val projection = arrayOf(MediaStore.Images.Media._ID)
+    val selection = MediaStore.Images.Media.DATA + "= ?"
+    val selectionArgs = arrayOf(path)
+    try {
+        val cursor = contentResolver.query(uri, projection, selection, selectionArgs, null)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                val id = cursor.getIntValue(MediaStore.Images.Media._ID).toString()
+                return Uri.withAppendedPath(uri, id)
+            }
+        }
+    } catch (_: Exception) {
+    }
+    return null
+}
+
+fun Context.buildDocumentUriSdk30(fullPath: String): Uri {
+    val storageId = getSAFStorageId(fullPath)
+
+    val relativePath = when {
+        fullPath.startsWith(internalStoragePath) -> fullPath.substring(internalStoragePath.length).trim('/')
+        else -> fullPath.substringAfter(storageId).trim('/')
+    }
+
+    val documentId = "${storageId}:$relativePath"
+    return DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_PROVIDER_AUTHORITY, documentId)
+}
+
+fun Context.hasProperStoredDocumentUriSdk30(path: String): Boolean {
+    val documentUri = buildDocumentUriSdk30(path)
+    return contentResolver.persistedUriPermissions.any { it.uri.toString() == documentUri.toString() }
+}
+
+fun Context.getMimeTypeFromUri(uri: Uri): String {
+    var mimetype = uri.path?.getMimeType() ?: ""
+    if (mimetype.isEmpty()) {
+        try {
+            mimetype = contentResolver.getType(uri) ?: ""
+        } catch (_: IllegalStateException) {
+        }
+    }
+    return mimetype
+}
+
+
+fun Context.getUriMimeType(path: String, newUri: Uri): String {
+    var mimeType = path.getMimeType()
+    if (mimeType.isEmpty()) {
+        mimeType = getMimeTypeFromUri(newUri)
+    }
+    return mimeType
+}
+
+fun Context.getDefaultAlarmTitle(type: Int): String {
+    val alarmString = getString(R.string.alarm)
+    return try {
+        RingtoneManager.getRingtone(this, RingtoneManager.getDefaultUri(type))?.getTitle(this) ?: alarmString
+    } catch (e: Exception) {
+        alarmString
+    }
+}
+
+fun Context.getDefaultAlarmSound(type: Int) =
+    AlarmSound(0, getDefaultAlarmTitle(type), RingtoneManager.getDefaultUri(type).toString())
