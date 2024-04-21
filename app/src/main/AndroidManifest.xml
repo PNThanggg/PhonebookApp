@@ -46,12 +46,79 @@
         <activity
             android:name=".presentation.activities.GroupContactsActivity"
             android:exported="false" />
+
         <activity
             android:name=".presentation.activities.EditContactActivity"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:host="contacts" />
+                <data android:mimeType="vnd.android.cursor.item/person" />
+                <data android:host="com.android.contacts" />
+                <data android:mimeType="vnd.android.cursor.item/contact" />
+                <data android:host="com.android.contacts" />
+                <data android:mimeType="vnd.android.cursor.item/raw_contact" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.dir/person" />
+                <data android:mimeType="vnd.android.cursor.dir/contact" />
+                <data android:mimeType="vnd.android.cursor.dir/raw_contact" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.item/group" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="vnd.android.cursor.dir/group" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".presentation.activities.ViewContactActivity"
-            android:exported="false" />
+            android:exported="false"
+            tools:ignore="AppLinkUrlError">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.dir/person" />
+                <data android:mimeType="vnd.android.cursor.dir/contact" />
+                <data android:mimeType="vnd.android.cursor.item/group" />
+            </intent-filter>
+
+            <intent-filter android:scheme="http">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.item/person" />
+                <data android:mimeType="vnd.android.cursor.item/contact" />
+                <data android:mimeType="vnd.android.cursor.item/raw_contact"
+                    tools:ignore="AppLinkUrlError" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="com.android.contacts.action.QUICK_CONTACT" />
+                <action android:name="android.provider.action.QUICK_CONTACT"
+                    tools:ignore="AppLinkUrlError" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.item/contact" />
+                <data android:mimeType="vnd.android.cursor.item/person"
+                    tools:ignore="AppLinkUrlError" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".presentation.activities.SplashActivity"
             android:exported="true"
@@ -62,6 +129,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".presentation.activities.MainActivity"
             android:configChanges="orientation|screenSize"
@@ -76,21 +144,22 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".presentation.activities.ConferenceActivity"
             android:exported="false" />
+
         <activity
             android:name=".presentation.activities.CallActivity"
             android:exported="false"
             android:label="@string/ongoing_call"
             android:launchMode="singleTask"
-            android:screenOrientation="fullSensor"
             android:showOnLockScreen="true" />
+
         <activity
             android:name=".presentation.activities.DialpadActivity"
             android:exported="false"
             android:parentActivityName=".presentation.activities.MainActivity"
-            android:screenOrientation="fullSensor"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
@@ -147,6 +216,16 @@
                 <!-- <action android:name="com.app.phonebook.action.DECLINE_CALL" /> -->
             </intent-filter>
         </receiver>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
 
         <provider
             android:name=".provider.ContactsContentProvider"

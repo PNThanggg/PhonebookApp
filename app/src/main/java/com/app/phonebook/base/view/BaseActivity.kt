@@ -385,6 +385,7 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
 
         if (isDefaultDialer()) {
             getHandleToUse(null, recipient) { handle ->
+
                 launchCallIntent(recipient, handle)
             }
         } else {

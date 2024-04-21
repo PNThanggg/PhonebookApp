@@ -57,6 +57,7 @@ import com.app.phonebook.base.view.BaseActivity
 import com.app.phonebook.data.models.Contact
 import com.app.phonebook.data.models.RadioItem
 import com.app.phonebook.databinding.ActivityMainBinding
+import com.app.phonebook.helpers.ContactsHelper
 import com.app.phonebook.helpers.RecentHelper
 import com.app.phonebook.presentation.dialog.ChangeSortingDialog
 import com.app.phonebook.presentation.dialog.ChangeViewTypeDialog
@@ -65,6 +66,7 @@ import com.app.phonebook.presentation.dialog.CreateNewGroupDialog
 import com.app.phonebook.presentation.dialog.FilterContactSourcesDialog
 import com.app.phonebook.presentation.dialog.PermissionRequiredDialog
 import com.app.phonebook.presentation.dialog.RadioGroupDialog
+import com.app.phonebook.presentation.dialog.SelectContactsDialog
 import com.app.phonebook.presentation.fragments.ContactsFragment
 import com.app.phonebook.presentation.fragments.FavoritesFragment
 import com.app.phonebook.presentation.fragments.GroupsFragment
@@ -143,7 +145,21 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     startActivity(this)
                 }
             } else if (getCurrentFragment() == getFavoritesFragment()) {
-
+                if(getFavoritesFragment()?.allContacts.isNullOrEmpty()) {
+                    toast("No contact")
+                } else {
+                    SelectContactsDialog(this@MainActivity, getFavoritesFragment()?.allContacts!!,
+                        allowSelectMultiple = true,
+                        showOnlyContactsWithNumber = false
+                    ) { addedContacts, removedContacts ->
+                        ContactsHelper(this).apply {
+                            addFavorites(addedContacts)
+                            removeFavorites(removedContacts)
+                        }
+                        getFavoritesFragment()?.finishActMode()
+                        getFavoritesFragment()?.refreshItems()
+                    }
+                }
             } else if (getCurrentFragment() == getGroupFragment()) {
                 getCurrentFragment()?.finishActMode()
                 showNewGroupsDialog()
@@ -250,7 +266,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainMenu.getToolbar().menu.apply {
             findItem(R.id.clear_call_history).isVisible = currentFragment == getRecentsFragment()
             findItem(R.id.sort).isVisible = currentFragment != getRecentsFragment()
-            findItem(R.id.create_new_contact).isVisible = currentFragment == getContactsFragment()
             findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
             findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
         }
@@ -279,7 +294,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             getToolbar().setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.clear_call_history -> clearCallHistory()
-                    R.id.create_new_contact -> launchCreateNewContactIntent()
                     R.id.sort -> showSortingDialog(showCustomSorting = getCurrentFragment() is FavoritesFragment)
                     R.id.filter -> showFilterDialog()
                     R.id.change_view_type -> changeViewType()

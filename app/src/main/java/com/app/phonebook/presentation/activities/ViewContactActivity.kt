@@ -137,11 +137,8 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         return ActivityViewContactBinding.inflate(inflater)
     }
 
-    private val PICK_RINGTONE_INTENT_ID = 1500
-    private val INTENT_SELECT_RINGTONE = 600
 
     private var contact: Contact? = null
-    private var originalRingtone: String? = null
     private var currentContactPhotoPath = ""
 
     private var isViewIntent = false
@@ -155,8 +152,11 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
 
     companion object {
         private const val COMPARABLE_PHONE_NUMBER_LENGTH = 9
+        private const val PICK_RINGTONE_INTENT_ID = 1500
+        private const val INTENT_SELECT_RINGTONE = 600
     }
 
+    @Suppress("DEPRECATION")
     override fun initView(savedInstanceState: Bundle?) {
         showFields = config.showContactFields
         binding.contactWrapper.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -188,6 +188,8 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (binding.contactPhotoBig.alpha == 1f) {
             hideBigContactPhoto()
@@ -215,11 +217,6 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
                 if (contact != null) {
                     launchEditContact(contact!!)
                 }
-                true
-            }
-
-            findItem(R.id.open_with).setOnMenuItemClickListener {
-                openWith()
                 true
             }
 
@@ -372,7 +369,12 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
                     return false
                 }
 
-                override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>,
+                    isFirstResource: Boolean
+                ): Boolean {
                     showPhotoPlaceholder(photoView)
                     bottomShadow.beGone()
                     return true
@@ -434,7 +436,7 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         }
 
         binding.contactSendSms.setOnClickListener { trySendSMS() }
-        binding.contactStartCall.setOnClickListener { tryInitiateCall(contact!!) {  startCallIntent(it) } }
+        binding.contactStartCall.setOnClickListener { tryInitiateCall(contact!!) { startCallIntent(it) } }
         binding.contactSendEmail.setOnClickListener { trySendEmail() }
 
         binding.contactSendSms.setOnLongClickListener { toast(R.string.send_sms); true; }
@@ -442,7 +444,6 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         binding.contactSendEmail.setOnLongClickListener { toast(R.string.send_email); true; }
 
         updateTextColors(binding.contactScrollview)
-        binding.contactToolbar.menu.findItem(R.id.open_with).isVisible = contact?.isPrivate() == false
     }
 
     private fun setupViewContact() {
@@ -813,7 +814,8 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
 
             if (sources.size > 1) {
                 sources =
-                    sources.toList().sortedBy { (key, value) -> value.toLowerCase() }.toMap() as LinkedHashMap<Contact, String>
+                    sources.toList().sortedBy { (_, value) -> value.lowercase(Locale.getDefault()) }
+                        .toMap() as LinkedHashMap<Contact, String>
             }
 
             for ((key, value) in sources) {
@@ -889,6 +891,7 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun setupRingtone() {
         if (showFields and SHOW_RINGTONE_FIELD != 0) {
             binding.contactRingtoneImage.beVisible()
@@ -1053,6 +1056,7 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         }
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables")
     private fun getStarDrawable(on: Boolean) =
         resources.getDrawable(if (on) R.drawable.ic_star_vector else R.drawable.ic_star_outline_vector, theme)
 
@@ -1155,6 +1159,7 @@ class ViewContactActivity : BaseActivity<ActivityViewContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun getIMTypeText(type: Int, label: String): String {
         return if (type == ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM) {
             label

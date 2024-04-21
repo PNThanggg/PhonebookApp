@@ -4,8 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
+import com.app.phonebook.presentation.view.pager.RtlViewPager
 
-class MyViewPager : CustomPageView {
+class MyViewPager : RtlViewPager {
 
     constructor(context: Context) : super(context)
 

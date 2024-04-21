@@ -39,7 +39,7 @@ class FavoritesFragment(
     attributeSet: AttributeSet
 ) : MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet), RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
-    private var allContacts = ArrayList<Contact>()
+    var allContacts = ArrayList<Contact>()
 
     private var contactAdapter: ContactsAdapter? = null
 

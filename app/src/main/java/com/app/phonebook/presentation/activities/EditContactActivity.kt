@@ -40,7 +40,6 @@ import com.app.phonebook.base.extension.beVisibleIf
 import com.app.phonebook.base.extension.config
 import com.app.phonebook.base.extension.getCachePhoto
 import com.app.phonebook.base.extension.getCachePhotoUri
-import com.app.phonebook.base.extension.getContactPublicUri
 import com.app.phonebook.base.extension.getContactUriRawId
 import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getDateTimeFromDateString
@@ -57,7 +56,6 @@ import com.app.phonebook.base.extension.getVisibleContactSources
 import com.app.phonebook.base.extension.hasContactPermissions
 import com.app.phonebook.base.extension.hideKeyboard
 import com.app.phonebook.base.extension.isVisible
-import com.app.phonebook.base.extension.launchActivityIntent
 import com.app.phonebook.base.extension.normalizePhoneNumber
 import com.app.phonebook.base.extension.onGlobalLayout
 import com.app.phonebook.base.extension.realScreenSize
@@ -145,14 +143,12 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
+import kotlin.math.abs
 
 class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     override fun inflateViewBinding(inflater: LayoutInflater): ActivityEditContactBinding {
         return ActivityEditContactBinding.inflate(inflater)
     }
-
-    private val PICK_RINGTONE_INTENT_ID = 1500
-    private val INTENT_SELECT_RINGTONE = 600
 
     private var contact: Contact? = null
     private var originalRingtone: String? = null
@@ -168,6 +164,8 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         private const val REMOVE_PHOTO = 3
 
         private const val AUTO_COMPLETE_DELAY = 5000L
+        private const val PICK_RINGTONE_INTENT_ID = 1500
+        private const val INTENT_SELECT_RINGTONE = 600
     }
 
     private var mLastSavePromptTS = 0L
@@ -185,6 +183,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         UNCHANGED, STARRED, UNSTARRED
     }
 
+    @Suppress("DEPRECATION")
     override fun initView(savedInstanceState: Bundle?) {
         super.initView(savedInstanceState)
 
@@ -218,20 +217,38 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
         super.onActivityResult(requestCode, resultCode, resultData)
-        if (requestCode == PICK_RINGTONE_INTENT_ID && resultCode == RESULT_OK && resultData != null && resultData.dataString != null) {
-            customRingtoneSelected(Uri.decode(resultData.dataString!!))
-        } else if (requestCode == INTENT_SELECT_RINGTONE && resultCode == Activity.RESULT_OK && resultData != null) {
-            val extras = resultData.extras
-            if (extras?.containsKey(RingtoneManager.EXTRA_RINGTONE_PICKED_URI) == true) {
-                val uri = extras.getParcelable<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
-                try {
-                    systemRingtoneSelected(uri)
-                } catch (e: Exception) {
-                    showErrorToast(e)
+
+        if (resultCode == RESULT_OK) {
+            when (requestCode) {
+                PICK_RINGTONE_INTENT_ID -> {
+                    if (resultData?.dataString != null) {
+                        customRingtoneSelected(Uri.decode(resultData.dataString!!))
+                    }
                 }
+
+                INTENT_SELECT_RINGTONE -> {
+                    val extras = resultData?.extras
+                    if (extras?.containsKey(RingtoneManager.EXTRA_RINGTONE_PICKED_URI) == true) {
+                        val uri = extras.getParcelable<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+                        try {
+                            systemRingtoneSelected(uri)
+                        } catch (e: Exception) {
+                            showErrorToast(e)
+                        }
+                    }
+                }
+
+                INTENT_TAKE_PHOTO, INTENT_CHOOSE_PHOTO -> startCropPhotoIntent(lastPhotoIntentUri, resultData?.data)
+
+                INTENT_CROP_PHOTO -> updateContactPhoto(
+                    lastPhotoIntentUri.toString(),
+                    binding.contactPhoto,
+                    binding.contactPhotoBottomShadow
+                )
             }
         }
     }
@@ -272,11 +289,6 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
                 true
             }
 
-            findItem(R.id.open_with).setOnMenuItemClickListener {
-                openWith()
-                true
-            }
-
             findItem(R.id.delete).setOnMenuItemClickListener {
                 deleteContact()
                 true
@@ -307,14 +319,6 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     }
 
     private fun hasContactChanged() = contact != null && contact != fillContactValues() || originalRingtone != contact?.ringtone
-
-    private fun openWith() {
-        Intent().apply {
-            action = Intent.ACTION_EDIT
-            data = getContactPublicUri(contact!!)
-            launchActivityIntent(this)
-        }
-    }
 
     private fun shareContact(contact: Contact) {
         shareContacts(arrayListOf(contact))
@@ -420,6 +424,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun getPhoneNumberFromIntent(intent: Intent): String? {
         if (intent.extras?.containsKey(KEY_PHONE) == true) {
             return intent.getStringExtra(KEY_PHONE)
@@ -428,7 +433,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             // data: [data1=+123 456 789 mimetype=vnd.android.cursor.item/phone_v2 _id=-1 data2=0]
             val data = intent.extras!!.get("data")
             if (data != null) {
-                val contentValues = (data as? ArrayList<Any>)?.firstOrNull() as? ContentValues
+                val contentValues = (data as? ArrayList<*>)?.firstOrNull() as? ContentValues
                 if (contentValues != null && contentValues.containsKey("data1")) {
                     return contentValues.getAsString("data1")
                 }
@@ -438,6 +443,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     }
 
 
+    @Suppress("DEPRECATION")
     private fun gotContact() {
         binding.contactScrollview.beVisible()
         if (contact == null) {
@@ -569,7 +575,6 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         binding.contactToolbar.menu.apply {
             findItem(R.id.delete).isVisible = contact?.id != 0
             findItem(R.id.share).isVisible = contact?.id != 0
-            findItem(R.id.open_with).isVisible = contact?.id != 0 && contact?.isPrivate() == false
         }
     }
 
@@ -772,6 +777,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun getFilledPhoneNumbers(): ArrayList<PhoneNumber> {
         val phoneNumbers = ArrayList<PhoneNumber>()
         val numbersCount = binding.contactNumbersHolder.childCount
@@ -849,6 +855,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         else -> ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM
     }
 
+    @Suppress("DEPRECATION")
     private fun getIMTypeId(value: String) = when (value) {
         getString(R.string.aim) -> ContactsContract.CommonDataKinds.Im.PROTOCOL_AIM
         getString(R.string.windows_live) -> ContactsContract.CommonDataKinds.Im.PROTOCOL_MSN
@@ -1046,6 +1053,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         contact!!.notes = note
     }
 
+    @Suppress("DEPRECATION")
     private fun startTakePhotoIntent() {
         hideKeyboard()
         val uri = getCachePhotoUri()
@@ -1063,6 +1071,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun startChoosePhotoIntent() {
         hideKeyboard()
         val uri = getCachePhotoUri()
@@ -1083,7 +1092,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
-
+    @Suppress("DEPRECATION")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (System.currentTimeMillis() - mLastSavePromptTS > SAVE_DISCARD_PROMPT_INTERVAL && hasContactChanged()) {
@@ -1102,6 +1111,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun startCropPhotoIntent(primaryUri: Uri?, backupUri: Uri?) {
         if (primaryUri == null) {
             toast(R.string.unknown_error_occurred)
@@ -1265,7 +1275,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     }
 
     private fun setupIMs() {
-        contact!!.listIM.forEachIndexed { index, IM ->
+        contact!!.listIM.forEachIndexed { index, listIM ->
             val imHolderView = binding.contactImsHolder.getChildAt(index)
             val imHolder = if (imHolderView == null) {
                 ItemEditImBinding.inflate(layoutInflater, binding.contactImsHolder, false).apply {
@@ -1276,8 +1286,8 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
             }
 
             imHolder.apply {
-                contactIm.setText(IM.value)
-                setupIMTypePicker(contactImType, IM.type, IM.label)
+                contactIm.setText(listIM.value)
+                setupIMTypePicker(contactImType, listIM.type, listIM.label)
             }
         }
     }
@@ -1286,6 +1296,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         binding.contactNotes.setText(contact!!.notes)
     }
 
+    @Suppress("DEPRECATION")
     private fun setupRingtone() {
         binding.contactRingtone.setOnClickListener {
             hideKeyboard()
@@ -1593,8 +1604,8 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         val currentNumberTypeId = getPhoneNumberTypeId(numberTypeField.value)
         RadioGroupDialog(this, items, currentNumberTypeId) {
             if (it as Int == ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM) {
-                CustomLabelDialog(this) {
-                    numberTypeField.text = it
+                CustomLabelDialog(this) { str ->
+                    numberTypeField.text = str
                 }
             } else {
                 numberTypeField.text = getPhoneNumberTypeText(it, "")
@@ -1681,6 +1692,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun showIMTypePicker(imTypeField: TextView) {
         val items = arrayListOf(
             RadioItem(ContactsContract.CommonDataKinds.Im.PROTOCOL_AIM, getString(R.string.aim)),
@@ -1699,8 +1711,8 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         val currentIMTypeId = getIMTypeId(imTypeField.value)
         RadioGroupDialog(this, items, currentIMTypeId) {
             if (it as Int == ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM) {
-                CustomLabelDialog(this) {
-                    imTypeField.text = it
+                CustomLabelDialog(this) { str ->
+                    imTypeField.text = str
                 }
             } else {
                 imTypeField.text = getIMTypeText(it, "")
@@ -1708,7 +1720,8 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
-    fun getIMTypeText(type: Int, label: String): String {
+    @Suppress("DEPRECATION")
+    private fun getIMTypeText(type: Int, label: String): String {
         return if (type == ContactsContract.CommonDataKinds.Im.PROTOCOL_CUSTOM) {
             label
         } else {
@@ -1742,7 +1755,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
-    fun getEventTextId(type: Int) = when (type) {
+    private fun getEventTextId(type: Int) = when (type) {
         ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY -> R.string.anniversary
         ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY -> R.string.birthday
         else -> R.string.other
@@ -1800,13 +1813,13 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
     }
 
     private fun addNewIMField() {
-        val IMHolder = ItemEditImBinding.inflate(layoutInflater, binding.contactImsHolder, false)
-        updateTextColors(IMHolder.root)
-        setupIMTypePicker(IMHolder.contactImType, DEFAULT_IM_TYPE, "")
-        binding.contactImsHolder.addView(IMHolder.root)
+        val imHolder = ItemEditImBinding.inflate(layoutInflater, binding.contactImsHolder, false)
+        updateTextColors(imHolder.root)
+        setupIMTypePicker(imHolder.contactImType, DEFAULT_IM_TYPE, "")
+        binding.contactImsHolder.addView(imHolder.root)
         binding.contactImsHolder.onGlobalLayout {
-            IMHolder.contactIm.requestFocus()
-            showKeyboard(IMHolder.contactIm)
+            imHolder.contactIm.requestFocus()
+            showKeyboard(imHolder.contactIm)
         }
     }
 
@@ -1837,6 +1850,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @SuppressLint("UseCompatLoadingForDrawables")
     private fun getStarDrawable(on: Boolean) =
         resources.getDrawable(if (on) R.drawable.ic_star_vector else R.drawable.ic_star_outline_vector)
@@ -1878,7 +1892,7 @@ class EditContactActivity : BaseActivity<ActivityEditContactBinding>() {
         view.layout(0, 0, bitmap.width, bitmap.height)
 
         val circlePaint = Paint().apply {
-            color = letterBackgroundColors[Math.abs(name.hashCode()) % letterBackgroundColors.size].toInt()
+            color = letterBackgroundColors[abs(name.hashCode()) % letterBackgroundColors.size].toInt()
             isAntiAlias = true
             style = Paint.Style.FILL
         }
