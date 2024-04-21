@@ -15,6 +15,7 @@ import com.app.phonebook.base.extension.getContrastColor
 import com.app.phonebook.base.extension.getMyContactsCursor
 import com.app.phonebook.base.extension.hasPermission
 import com.app.phonebook.base.extension.normalizeString
+import com.app.phonebook.base.extension.startContactDetailsIntent
 import com.app.phonebook.base.extension.telephonyManager
 import com.app.phonebook.base.helpers.Converters
 import com.app.phonebook.base.interfaces.RefreshItemsListener
@@ -140,11 +141,8 @@ class FavoritesFragment(
                         }
                     }
                 } else {
-                    activity?.apply {
-                        initiateCall(it as Contact) { str ->
-                            launchCallIntent(str)
-                        }
-                    }
+                    val contact = it as Contact
+                    activity?.startContactDetailsIntent(contact)
                 }
             }.apply {
                 contactAdapter = this
